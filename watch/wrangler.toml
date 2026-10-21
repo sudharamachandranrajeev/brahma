@@ -1,0 +1,13 @@
+name = "brahma-watch"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Every 10 minutes. Rentals in a town like Enniskillen appear a few times a
+# week, so this is prompt without hammering the site.
+[triggers]
+crons = ["*/10 * * * *"]
+
+# `npm run setup` creates the namespace and fills in this id.
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_KV_ID"

@@ -1,0 +1,11 @@
+node_modules/
+.wrangler/
+.dev.vars
+
+# Flutter / Dart
+.dart_tool/
+build/
+*.iml
+.idea/
+pubspec_overrides.yaml
+.flutter-plugins-dependencies
