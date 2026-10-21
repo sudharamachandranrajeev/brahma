@@ -1,0 +1,29 @@
+/// Shared core of the Brahma apps.
+library;
+
+export 'src/app/links.dart';
+export 'src/app/modules.dart';
+export 'src/app/pairing_dialogs.dart';
+export 'src/app/providers.dart';
+export 'src/app/root.dart';
+export 'src/app/session.dart';
+export 'src/app/settings_cards.dart';
+export 'src/app/sync_dialogs.dart';
+export 'src/dates.dart';
+export 'src/db/store.dart';
+export 'src/db/synced_database.dart';
+export 'src/identity.dart';
+export 'src/money/currencies.dart';
+export 'src/money/money.dart';
+export 'src/security/crypto.dart';
+export 'src/security/key_vault.dart';
+export 'src/sync/account_service.dart';
+export 'src/sync/hlc.dart';
+export 'src/sync/pairing.dart';
+export 'src/sync/pocketbase_remote.dart';
+export 'src/sync/sync_engine.dart';
+export 'src/ui/format.dart';
+export 'src/ui/hints.dart';
+export 'src/ui/shell.dart';
+export 'src/ui/theme.dart';
+export 'src/ui/widgets.dart';
