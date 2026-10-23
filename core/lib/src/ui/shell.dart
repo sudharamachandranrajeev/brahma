@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/modules.dart';
 import '../app/providers.dart';
 import 'hints.dart';
+import 'theme.dart';
 
 /// Navigation around every module's screens: a rail on wide windows, a bottom
 /// bar with "More" on phones. Pages are built on first visit and then kept.
@@ -18,8 +19,11 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderStateMixin {
   late final _destinations = widget.destinations;
+  // Fades the newly selected page in over the canvas.
+  late final _fade = AnimationController(vsync: this, duration: Motion.medium, value: 1);
+  late final _eased = CurvedAnimation(parent: _fade, curve: Motion.curve);
   final _visited = <int>{0};
   int _index = 0;
 
@@ -31,15 +35,26 @@ class _AppShellState extends ConsumerState<AppShell> {
     widget.onStart?.call(ref);
   }
 
-  void _select(int i) => setState(() {
-    _index = i;
-    _visited.add(i);
-  });
+  @override
+  void dispose() {
+    _eased.dispose();
+    _fade.dispose();
+    super.dispose();
+  }
+
+  void _select(int i) {
+    if (i == _index) return;
+    setState(() {
+      _index = i;
+      _visited.add(i);
+    });
+    if (!Motion.reduced(context)) _fade.forward(from: 0);
+  }
 
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
-    final stack = IndexedStack(
+    final indexed = IndexedStack(
       index: _index,
       children: [
         for (var i = 0; i < _destinations.length; i++)
@@ -47,6 +62,13 @@ class _AppShellState extends ConsumerState<AppShell> {
               ? KeyedSubtree(key: ValueKey(_destinations[i].id), child: _destinations[i].page(context))
               : const SizedBox.shrink(),
       ],
+    );
+    final stack = FadeTransition(
+      opacity: _eased,
+      child: SlideTransition(
+        position: Tween(begin: const Offset(0, 0.012), end: Offset.zero).animate(_eased),
+        child: indexed,
+      ),
     );
 
     if (width >= 840) {

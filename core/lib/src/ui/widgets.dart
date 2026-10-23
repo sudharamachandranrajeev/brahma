@@ -17,15 +17,54 @@ class AsyncView<T> extends StatelessWidget {
   final VoidCallback? onRetry;
 
   @override
-  // Keeps showing the last data while a write makes the provider load again.
-  Widget build(BuildContext context) => value.when(
-    skipLoadingOnReload: true,
-    data: builder,
-    error: (error, _) => ErrorPanel(describeError(error), onRetry: onRetry),
-    loading: () => const Center(
-      child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
-    ),
-  );
+  Widget build(BuildContext context) {
+    // Keeps showing the last data while a write makes the provider load again.
+    final (stage, child) = value.when(
+      skipLoadingOnReload: true,
+      data: (data) => (#data, builder(data)),
+      error: (error, _) => (#error, ErrorPanel(describeError(error), onRetry: onRetry)),
+      loading: () => (
+        #loading,
+        const Center(
+          child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
+        ),
+      ),
+    );
+    // Fade only between stages, so refreshed data swaps in place.
+    return AnimatedSwitcher(
+      duration: Motion.reduced(context) ? Duration.zero : Motion.medium,
+      switchInCurve: Motion.curve,
+      layoutBuilder: (current, previous) =>
+          Stack(alignment: Alignment.topCenter, fit: StackFit.passthrough, children: [...previous, ?current]),
+      child: KeyedSubtree(key: ValueKey(stage), child: child),
+    );
+  }
+}
+
+/// Fades its child in and lifts it a few pixels when first shown.
+class FadeIn extends StatelessWidget {
+  const FadeIn({super.key, required this.child, this.delay = Duration.zero});
+  final Widget child;
+
+  /// Staggers siblings: each starts this much later.
+  final Duration delay;
+
+  @override
+  Widget build(BuildContext context) {
+    if (Motion.reduced(context)) return child;
+    final total = Motion.medium + delay;
+    final start = delay.inMicroseconds / total.inMicroseconds;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: total,
+      curve: Interval(start, 1, curve: Motion.curve),
+      child: child,
+      builder: (context, t, child) => Opacity(
+        opacity: t,
+        child: Transform.translate(offset: Offset(0, 8 * (1 - t)), child: child),
+      ),
+    );
+  }
 }
 
 class ErrorPanel extends StatelessWidget {
@@ -93,7 +132,13 @@ class PageScaffold extends StatelessWidget {
                 constraints: const BoxConstraints(maxWidth: 1200),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [if (banner != null) HintBanner(banner!), ...children!],
+                  children: [
+                    for (final (i, child) in [if (banner != null) HintBanner(banner!), ...children!].indexed)
+                      FadeIn(
+                        delay: Duration(milliseconds: 40 * i.clamp(0, 6)),
+                        child: child,
+                      ),
+                  ],
                 ),
               ),
             ),

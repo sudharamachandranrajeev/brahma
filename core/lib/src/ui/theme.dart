@@ -23,6 +23,7 @@ ThemeData buildTheme(Brightness brightness, {Color seed = emerald, Color accent 
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
     ),
     snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+    pageTransitionsTheme: Motion.pageTransitions,
   );
   // Text styles come from the theme's own text theme so they keep its fonts.
   final text = base.textTheme;
@@ -41,6 +42,21 @@ ThemeData buildTheme(Brightness brightness, {Color seed = emerald, Color accent 
       leadingAndTrailingTextStyle: text.bodyLarge,
     ),
   );
+}
+
+/// Shared motion: short, eased fades so screens settle rather than jump.
+/// Everything here stops when the platform asks for reduced motion.
+abstract final class Motion {
+  static const short = Duration(milliseconds: 180);
+  static const medium = Duration(milliseconds: 260);
+  static const curve = Curves.easeOutCubic;
+
+  /// Pushed pages slide in and fade forwards on every platform.
+  static final pageTransitions = PageTransitionsTheme(
+    builders: {for (final p in TargetPlatform.values) p: const FadeForwardsPageTransitionsBuilder()},
+  );
+
+  static bool reduced(BuildContext context) => MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 }
 
 /// Chart colours from the data-viz reference palette, fixed per slot so a
