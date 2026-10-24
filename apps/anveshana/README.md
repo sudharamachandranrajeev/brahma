@@ -1,8 +1,8 @@
-# Anveshana
+# Graha Anveshana
 
 Property search, renting, buying, investment, development and lettings for Linux, Windows 11 and
 Android. Part of **Brahma**, a suite of life-management apps that share one encrypted account
-(with [Artha](https://github.com/sudharamachandranrajeev/artha) for money). The shared core and the
+(with [Vahana Anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana) for cars and [Artha](https://github.com/sudharamachandranrajeev/artha) for money). The shared core and the
 cloud alert service live in [brahma](https://github.com/sudharamachandranrajeev/brahma).
 
 Status: first release, for testing. Built with Flutter 3.47.7; local data in an encrypted SQLite
@@ -40,13 +40,13 @@ Tax rates are as of October 2026 and are a starting point for your own checks, n
 Builds are on the [releases page](https://github.com/sudharamachandranrajeev/anveshana/releases),
 each with `SHA256SUMS.txt`.
 
-- **Linux (x86-64):** unpack `Anveshana-<version>-linux-x64.tar.gz` and run `./install.sh` (for
+- **Linux (x86-64):** unpack `Graha-Anveshana-<version>-linux-x64.tar.gz` and run `./install.sh` (for
   your user only; `./install.sh --uninstall` removes it). Needs GTK 3, libsecret and a running
   keyring, which holds the database key.
-- **Windows 10/11:** run `Anveshana-<version>-windows-x64-setup.exe` (no admin rights), or unzip
+- **Windows 10/11:** run `Graha-Anveshana-<version>-windows-x64-setup.exe` (no admin rights), or unzip
   the portable build. SmartScreen warns because the build is not code-signed: *More info > Run
   anyway*.
-- **Android 7+:** install `Anveshana-<version>-android.apk`.
+- **Android 7+:** install `Graha-Anveshana-<version>-android.apk`.
 
 Your data stays on the device, encrypted, until you turn on sync. An account made in any Brahma
 app works in all of them.

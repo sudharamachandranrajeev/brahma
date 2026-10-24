@@ -3,10 +3,10 @@ import 'package:brahma_core/brahma_core.dart';
 import '../db/database.dart';
 import '../domain/book.dart';
 
-/// Anveshana in Brahma's terms: the app's id, name and Android package.
+/// Graha Anveshana in Brahma's terms: the app's id, name and Android package.
 const anveshanaIdentity = AppIdentity(
   id: 'anveshana',
-  name: 'Anveshana',
+  name: 'Graha Anveshana',
   androidPackage: 'dev.brahma.anveshana',
 );
 

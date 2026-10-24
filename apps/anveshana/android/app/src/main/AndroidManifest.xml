@@ -10,7 +10,7 @@
          not backed up, so a restored copy could never be opened. Sync is the
          backup. -->
     <application
-        android:label="Anveshana"
+        android:label="Graha Anveshana"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true"

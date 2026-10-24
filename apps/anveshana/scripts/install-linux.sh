@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs Anveshana for the current user (no root needed).
+# Installs Graha Anveshana for the current user (no root needed).
 #
 #   ./install.sh                 # from an unpacked release tarball
 #   scripts/install-linux.sh     # from a source checkout, after `flutter build linux --release`
@@ -22,7 +22,7 @@ if [[ ${1:-} == --uninstall ]]; then
   rm -rf "$dest"
   rm -f "$bin" "$desktop" "$icon"
   command -v update-desktop-database >/dev/null && update-desktop-database -q "$(dirname "$desktop")" || true
-  echo "Anveshana removed. Your data is still in ~/.local/share/$app_id."
+  echo "Graha Anveshana removed. Your data is still in ~/.local/share/$app_id."
   exit 0
 fi
 
@@ -43,10 +43,10 @@ fi
 # The database key is kept in the desktop keyring through libsecret.
 # grep reads all input (no -q): under pipefail an early exit would fail the pipe.
 if ! ldconfig -p 2>/dev/null | grep libsecret-1.so.0 >/dev/null; then
-  echo "Warning: libsecret is not installed. Install it (e.g. libsecret / libsecret-1-0) or Anveshana cannot store its key." >&2
+  echo "Warning: libsecret is not installed. Install it (e.g. libsecret / libsecret-1-0) or Graha Anveshana cannot store its key." >&2
 fi
 if command -v busctl >/dev/null && ! busctl --user list 2>/dev/null | grep org.freedesktop.secrets >/dev/null; then
-  echo "Note: no keyring service is running right now (GNOME Keyring or KWallet). Anveshana needs one when it starts." >&2
+  echo "Note: no keyring service is running right now (GNOME Keyring or KWallet). Graha Anveshana needs one when it starts." >&2
 fi
 
 # Copy beside the old install, then swap, so a failed copy leaves it working.
@@ -67,7 +67,7 @@ ln -sf "$dest/anveshana" "$bin"
 cat >"$desktop" <<DESKTOP
 [Desktop Entry]
 Type=Application
-Name=Anveshana
+Name=Graha Anveshana
 GenericName=Personal finance
 Comment=Accounts, spending, investments and reports in one private ledger
 Exec=$dest/anveshana
@@ -80,4 +80,4 @@ DESKTOP
 command -v update-desktop-database >/dev/null && update-desktop-database -q "$(dirname "$desktop")" || true
 command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -q "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 
-echo "Anveshana installed. Start it from your app menu or run: anveshana"
+echo "Graha Anveshana installed. Start it from your app menu or run: anveshana"

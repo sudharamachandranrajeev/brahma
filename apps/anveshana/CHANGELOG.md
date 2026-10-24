@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+Anveshana is now two apps. This one, Graha Anveshana, keeps the homes: hunt, searches, invest,
+research and lettings. The cars (added in 0.2.0) moved to Vahana Anveshana. App ids, the data folder
+and the encryption key are unchanged, so it upgrades in place; cars you saved in 0.2.0 stay in the
+database but are no longer shown (add them again in Vahana Anveshana from their advert links).
+
+## 0.2.0
+
+Added the Cars module, since moved to Vahana Anveshana.
+
 ## 0.1.0
 
 First release, for Linux, Windows and Android.

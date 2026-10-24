@@ -212,3 +212,59 @@ class FigureRow extends StatelessWidget {
     );
   }
 }
+
+enum Unit { pounds, percent, number }
+
+/// A number field that keeps its own text while typing.
+class NumberInput extends StatefulWidget {
+  const NumberInput({
+    super.key,
+    required this.value,
+    required this.label,
+    required this.unit,
+    required this.onChanged,
+    this.helper,
+  });
+  final double value;
+  final String label;
+  final Unit unit;
+  final String? helper;
+  final ValueChanged<double> onChanged;
+
+  @override
+  State<NumberInput> createState() => _NumberInputState();
+}
+
+class _NumberInputState extends State<NumberInput> {
+  late final c = TextEditingController(text: _show(widget.value));
+
+  String _show(double v) {
+    final x = widget.unit == Unit.percent ? v * 100 : v;
+    return x == x.roundToDouble() ? x.round().toString() : double.parse(x.toStringAsFixed(4)).toString();
+  }
+
+  @override
+  void dispose() {
+    c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextField(
+      controller: c,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: widget.label,
+        helperText: widget.helper,
+        prefixText: widget.unit == Unit.pounds ? '£' : null,
+        suffixText: widget.unit == Unit.percent ? '%' : null,
+      ),
+      onChanged: (_) {
+        final v = numberIn(c)?.toDouble();
+        if (v != null) widget.onChanged(widget.unit == Unit.percent ? v / 100 : v);
+      },
+    ),
+  );
+}
