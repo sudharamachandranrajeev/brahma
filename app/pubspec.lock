@@ -31,7 +31,7 @@ packages:
       path: "../apps/anveshana"
       relative: true
     source: path
-    version: "0.3.0+3"
+    version: "0.4.0+4"
   archive:
     dependency: transitive
     description:
@@ -1092,7 +1092,7 @@ packages:
       path: "../apps/vahana"
       relative: true
     source: path
-    version: "0.1.0+1"
+    version: "0.2.0+2"
   vani:
     dependency: "direct main"
     description:
