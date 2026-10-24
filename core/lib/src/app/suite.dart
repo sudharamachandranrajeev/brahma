@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 
 import '../identity.dart';
 import '../security/key_vault.dart';
+import '../ui/widgets.dart';
 import 'modules.dart';
 import 'session.dart';
 
@@ -59,4 +60,46 @@ class SuiteApp {
 
   /// Whether the app uses the floating navigation bar ([AppShell.floating]).
   final bool floating;
+}
+
+/// A home-screen card body: a few figures and, optionally, the next thing
+/// to do. Apps build their [SuiteApp.summary] from it so every card reads
+/// the same way.
+class SummaryFigures extends StatelessWidget {
+  const SummaryFigures(this.figures, {super.key, this.next});
+
+  /// Value and label pairs, e.g. ('3', 'follow-ups due').
+  final List<(String, String)> figures;
+  final String? next;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = Theme.of(context).textTheme;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Wrap(
+          spacing: 20,
+          runSpacing: 8,
+          children: [
+            for (final (value, label) in figures)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(value, style: type.titleLarge?.merge(tabular)),
+                  Text(label, style: type.bodySmall?.copyWith(color: muted)),
+                ],
+              ),
+          ],
+        ),
+        if (next != null) ...[
+          const SizedBox(height: 10),
+          Text(next!, style: type.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+        ],
+      ],
+    );
+  }
 }
