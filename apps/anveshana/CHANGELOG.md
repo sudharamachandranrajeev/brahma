@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+
+A new look, after a dark instrument-panel reference: a charcoal canvas with faint contour lines,
+hairline cards, one lime accent for the best or chosen, big tabular figures under small spaced
+capitals, and a floating navigation bar. Light mode keeps the layout with ink actions. Inter is
+bundled.
+
+- Hunt leads with the homes in play; homes are ranked rows with the top-rated underlined.
+- Invest leads with cash flow (or the mortgage, or the profit) and figure tiles.
+- Lettings leads with rent outstanding; property and research pages get a headline figure.
+
 ## 0.3.0
 
 Anveshana is now two apps. This one, Graha Anveshana, keeps the homes: hunt, searches, invest,

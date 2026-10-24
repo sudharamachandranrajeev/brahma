@@ -10,6 +10,7 @@ import '../db/database.dart';
 import '../domain/appraisal.dart';
 import '../domain/tax.dart';
 import 'common.dart';
+import 'look.dart';
 
 const _kinds = {'btl': 'Buy-to-let', 'home': 'Buy a home', 'dev': 'Development'};
 
@@ -130,13 +131,17 @@ class _InvestPageState extends ConsumerState<InvestPage> {
           },
         ),
       );
-      final results = SectionCard(
-        title: 'Results',
-        child: switch (kind) {
-          'home' => _homeResults(appraiseHome(HomeInput.fromJson(j))),
-          'dev' => _devResults(DevInput.fromJson(j), appraiseDev(DevInput.fromJson(j))),
-          _ => _btlResults(BtlInput.fromJson(j), appraiseBtl(BtlInput.fromJson(j))),
-        },
+      final (headline, rows) = switch (kind) {
+        'home' => _homeResults(appraiseHome(HomeInput.fromJson(j))),
+        'dev' => _devResults(DevInput.fromJson(j), appraiseDev(DevInput.fromJson(j))),
+        _ => _btlResults(BtlInput.fromJson(j), appraiseBtl(BtlInput.fromJson(j))),
+      };
+      final results = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ...headline,
+          SectionCard(title: 'Results', child: rows),
+        ],
       );
       if (c.maxWidth < 800) return Column(children: [results, const SizedBox(height: 12), form]);
       return Row(
@@ -323,120 +328,154 @@ class _InvestPageState extends ConsumerState<InvestPage> {
     ];
   }
 
-  Widget _btlResults(BtlInput i, BtlResult r) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      FigureRow('Cash needed', gbp(r.cashIn), strong: true),
-      PurchaseTaxView(r.purchaseTax),
-      FigureRow('Loan', gbp(r.loan)),
-      const Divider(),
-      FigureRow('Rent collected a year', gbp(r.rentCollected)),
-      FigureRow('Running costs', '−${gbp(r.runningCosts)}'),
-      FigureRow('Mortgage payments', '−${gbp(r.mortgagePayments)}'),
-      FigureRow('Tax', '−${gbp(r.tax)}'),
-      FigureRow(
-        'Cash flow a year',
-        gbp(r.cashFlow),
-        strong: true,
-        status: r.cashFlow >= 0 ? Status.good : Status.critical,
+  /// The figure that decides it and the small ones beside it, then the
+  /// worked rows.
+  (List<Widget>, Widget) _btlResults(BtlInput i, BtlResult r) => (
+    [
+      FigureCard(
+        eyebrow: 'Cash flow a month, after tax',
+        value: gbp(r.monthlyCashFlow),
+        caption: r.cashFlow >= 0 ? 'Pays its way' : 'Costs you each month',
+        detail: 'Over ${i.years} years the equity grows to ${gbp(r.futureEquity)}',
+        accent: r.cashFlow >= 0,
       ),
-      FigureRow('A month', gbp(r.monthlyCashFlow)),
-      const Divider(),
-      FigureRow('Gross yield', percent(r.grossYield)),
-      FigureRow('Net yield (before mortgage)', percent(r.netYield)),
-      FigureRow('Return on cash', percent(r.cashOnCash)),
-      FigureRow('Break-even rent', '${gbp(r.breakEvenRent)} pcm'),
-      Hint(
-        'invest.icr',
-        child: FigureRow(
-          'Largest loan the stress test allows',
-          gbp(r.maxLoanByIcr),
-          status: r.passesStressTest ? Status.good : Status.warning,
-        ),
-      ),
-      const Divider(),
-      FigureRow('Value in ${i.years} years', gbp(r.futureValue)),
-      FigureRow('Your equity then', gbp(r.futureEquity), strong: true),
-      const SizedBox(height: 8),
-      Text(
-        i.ownership == Ownership.personal
-            ? 'Mortgage interest earns a ${percent(financeCreditRate, digits: 0)} tax credit (Section 24). '
-                  'Property income rates from April 2027.'
-            : 'Company: corporation tax on profit after interest; taking money out is taxed again.',
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
+      StatStrip([
+        StatTile('Gross yield', percent(r.grossYield)),
+        StatTile('Net yield', percent(r.netYield), detail: 'before mortgage'),
+        StatTile('Return on cash', percent(r.cashOnCash)),
+        StatTile('Break-even rent', '${gbp(r.breakEvenRent)} pcm', alert: r.breakEvenRent > i.rent),
+      ]),
     ],
-  );
-
-  Widget _homeResults(HomeResult r) {
-    final i = HomeInput.fromJson(j);
-    return Column(
+    Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FigureRow('Cash needed', gbp(r.cashIn), strong: true),
         PurchaseTaxView(r.purchaseTax),
-        FigureRow('Loan', '${gbp(r.loan)} (${percent(r.ltv, digits: 0)} of the price)'),
+        FigureRow('Loan', gbp(r.loan)),
+        const Divider(),
+        FigureRow('Rent collected a year', gbp(r.rentCollected)),
+        FigureRow('Running costs', '−${gbp(r.runningCosts)}'),
+        FigureRow('Mortgage payments', '−${gbp(r.mortgagePayments)}'),
+        FigureRow('Tax', '−${gbp(r.tax)}'),
         FigureRow(
-          'Lenders might lend up to',
-          gbp(r.maxLoan),
-          status: r.affordable ? Status.good : Status.warning,
+          'Cash flow a year',
+          gbp(r.cashFlow),
+          strong: true,
+          status: r.cashFlow >= 0 ? Status.good : Status.critical,
+        ),
+        Hint(
+          'invest.icr',
+          child: FigureRow(
+            'Largest loan the stress test allows',
+            gbp(r.maxLoanByIcr),
+            status: r.passesStressTest ? Status.good : Status.warning,
+          ),
         ),
         const Divider(),
-        FigureRow('Mortgage a month', gbp(r.monthly), strong: true),
-        FigureRow('If rates rose 3 points', gbp(r.stressedMonthly)),
-        FigureRow('Cost of owning a month', gbp(r.monthlyOwnCost)),
-        FigureRow('Rent you pay now', gbp(i.currentRent)),
+        FigureRow('Value in ${i.years} years', gbp(r.futureValue)),
+        FigureRow('Your equity then', gbp(r.futureEquity), strong: true),
+        const SizedBox(height: 8),
         Text(
-          'The cost of owning is interest, upkeep and insurance: the part of the payment that is not saving.',
+          i.ownership == Ownership.personal
+              ? 'Mortgage interest earns a ${percent(financeCreditRate, digits: 0)} tax credit (Section 24). '
+                    'Property income rates from April 2027.'
+              : 'Company: corporation tax on profit after interest; taking money out is taxed again.',
           style: Theme.of(context).textTheme.bodySmall,
         ),
-        if (i.letRent > 0) ...[
-          const Divider(),
-          FigureRow('Gross yield if let', percent(r.letGrossYield)),
+      ],
+    ),
+  );
+
+  (List<Widget>, Widget) _homeResults(HomeResult r) {
+    final i = HomeInput.fromJson(j);
+    return (
+      [
+        FigureCard(
+          eyebrow: 'Mortgage a month',
+          value: gbp(r.monthly),
+          caption: r.affordable ? 'Within what lenders lend' : 'More than lenders may lend',
+          detail: '${percent(r.ltv, digits: 0)} of the price borrowed',
+          accent: r.affordable,
+        ),
+        StatStrip([
+          StatTile('If rates rose 3 points', gbp(r.stressedMonthly)),
+          StatTile('Cost of owning', gbp(r.monthlyOwnCost), detail: 'a month'),
+          StatTile('Rent you pay now', gbp(i.currentRent)),
+        ]),
+      ],
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FigureRow('Cash needed', gbp(r.cashIn), strong: true),
+          PurchaseTaxView(r.purchaseTax),
+          FigureRow('Loan', '${gbp(r.loan)} (${percent(r.ltv, digits: 0)} of the price)'),
           FigureRow(
-            'Rent over stressed interest',
-            percent(r.letStressCover, digits: 0),
-            status: r.letStressCover >= 1.25 ? Status.good : Status.warning,
+            'Lenders might lend up to',
+            gbp(r.maxLoan),
+            status: r.affordable ? Status.good : Status.warning,
           ),
           Text(
-            'Letting a home with a residential mortgage needs the lender\'s consent to let, or a buy-to-let remortgage.',
+            'The cost of owning is interest, upkeep and insurance: the part of the payment that is not saving.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          if (i.letRent > 0) ...[
+            const Divider(),
+            FigureRow('Gross yield if let', percent(r.letGrossYield)),
+            FigureRow(
+              'Rent over stressed interest',
+              percent(r.letStressCover, digits: 0),
+              status: r.letStressCover >= 1.25 ? Status.good : Status.warning,
+            ),
+            Text(
+              'Letting a home with a residential mortgage needs the lender\'s consent to let, or a buy-to-let remortgage.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
-  Widget _devResults(DevInput i, DevResult r) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      FigureRow('Sales (GDV)', gbp(r.gdv), strong: true),
-      FigureRow('Floor area', '${r.areaM2.round()} m²'),
-      const Divider(),
-      FigureRow('Land', gbp(i.land)),
-      FigureRow('Tax on the land', gbp(r.landTax)),
-      FigureRow('Planning and surveys', gbp(i.planning)),
-      FigureRow('Building, with fees and contingency', gbp(r.build)),
-      FigureRow('Finance', gbp(r.finance)),
-      FigureRow('Sales costs', gbp(r.sales)),
-      FigureRow('Total cost', gbp(r.totalCost), strong: true),
-      const Divider(),
-      FigureRow('Profit', gbp(r.profit), strong: true, status: r.profit >= 0 ? Status.good : Status.critical),
-      FigureRow(
-        'Profit on sales',
-        percent(r.marginOnGdv),
-        status: r.marginOnGdv >= i.targetMargin ? Status.good : Status.warning,
-      ),
-      FigureRow('Profit on cost', percent(r.marginOnCost)),
-      Hint(
-        'invest.residual',
-        child: FigureRow(
-          'Most to pay for the land',
-          r.residualLand <= 0 ? 'Does not work' : gbp(r.residualLand),
-          strong: true,
-        ),
+  (List<Widget>, Widget) _devResults(DevInput i, DevResult r) => (
+    [
+      FigureCard(
+        eyebrow: 'Profit',
+        value: gbp(r.profit),
+        caption: '${percent(r.marginOnGdv)} of sales',
+        detail: 'Target ${percent(i.targetMargin)}',
+        accent: r.profit >= 0 && r.marginOnGdv >= i.targetMargin,
       ),
     ],
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FigureRow('Sales (GDV)', gbp(r.gdv), strong: true),
+        FigureRow('Floor area', '${r.areaM2.round()} m²'),
+        const Divider(),
+        FigureRow('Land', gbp(i.land)),
+        FigureRow('Tax on the land', gbp(r.landTax)),
+        FigureRow('Planning and surveys', gbp(i.planning)),
+        FigureRow('Building, with fees and contingency', gbp(r.build)),
+        FigureRow('Finance', gbp(r.finance)),
+        FigureRow('Sales costs', gbp(r.sales)),
+        FigureRow('Total cost', gbp(r.totalCost), strong: true),
+        const Divider(),
+        FigureRow(
+          'Profit on sales',
+          percent(r.marginOnGdv),
+          status: r.marginOnGdv >= i.targetMargin ? Status.good : Status.warning,
+        ),
+        FigureRow('Profit on cost', percent(r.marginOnCost)),
+        Hint(
+          'invest.residual',
+          child: FigureRow(
+            'Most to pay for the land',
+            r.residualLand <= 0 ? 'Does not work' : gbp(r.residualLand),
+            strong: true,
+          ),
+        ),
+      ],
+    ),
   );
 
   Widget _savedList() => AsyncView(

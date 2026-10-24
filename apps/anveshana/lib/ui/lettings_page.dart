@@ -8,6 +8,7 @@ import '../db/database.dart';
 import '../domain/lettings.dart';
 import '../domain/pipeline.dart';
 import 'common.dart';
+import 'look.dart';
 import 'hunt_page.dart';
 import 'property_page.dart';
 
@@ -22,6 +23,22 @@ class LettingsPage extends ConsumerWidget {
     final payments = ref.watch(rentPaymentsProvider).value ?? const <RentPayment>[];
     final checks = ref.watch(complianceProvider).value ?? const <ComplianceItem>[];
     final day = ref.watch(todayProvider);
+    final tenancies = ref.watch(tenanciesProvider).value ?? const <Tenancy>[];
+    // What tenants owe you, across every let you are the landlord of.
+    final arrears = tenancies.where((t) => t.role == 'landlord').fold<int>(0, (sum, t) {
+      final b = rentBalance(
+        start: t.start,
+        end: t.end,
+        day: t.rentDay,
+        rent: t.rent,
+        paid: payments.where((p) => p.tenancyId == t.id).map((p) => p.amount),
+        asOf: day,
+      );
+      return sum + (b > 0 ? b : 0);
+    });
+    final open = checks.where((c) => c.done == null).toList();
+    final overdue = open.where((c) => c.due.compareTo(day) < 0).length;
+    final soon = open.where((c) => c.due.compareTo(addDays(day, 30)) <= 0).length;
     return PageScaffold(
       title: 'Lettings',
       banner: 'page.lettings',
@@ -32,6 +49,18 @@ class LettingsPage extends ConsumerWidget {
         label: const Text('Add tenancy'),
       ),
       children: [
+        FigureCard(
+          eyebrow: 'Rent outstanding',
+          value: gbp(arrears),
+          caption: arrears == 0 ? 'Every tenant is up to date' : 'Chase it up',
+          detail: '${tenancies.length} ${tenancies.length == 1 ? 'tenancy' : 'tenancies'}',
+          accent: arrears == 0,
+        ),
+        StatStrip([
+          StatTile('Homes owned', '${owned.length}'),
+          StatTile('Checks due in 30 days', '$soon', alert: soon > 0),
+          StatTile('Checks overdue', '$overdue', alert: overdue > 0),
+        ]),
         SectionCard(
           title: 'Homes you own',
           trailing: TextButton.icon(

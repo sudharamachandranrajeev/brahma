@@ -2,11 +2,11 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../ui/common.dart';
+import '../ui/look.dart';
 import 'modules.dart';
 import 'providers.dart';
 
-ThemeData anveshanaTheme(Brightness b) => buildTheme(b, seed: lakeBlue, accent: amber);
+ThemeData anveshanaTheme(Brightness b) => instrumentTheme(b);
 
 class AnveshanaApp extends StatelessWidget {
   const AnveshanaApp({super.key, this.home = const _Root()});
@@ -18,6 +18,7 @@ class AnveshanaApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: anveshanaTheme(Brightness.light),
     darkTheme: anveshanaTheme(Brightness.dark),
+    builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
     home: home,
   );
 }
@@ -32,6 +33,6 @@ class _Root extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => LinkHandler(
-    child: AppShell(destinations: allDestinations, onStart: fetchWatch),
+    child: AppShell(destinations: allDestinations, onStart: fetchWatch, floating: true),
   );
 }
