@@ -16,9 +16,11 @@ import 'providers.dart';
 /// Vani's frame: on wide screens an icon rail in a rounded card on the
 /// left (the selected page on a red pill, Compose as a red button); on
 /// phones a floating pill bar with Compose in the middle and a More sheet.
-/// Pages swap with a short fade-and-rise.
+/// Pages swap with a short fade-and-rise. [onHome] leads back to the
+/// Brahma suite's home screen when the suite hosts Vani.
 class VaniShell extends ConsumerStatefulWidget {
-  const VaniShell({super.key});
+  const VaniShell({super.key, this.onHome});
+  final VoidCallback? onHome;
 
   @override
   ConsumerState<VaniShell> createState() => _VaniShellState();
@@ -71,7 +73,7 @@ class _VaniShellState extends ConsumerState<VaniShell> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 0, 16),
-                child: _Rail(tab: tab, badges: badges),
+                child: _Rail(tab: tab, badges: badges, onHome: widget.onHome),
               ),
               Expanded(child: body),
             ],
@@ -82,7 +84,7 @@ class _VaniShellState extends ConsumerState<VaniShell> {
     return Scaffold(
       extendBody: true,
       body: body,
-      bottomNavigationBar: _PillBar(tab: tab, badges: badges),
+      bottomNavigationBar: _PillBar(tab: tab, badges: badges, onHome: widget.onHome),
     );
   }
 
@@ -95,9 +97,10 @@ class _VaniShellState extends ConsumerState<VaniShell> {
 }
 
 class _Rail extends ConsumerWidget {
-  const _Rail({required this.tab, required this.badges});
+  const _Rail({required this.tab, required this.badges, this.onHome});
   final VaniTab tab;
   final Map<VaniTab, int> badges;
+  final VoidCallback? onHome;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -118,6 +121,14 @@ class _Rail extends ConsumerWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 18),
+                  if (onHome != null) ...[
+                    IconButton(
+                      onPressed: onHome,
+                      tooltip: 'All apps',
+                      icon: Icon(Icons.apps_rounded, color: tone.muted),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   const _Logo(),
                   const SizedBox(height: 22),
                   for (final t in VaniTab.values)
@@ -289,9 +300,10 @@ class _Badged extends StatelessWidget {
 }
 
 class _PillBar extends ConsumerWidget {
-  const _PillBar({required this.tab, required this.badges});
+  const _PillBar({required this.tab, required this.badges, this.onHome});
   final VaniTab tab;
   final Map<VaniTab, int> badges;
+  final VoidCallback? onHome;
 
   static const _main = [VaniTab.home, VaniTab.calendar, VaniTab.inbox, VaniTab.alerts];
   static const _more = [VaniTab.analytics, VaniTab.accounts, VaniTab.settings];
@@ -370,6 +382,15 @@ class _PillBar extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (onHome != null)
+              ListTile(
+                leading: const Icon(Icons.apps_rounded),
+                title: const Text('All apps'),
+                onTap: () {
+                  Navigator.pop(context);
+                  onHome!();
+                },
+              ),
             for (final t in _more)
               ListTile(
                 leading: Icon(t == tab ? t.selectedIcon : t.icon, color: t == tab ? signal : null),
