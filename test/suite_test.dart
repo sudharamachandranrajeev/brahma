@@ -23,9 +23,11 @@ void main() {
           ...udyogaSuite.overrides(session),
         ],
         retry: (_, _) => null,
-        child: MaterialApp(
-          theme: udyogaSuite.theme(Brightness.light),
-          home: Scaffold(body: Builder(builder: udyogaSuite.summary)),
+        child: Consumer(
+          builder: (context, ref, _) => MaterialApp(
+            theme: udyogaSuite.theme(ref, Brightness.light),
+            home: Scaffold(body: Builder(builder: udyogaSuite.summary)),
+          ),
         ),
       ),
     );

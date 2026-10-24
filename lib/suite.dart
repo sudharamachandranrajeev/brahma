@@ -18,7 +18,7 @@ final udyogaSuite = SuiteApp(
   open: AppSession.open,
   overrides: (s) => [sessionProvider.overrideWithValue(s as AppSession)],
   hints: udyogaHints,
-  theme: udyogaTheme,
+  theme: (_, b) => udyogaTheme(b),
   home: (onHome) => AppShell(destinations: allDestinations, floating: true, onHome: onHome),
   builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
   // The routine refresh, as in the app (it runs only what is due).
