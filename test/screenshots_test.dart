@@ -113,6 +113,8 @@ void main() {
     await shot('today-desktop');
     await app.go('Jobs');
     await shot('jobs-desktop');
+    await app.go('Settings');
+    await shot('settings-desktop');
     await app.close();
     debugDisableShadows = true;
   });

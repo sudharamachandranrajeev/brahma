@@ -56,8 +56,11 @@ encryption.
 - **Growth.** Certifications, courses and experience to get, from the assessment and the paths you
   pick, with priority, cost, target date and progress.
 
-The AI features use your own [Claude API key](https://console.anthropic.com/) (Settings), which is
-kept in the encrypted, synced settings. Job-site keys for Adzuna and Reed are free and optional.
+The AI features use your own key (Settings), kept in the encrypted, synced settings: a free
+[Gemini key](https://aistudio.google.com/apikey) (sign in with a Google account and press Create API
+key; Gemini 3.8 Flash or 3.5 Flash-Lite on the free tier) or a
+[Claude API key](https://console.anthropic.com/). On Google's free tier, prompts may be used to
+improve Google's products except in the UK, EEA and Switzerland. Job-site keys for Adzuna and Reed are free and optional.
 
 ## Look and feel
 

@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import '../db/database.dart';
 import 'answer_metrics.dart';
-import 'claude.dart';
+import 'ai.dart';
 import 'countries.dart';
 import 'insights.dart';
 import 'json.dart';
@@ -13,7 +13,7 @@ import 'schema.dart';
 
 typedef Progress = void Function(String status);
 
-/// A CV to read: a PDF (Claude reads the layout itself) or text.
+/// A CV to read: a PDF (the model reads the layout itself) or text.
 sealed class CvSource {
   const CvSource();
 }
@@ -32,8 +32,8 @@ class TextCv extends CvSource {
 /// The candidate's profile goes with each request; nothing else about the
 /// user does.
 class Advisor {
-  Advisor(this.claude, {required this.today});
-  final Claude claude;
+  Advisor(this.ai, {required this.today});
+  final Ai ai;
 
   /// yyyy-MM-dd, so research is dated and deadlines are judged right.
   final String today;
@@ -90,7 +90,7 @@ Principles:
         _text('<cv>\n$text\n</cv>\n\nThis is the candidate\'s CV. Fill in the profile from it.'),
       ],
     };
-    final r = await claude.ask(
+    final r = await ai.ask(
       system:
           'You read CVs and fill in a structured profile exactly as the CV states it. Today is $today. '
           'Copy facts faithfully; do not improve, guess or add anything. Leave unknown fields empty.',
@@ -103,7 +103,7 @@ Principles:
 
   /// The deep assessment: market position, strengths and weaknesses, the
   /// toughest challenges, AI impact, target roles, countries and learning.
-  Future<AiResult> assess(CandidateProfile p, {Progress? onProgress}) => claude.ask(
+  Future<AiResult> assess(CandidateProfile p, {Progress? onProgress}) => ai.ask(
     system: _system(p),
     content: [
       _candidate(p),
@@ -121,25 +121,24 @@ Cover: where they stand today and how competitive they are; strengths with evide
   );
 
   /// Every realistic career path from the current role.
-  Future<AiResult> careerMap(CandidateProfile p, {Assessment? assessment, Progress? onProgress}) =>
-      claude.ask(
-        system: _system(p),
-        content: [
-          _candidate(p),
-          if (assessment != null) _text('<assessment>\n${jsonEncode(assessment.j)}\n</assessment>'),
-          _text(
-            '''
+  Future<AiResult> careerMap(CandidateProfile p, {Assessment? assessment, Progress? onProgress}) => ai.ask(
+    system: _system(p),
+    content: [
+      _candidate(p),
+      if (assessment != null) _text('<assessment>\n${jsonEncode(assessment.j)}\n</assessment>'),
+      _text(
+        '''
 Map every realistic career progression from the candidate's current role: up the same ladder, sideways into related roles, specialist routes, management, a change of field, and independent work where it fits. For each path give two to four steps with timeframes, current salary ranges, likelihood, what each step requires (experience, skills, certifications) and typical employers in their countries. Judge each path's exposure to AI and say which parts will grow or shrink. Be honest about which paths are ambitious. Recommend one path and say why. Research current pay scales, grade structures and hiring trends.''',
-          ),
-        ],
-        schema: CareerMap.schema,
-        web: true,
-        searches: 10,
-        onProgress: onProgress,
-      );
+      ),
+    ],
+    schema: CareerMap.schema,
+    web: true,
+    searches: 10,
+    onProgress: onProgress,
+  );
 
   /// How well the candidate fits [job], with research on the employer.
-  Future<AiResult> assessJob(CandidateProfile p, Job job, {Progress? onProgress}) => claude.ask(
+  Future<AiResult> assessJob(CandidateProfile p, Job job, {Progress? onProgress}) => ai.ask(
     system: _system(p),
     content: [
       _candidate(p),
@@ -156,28 +155,27 @@ Evaluate this job for the candidate as a demanding hiring manager would. If the 
   );
 
   /// A CV (and cover letter) for [job], from the profile.
-  Future<AiResult> tailor(CandidateProfile p, Job job, {FitAssessment? fit, Progress? onProgress}) =>
-      claude.ask(
-        system: _system(p),
-        content: [
-          _candidate(p),
-          _text('<base_cv>\n${jsonEncode(ResumeDoc.fromProfile(p).toJson())}\n</base_cv>'),
-          _text('<job>\n${_job(job)}\n</job>'),
-          if (fit != null) _text('<fit_assessment>\n${jsonEncode(fit.j)}\n</fit_assessment>'),
-          _text(
-            '''
+  Future<AiResult> tailor(CandidateProfile p, Job job, {FitAssessment? fit, Progress? onProgress}) => ai.ask(
+    system: _system(p),
+    content: [
+      _candidate(p),
+      _text('<base_cv>\n${jsonEncode(ResumeDoc.fromProfile(p).toJson())}\n</base_cv>'),
+      _text('<job>\n${_job(job)}\n</job>'),
+      if (fit != null) _text('<fit_assessment>\n${jsonEncode(fit.j)}\n</fit_assessment>'),
+      _text(
+        '''
 Tailor the CV to this job. Follow the job description, key responsibilities, essential and desirable criteria and the employer's values:
 - Rewrite the profile for this role. Order skills and bullets so the most relevant come first; lead bullets with actions and results, using real figures from the CV only.
 - Use the advert's wording where it truthfully describes the candidate's experience, so applicant tracking systems match it. Do not add a skill, duty, qualification or result the candidate does not have; list such keywords as missing instead.
 - Keep it to about two pages: cut or shorten what does not serve this job.
 - Keep the candidate's real job titles, employers and dates.
 Then write the cover letter (or supporting statement, if the advert asks for one against criteria), and the notes.''',
-          ),
-        ],
-        schema: tailorSchema,
-        effort: 'high',
-        onProgress: onProgress,
-      );
+      ),
+    ],
+    schema: tailorSchema,
+    effort: 'high',
+    onProgress: onProgress,
+  );
 
   /// Quick fit scores for many jobs at once, from their adverts.
   Future<Map<String, ({int fit, String why})>> triage(CandidateProfile p, List<Job> jobs) async {
@@ -193,7 +191,7 @@ Then write the cover letter (or supporting statement, if the advert asks for one
           'advert': j.description.length > 700 ? '${j.description.substring(0, 700)}…' : j.description,
         },
     ];
-    final r = await claude.ask(
+    final r = await ai.ask(
       system: _system(p),
       content: [
         _candidate(p),
@@ -222,7 +220,7 @@ Then write the cover letter (or supporting statement, if the advert asks for one
     required List<String> countries,
     List<String> known = const [],
     Progress? onProgress,
-  }) => claude.ask(
+  }) => ai.ask(
     system: _system(p),
     content: [
       _candidate(p),
@@ -241,7 +239,7 @@ Return up to 20, best fit first.'''),
 
   /// Reads an advert from its page or pasted text into job fields.
   Future<Json> readAdvert({String url = '', String text = '', Progress? onProgress}) async {
-    final r = await claude.ask(
+    final r = await ai.ask(
       system: 'You extract job adverts into fields exactly as written. Today is $today.',
       content: [
         _text(
@@ -274,7 +272,7 @@ Return up to 20, best fit first.'''),
   /// People worth contacting about [job] or at [company]: recruiters,
   /// hiring managers, teams, from public professional pages.
   Future<AiResult> findLeads(CandidateProfile p, {Job? job, String company = '', Progress? onProgress}) =>
-      claude.ask(
+      ai.ask(
         system: _system(p),
         content: [
           _candidate(p),
@@ -294,7 +292,7 @@ Find people and teams the candidate could contact about ${job != null ? 'this jo
   /// A short message: outreach to a lead, chasing feedback, thanks after an
   /// interview.
   Future<Draft> draft(CandidateProfile p, {required String purpose, String context = ''}) async {
-    final r = await claude.ask(
+    final r = await ai.ask(
       system: _system(p),
       content: [
         _candidate(p),
@@ -319,7 +317,7 @@ Find people and teams the candidate could contact about ${job != null ? 'this jo
     Job? job,
     int count = 8,
     Progress? onProgress,
-  }) => claude.ask(
+  }) => ai.ask(
     system: _system(p),
     content: [
       _candidate(p),
@@ -347,7 +345,7 @@ Research how this employer or sector interviews now (competency frameworks, valu
     required String answer,
   }) async {
     final m = AnswerMetrics.of(answer);
-    final r = await claude.ask(
+    final r = await ai.ask(
       system: _system(p),
       content: [
         _candidate(p),

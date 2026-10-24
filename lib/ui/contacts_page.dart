@@ -119,7 +119,7 @@ class _ContactsPageState extends ConsumerState<ContactsPage> {
           helper: 'Leave empty to find recruiters and agencies for your field and area.',
         ),
         const Text(
-          'Claude searches public professional pages only: adverts, team pages, agency sites and public '
+          'The AI searches public professional pages only: adverts, team pages, agency sites and public '
           'LinkedIn profiles. It never guesses private details.',
         ),
       ],

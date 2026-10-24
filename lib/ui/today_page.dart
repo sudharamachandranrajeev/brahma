@@ -21,9 +21,15 @@ List<({IconData icon, String text})> nextSteps({
   required int jobs,
   required int applications,
   required int practice,
+  String? update,
 }) => [
+  if (update != null)
+    (icon: Icons.system_update_outlined, text: 'Udyoga $update is out: update it in Settings.'),
   if (!hasAi)
-    (icon: Icons.key_outlined, text: 'Add your Claude API key in Settings to turn on the AI features.'),
+    (
+      icon: Icons.key_outlined,
+      text: 'Add a free Gemini key (or a Claude key) in Settings to turn on the AI features.',
+    ),
   if (profile.isEmpty) (icon: Icons.upload_file, text: 'Import your CV on the Profile page.'),
   if (!profile.isEmpty && profile.searchCountries.isEmpty)
     (icon: Icons.public, text: 'Choose the countries to search in on the Profile page.'),
@@ -85,6 +91,7 @@ class TodayPage extends ConsumerWidget {
       jobs: jobs.length,
       applications: apps.length,
       practice: practice.length,
+      update: ref.watch(updateProvider).value?.version,
     );
     final sent = apps.where((a) => a.applied != null).length;
     final heard = apps

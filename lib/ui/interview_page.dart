@@ -115,7 +115,7 @@ class InterviewPage extends ConsumerWidget {
                 icon: Icons.record_voice_over_outlined,
                 title: 'No practice yet',
                 message:
-                    'Pick a role and a kind of interview. Claude researches how that employer or sector interviews '
+                    'Pick a role and a kind of interview. The AI researches how that employer or sector interviews '
                     'now, asks the questions, and scores each answer strictly on seven dimensions.',
               );
             }

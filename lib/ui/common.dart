@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../domain/claude.dart';
+import '../domain/ai.dart';
 import '../domain/json.dart';
 
 /// "2026-10-24T11:00" as "24 Oct 2026, 11:00".
@@ -66,14 +66,15 @@ Future<bool> saveBytes(BuildContext context, String fileName, Uint8List bytes, {
   }
 }
 
-/// Runs an AI task in a dialog that shows what it is doing ("Searching:
-/// ..."). Returns the result, or null when it failed (the error is shown).
+/// Runs an AI task (or an update) in a dialog that shows what it is doing
+/// ("Searching: ..."). Returns the result, or null when it failed (the error is shown).
 Future<T?> runAi<T>(
   BuildContext context, {
   required String title,
   required Future<T> Function(void Function(String status) progress) task,
+  String status = 'Asking the AI…',
 }) async {
-  final status = ValueNotifier('Asking Claude…');
+  final notifier = ValueNotifier(status);
   final nav = Navigator.of(context, rootNavigator: true);
   showDialog<void>(
     context: context,
@@ -90,7 +91,7 @@ Future<T?> runAi<T>(
               const SizedBox(width: 16),
               Expanded(
                 child: ValueListenableBuilder(
-                  valueListenable: status,
+                  valueListenable: notifier,
                   builder: (_, s, _) => Text(s, maxLines: 3, overflow: TextOverflow.ellipsis),
                 ),
               ),
@@ -101,7 +102,7 @@ Future<T?> runAi<T>(
     ),
   );
   try {
-    final r = await task((s) => status.value = s);
+    final r = await task((s) => notifier.value = s);
     nav.pop();
     return r;
   } catch (e) {
@@ -109,7 +110,7 @@ Future<T?> runAi<T>(
     if (context.mounted) showError(context, e);
     return null;
   } finally {
-    status.dispose();
+    notifier.dispose();
   }
 }
 
@@ -393,7 +394,7 @@ class NeedsKey extends StatelessWidget {
       children: [
         Icon(Status.info.icon, size: 18, color: Status.info.color),
         const SizedBox(width: 8),
-        Expanded(child: Text('$what uses Claude. Add your API key in Settings.')),
+        Expanded(child: Text('$what uses the AI. Add a free Gemini key or a Claude API key in Settings.')),
       ],
     ),
   );

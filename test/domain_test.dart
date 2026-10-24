@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:brahma_core/brahma_core.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -8,8 +10,10 @@ import 'package:udyoga/db/database.dart';
 import 'package:udyoga/domain/answer_metrics.dart';
 import 'package:udyoga/domain/book.dart';
 import 'package:udyoga/domain/calendar.dart';
+import 'package:udyoga/domain/ai.dart';
 import 'package:udyoga/domain/claude.dart';
 import 'package:udyoga/domain/feeds.dart';
+import 'package:udyoga/domain/gemini.dart';
 import 'package:udyoga/domain/insights.dart';
 import 'package:udyoga/domain/matching.dart';
 import 'package:udyoga/domain/n8n.dart';
@@ -17,6 +21,7 @@ import 'package:udyoga/domain/pipeline.dart';
 import 'package:udyoga/domain/profile.dart';
 import 'package:udyoga/domain/resume.dart';
 import 'package:udyoga/domain/schema.dart';
+import 'package:udyoga/domain/update.dart';
 
 import 'support.dart';
 
@@ -106,6 +111,7 @@ void main() {
       AiUsage? usage;
       final r = await Claude(
         apiKey: 'sk-test',
+        model: 'claude-opus-5-5',
         client: client,
         onUsage: (u) => usage = u,
       ).ask(system: 's', content: const [], schema: schema);
@@ -155,6 +161,7 @@ void main() {
       });
       final r = await Claude(
         apiKey: 'sk-test',
+        model: 'claude-opus-5-5',
         client: client,
       ).ask(system: 's', content: const [], schema: schema, web: true);
       expect(r.data['answer'], 'ok');
@@ -168,10 +175,200 @@ void main() {
         return http.Response('{"error":{"message":"invalid x-api-key"}}', 401);
       });
       await expectLater(
-        Claude(apiKey: 'sk-bad', client: client).ask(system: 's', content: const [], schema: schema),
+        Claude(
+          apiKey: 'sk-bad',
+          model: 'claude-opus-5-5',
+          client: client,
+        ).ask(system: 's', content: const [], schema: schema),
         throwsA(isA<AiException>().having((e) => e.message, 'message', contains('API key'))),
       );
       expect(calls, 1);
+    });
+  });
+
+  group('Gemini', () {
+    final schema = object({'answer': string(), 'sources': sourcesSchema});
+
+    Map<String, Object?> interaction(String text, {List<Object?> annotations = const []}) => {
+      'id': 'i1',
+      'status': 'completed',
+      'steps': [
+        {'type': 'thought', 'summary': <Object?>[]},
+        {
+          'type': 'model_output',
+          'content': [
+            {'type': 'text', 'text': text, 'annotations': annotations},
+          ],
+        },
+      ],
+      'usage': {
+        'total_input_tokens': 1000,
+        'total_output_tokens': 40,
+        'total_thought_tokens': 60,
+        'grounding_tool_count': [
+          {'type': 'google_search', 'count': 2},
+        ],
+      },
+    };
+
+    test('sends a structured request and reads the answer, sources and usage', () async {
+      late Map<String, Object?> sent;
+      late http.Request request;
+      final client = MockClient((r) async {
+        request = r;
+        sent = jsonDecode(r.body) as Map<String, Object?>;
+        return http.Response(
+          jsonEncode(
+            interaction(
+              '{"answer":"yes","sources":[{"title":"Listed","url":"https://a.example"}]}',
+              annotations: [
+                {'type': 'url_citation', 'title': 'Read', 'url': 'https://b.example'},
+                {'type': 'url_citation', 'title': 'Listed again', 'url': 'https://a.example'},
+              ],
+            ),
+          ),
+          200,
+        );
+      });
+      AiUsage? usage;
+      final r =
+          await Gemini(
+            apiKey: 'g-test',
+            model: 'gemini-3.8-flash',
+            client: client,
+            onUsage: (u) => usage = u,
+          ).ask(
+            system: 's',
+            content: [
+              {'type': 'text', 'text': 'hello'},
+              {
+                'type': 'document',
+                'source': {'type': 'base64', 'media_type': 'application/pdf', 'data': 'UERG'},
+              },
+            ],
+            schema: schema,
+            web: true,
+            effort: 'medium',
+          );
+      expect(request.url.path, endsWith('/interactions'));
+      expect(request.headers['x-goog-api-key'], 'g-test');
+      expect(sent['store'], isFalse);
+      expect(sent['response_format'], {'type': 'text', 'mime_type': 'application/json', 'schema': schema});
+      expect(sent['tools'], [
+        {'type': 'google_search'},
+        {'type': 'url_context'},
+      ]);
+      expect((sent['generation_config'] as Map)['thinking_level'], 'medium');
+      expect(sent['input'], [
+        {'type': 'text', 'text': 'hello'},
+        {'type': 'document', 'data': 'UERG', 'mime_type': 'application/pdf'},
+      ]);
+      expect(r.data['answer'], 'yes');
+      expect(r.sources.map((s) => s.url), ['https://a.example', 'https://b.example']);
+      expect(usage!.input, 1000);
+      expect(usage!.output, 100);
+      expect(usage!.searches, 2);
+    });
+
+    test('asks again when the answer breaks the schema', () async {
+      var calls = 0;
+      final client = MockClient((_) async {
+        calls++;
+        return http.Response(
+          jsonEncode(interaction(calls == 1 ? '{"answer": 3' : '{"answer":"ok","sources":[]}')),
+          200,
+        );
+      });
+      final r = await Gemini(
+        apiKey: 'g',
+        model: 'gemini-3.8-flash',
+        client: client,
+      ).ask(system: 's', content: const [], schema: schema);
+      expect(r.data['answer'], 'ok');
+      expect(calls, 2);
+    });
+
+    test('explains a rejected key and a spent daily quota without retrying', () async {
+      for (final (status, body, words) in [
+        (400, '{"error":{"code":400,"message":"API key not valid.","status":"INVALID_ARGUMENT"}}', 'key'),
+        (
+          429,
+          '{"error":{"code":429,"details":[{"violations":[{"quotaId":"GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]}]}}',
+          'daily',
+        ),
+      ]) {
+        var calls = 0;
+        final client = MockClient((_) async {
+          calls++;
+          return http.Response(body, status);
+        });
+        await expectLater(
+          Gemini(apiKey: 'g', model: 'gemini-3.8-flash', client: client).check(),
+          throwsA(isA<AiException>().having((e) => e.message, 'message', contains(words))),
+        );
+        expect(calls, 1);
+      }
+    });
+
+    test('the chosen model is used only when its service has a key', () {
+      expect(effectiveModel('', {}), isNull);
+      expect(effectiveModel('claude-opus-5-5', {AiProvider.gemini: 'g'}), 'gemini-3.8-flash');
+      expect(effectiveModel('gemini-3.5-flash-lite', {AiProvider.gemini: 'g'}), 'gemini-3.5-flash-lite');
+      expect(effectiveModel('', {AiProvider.claude: 'sk', AiProvider.gemini: 'g'}), 'claude-opus-5-5');
+    });
+  });
+
+  group('updates', () {
+    test('versions compare number by number, ignoring a pre-release suffix', () {
+      expect(isNewer('0.10.0', '0.9.9'), isTrue);
+      expect(isNewer('v0.3.0-beta.1', '0.2.0'), isTrue);
+      expect(isNewer('0.2.0', '0.2.0'), isFalse);
+      expect(isNewer('0.2', '0.2.1'), isFalse);
+    });
+
+    Map<String, Object?> release(String tag, {bool draft = false}) => {
+      'tag_name': tag,
+      'draft': draft,
+      'body': 'Notes',
+      'assets': [
+        for (final name in ['Udyoga-x-linux-x64.tar.gz', 'Udyoga-x-android.apk', checksumsName])
+          {'name': name, 'browser_download_url': 'https://dl.example/$name', 'size': 4},
+      ],
+    };
+
+    test('the newest published release with a file for this device is offered', () async {
+      final client = MockClient(
+        (_) async => http.Response(
+          jsonEncode([release('v0.2.0'), release('v0.4.0', draft: true), release('v0.3.0')]),
+          200,
+        ),
+      );
+      Updater u(String os, String current) =>
+          Updater(client, current: current, os: os, dir: Directory.systemTemp);
+      expect((await u('linux', '0.2.0').check())?.version, '0.3.0');
+      expect(await u('linux', '0.3.0').check(), isNull);
+      expect(await u('windows', '0.2.0').check(), isNull);
+    });
+
+    test('a download is kept only when it matches its checksum', () async {
+      final dir = await Directory.systemTemp.createTemp('udyoga-update');
+      addTearDown(() => dir.delete(recursive: true));
+      final data = utf8.encode('tarball');
+      for (final (sum, ok) in [(sha256.convert(data).toString(), true), ('0' * 64, false)]) {
+        final client = MockClient(
+          (r) async => r.url.path.endsWith(checksumsName)
+              ? http.Response('$sum  Udyoga-x-linux-x64.tar.gz\n', 200)
+              : http.Response.bytes(data, 200),
+        );
+        final u = Updater(client, current: '0.1.0', os: 'linux', dir: dir);
+        final download = u.download(Release.fromJson(release('v0.3.0')));
+        if (ok) {
+          expect(await (await download).readAsBytes(), data);
+        } else {
+          await expectLater(download, throwsA(isA<UpdateException>()));
+          expect(dir.listSync().where((f) => f.path.endsWith('.part')), isEmpty);
+        }
+      }
     });
   });
 
