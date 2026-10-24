@@ -82,6 +82,8 @@ void main() {
           RepaintBoundary(
             key: key,
             child: ProviderScope(
+              // A fresh tree per shot, so each starts at the top.
+              key: ValueKey('$form-$dark'),
               overrides: suiteOverrides(suite),
               retry: (_, _) => null,
               child: const BrahmaApp(),

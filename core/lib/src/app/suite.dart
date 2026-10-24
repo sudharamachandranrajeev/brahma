@@ -80,29 +80,59 @@ class SummaryFigures extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final type = Theme.of(context).textTheme;
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Wrap(
-          spacing: 20,
-          runSpacing: 8,
-          children: [
-            for (final (value, label) in figures)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(value, style: type.titleLarge?.merge(tabular)),
-                  Text(label, style: type.bodySmall?.copyWith(color: muted)),
-                ],
-              ),
-          ],
-        ),
+        if (figures.isNotEmpty)
+          // Equal columns, so figures line up from card to card; long labels wrap.
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final (i, (value, label)) in figures.indexed) ...[
+                if (i > 0) const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        value,
+                        style: type.headlineSmall?.copyWith(fontWeight: FontWeight.w600).merge(tabular),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        label,
+                        style: type.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         if (next != null) ...[
-          const SizedBox(height: 10),
-          Text(next!, style: type.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+          if (figures.isNotEmpty) const SizedBox(height: 16),
+          // The next thing to do, set apart as a prompt.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.east, size: 16, color: scheme.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(next!, style: type.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                ),
+              ],
+            ),
+          ),
         ],
       ],
     );

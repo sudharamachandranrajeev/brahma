@@ -2,12 +2,13 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../app/app.dart';
 import '../app/providers.dart';
 import 'hosted_app.dart';
 import 'settings_page.dart';
 
-/// The life dashboard: one card per app with its figures for today. A card
-/// opens the app.
+/// The life dashboard: a greeting, then one card per app with its figures
+/// for today. A card opens the app.
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -45,127 +46,272 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final apps = ref.watch(suiteProvider).apps;
     final type = Theme.of(context).textTheme;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final width = MediaQuery.sizeOf(context).width;
     final columns = width >= 1100 ? 3 : (width >= 700 ? 2 : 1);
+    final gap = width >= 700 ? 16.0 : 12.0;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Brahma'),
-        actions: [
-          const SyncIndicator(),
-          IconButton(
-            tooltip: 'Settings',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () =>
-                Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SettingsPage())),
-          ),
-        ],
-      ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
-            FadeIn(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(4, 8, 4, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_greeting(), style: type.headlineSmall),
-                    const SizedBox(height: 4),
-                    Text(niceDate(today()), style: type.bodyMedium),
-                  ],
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1240),
+            child: ListView(
+              padding: EdgeInsets.fromLTRB(gap, gap, gap, 32),
+              children: [
+                const FadeIn(child: _Hero()),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 28, 4, 12),
+                  child: Text('Your apps', style: type.titleSmall?.copyWith(color: muted)),
                 ),
-              ),
-            ),
-            for (var row = 0; row * columns < apps.length; row++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (var c = 0; c < columns; c++) ...[
-                        if (c > 0) const SizedBox(width: 12),
-                        Expanded(
-                          child: row * columns + c < apps.length
-                              ? _AppCard(apps[row * columns + c], onOpen: _open)
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
-                    ],
+                for (var row = 0; row * columns < apps.length; row++)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: gap),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var c = 0; c < columns; c++) ...[
+                            if (c > 0) SizedBox(width: gap),
+                            Expanded(
+                              child: row * columns + c < apps.length
+                                  ? FadeIn(
+                                      delay: Duration(milliseconds: 50 * (row * columns + c + 1)),
+                                      child: _AppCard(apps[row * columns + c], onOpen: _open),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+}
+
+/// The top of the page: Brahma's dusk-to-saffron panel with the greeting,
+/// the date, sync and settings.
+class _Hero extends StatelessWidget {
+  const _Hero();
 
   static String _greeting() {
     final h = DateTime.now().hour;
     return h < 12 ? 'Good morning' : (h < 18 ? 'Good afternoon' : 'Good evening');
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final type = Theme.of(context).textTheme;
+    final wide = MediaQuery.sizeOf(context).width >= 700;
+    const ink = Colors.white;
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [dusk, Color(0xFF4A3D8F), Color(0xFF8A4F7D)],
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Sunrise: a saffron glow behind the top corner.
+          Positioned(
+            right: -120,
+            top: -140,
+            child: Container(
+              width: 360,
+              height: 360,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [saffron.withValues(alpha: 0.55), saffron.withValues(alpha: 0)],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(wide ? 28 : 20, 12, 12, wide ? 32 : 24),
+            child: IconButtonTheme(
+              // Light icons on the panel, the sync one too while sync is off.
+              data: IconButtonThemeData(
+                style: IconButton.styleFrom(
+                  foregroundColor: ink,
+                  disabledForegroundColor: ink.withValues(alpha: 0.6),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.spa_outlined, color: saffron),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Brahma',
+                        style: type.titleMedium?.copyWith(color: ink, fontWeight: FontWeight.w600),
+                      ),
+                      const Spacer(),
+                      const SyncIndicator(),
+                      IconButton(
+                        tooltip: 'Settings',
+                        icon: const Icon(Icons.settings_outlined),
+                        onPressed: () =>
+                            Navigator.of(context)
+                                .push(MaterialPageRoute<void>(builder: (_) => const SettingsPage())),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: wide ? 36 : 24),
+                  Text(
+                    _greeting(),
+                    style: (wide ? type.displaySmall : type.headlineMedium)?.copyWith(
+                      color: ink,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    niceDate(today()),
+                    style: type.titleMedium?.copyWith(color: ink.withValues(alpha: 0.78)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-/// An app's card, drawn in the app's own theme.
-class _AppCard extends ConsumerWidget {
+/// An app's card: Brahma's neutral frame, tinted with the app's colour, and
+/// the app's figures.
+class _AppCard extends ConsumerStatefulWidget {
   const _AppCard(this.app, {required this.onOpen});
   final SuiteApp app;
   final void Function(SuiteApp app) onOpen;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = app.theme(ref, Theme.of(context).brightness);
-    return Theme(
-      data: theme,
-      child: Builder(
-        builder: (context) {
-          final scheme = Theme.of(context).colorScheme;
-          final type = Theme.of(context).textTheme;
-          return Card(
-            margin: EdgeInsets.zero,
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: () => onOpen(app),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: scheme.primary,
-                          foregroundColor: scheme.onPrimary,
-                          child: Icon(app.icon),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(app.identity.name, style: type.titleMedium),
-                              Text(
-                                app.tagline,
-                                style: type.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+  ConsumerState<_AppCard> createState() => _AppCardState();
+}
+
+class _AppCardState extends ConsumerState<_AppCard> {
+  var _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final app = widget.app;
+    final base = Theme.of(context);
+    final scheme = base.colorScheme;
+    final type = base.textTheme;
+    final own = app.theme(ref, base.brightness).colorScheme;
+    final accent = own.primary;
+    final dark = base.brightness == Brightness.dark;
+    final radius = BorderRadius.circular(24);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: Motion.short,
+        curve: Motion.curve,
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: const Alignment(0.4, 1),
+            colors: [
+              Color.alphaBlend(accent.withValues(alpha: dark ? 0.16 : 0.09), scheme.surfaceContainerLow),
+              scheme.surfaceContainerLow,
+            ],
+          ),
+          border: Border.all(
+            color: _hover ? accent.withValues(alpha: 0.6) : scheme.outlineVariant.withValues(alpha: 0.5),
+          ),
+          boxShadow: [
+            if (_hover)
+              BoxShadow(color: accent.withValues(alpha: 0.18), blurRadius: 24, offset: const Offset(0, 8)),
+          ],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: () => widget.onOpen(app),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [accent, Color.lerp(accent, Colors.black, 0.25)!],
                           ),
                         ),
-                        Hint('home.open', child: Icon(Icons.chevron_right, color: scheme.onSurfaceVariant)),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    app.summary(context),
-                  ],
-                ),
+                        child: Icon(app.icon, color: own.onPrimary),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              app.identity.name,
+                              style: type.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              app.tagline,
+                              style: type.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Hint(
+                        'home.open',
+                        child: AnimatedContainer(
+                          duration: Motion.short,
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _hover ? accent : scheme.surfaceContainerHighest,
+                          ),
+                          child: Icon(
+                            Icons.arrow_forward,
+                            size: 18,
+                            color: _hover ? own.onPrimary : scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // The figures in Brahma's type, with the app's colour as primary.
+                  Theme(
+                    data: base.copyWith(colorScheme: scheme.copyWith(primary: accent)),
+                    child: Builder(builder: app.summary),
+                  ),
+                ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
