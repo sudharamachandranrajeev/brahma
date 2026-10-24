@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -5,13 +6,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:brahma_core/brahma_core.dart';
 import 'package:udyoga/app/app.dart';
 import 'package:udyoga/app/providers.dart';
 
 import 'app_harness.dart';
+
+import 'package:udyoga/ui/hints.dart';
+
 import 'seed.dart';
 import 'support.dart';
+
+/// Hides the first-run tip banners and skips the start-up job refresh, so
+/// the shots show the pages as a regular user sees them.
+Future<void> settledLook(AppHarness app) => app.tester.runAsync(
+  () => app.session.db.setLocalSetting(
+    'ui.hints.dismissed',
+    jsonEncode([...coreHints.keys, ...udyogaHints.keys]),
+  ),
+);
+
+List<Override> shotOverrides(AppHarness app) => [
+  ...udyogaOverrides(app.session, client: quietClient()),
+  refreshTickerProvider.overrideWithValue(null),
+];
 
 /// Renders the main pages with the real fonts to PNG files, for checking
 /// the look and for the README. Runs only when UDYOGA_SHOTS names an
@@ -63,11 +83,12 @@ void main() {
       tester.view.physicalSize = const Size(1170, 2532);
       tester.view.devicePixelRatio = 3;
       await app.open(seed: seedBook);
+      await settledLook(app);
       await tester.pumpWidget(
         RepaintBoundary(
           key: key,
           child: ProviderScope(
-            overrides: udyogaOverrides(app.session, client: quietClient()),
+            overrides: shotOverrides(app),
             retry: (_, _) => null,
             child: const UdyogaApp(),
           ),
@@ -99,14 +120,11 @@ void main() {
 
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seedBook);
+    await settledLook(app);
     await tester.pumpWidget(
       RepaintBoundary(
         key: key,
-        child: ProviderScope(
-          overrides: udyogaOverrides(app.session, client: quietClient()),
-          retry: (_, _) => null,
-          child: const UdyogaApp(),
-        ),
+        child: ProviderScope(overrides: shotOverrides(app), retry: (_, _) => null, child: const UdyogaApp()),
       ),
     );
     await app.settle();
