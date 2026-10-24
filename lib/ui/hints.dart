@@ -8,10 +8,13 @@ const vidyaHints = <String, String>{
   'nav.skills': 'What you can do, and how far from where you want to be.',
   'nav.portfolio': 'Evidence of your skills: projects, certificates, talks.',
   'nav.notes': 'What you have learned, in your own words.',
+  'nav.review': 'Flashcards that come back just before you would forget them.',
+  'action.focus': 'A quiet timer that logs the time when it ends.',
+  'action.export': 'Copy your skills, work and finished courses as Markdown for a CV or profile.',
   'nav.settings': 'Sync, hints and security.',
   'page.home':
       'Three small quests each day keep the habit gentle. Experience comes from topics finished, time '
-      'studied, tests taken, skills raised, work shown and notes written.',
+      'studied, tests taken, skills raised, work shown, notes written and cards reviewed.',
   'page.learn':
       'A program is a goal; it holds courses; a course holds topics. Finish topics to move a course on, '
       'and finish every course to complete the program. Start from a template or build your own.',
@@ -19,5 +22,8 @@ const vidyaHints = <String, String>{
   'page.skills':
       'Rate each skill from 0 to 5 and set the level you are aiming for. The gap is your to-do list.',
   'page.portfolio': 'Add what you have made or earned and the skills it proves. The score rewards variety and evidence for your skills.',
+  'page.review':
+      'Rate each card by how well you remembered it. Again brings it back today; Good and Easy push it '
+      'further out each time, so cards you know well take less of your day.',
   'page.notes': 'Write down what you learn. Tag notes to find them again.',
 };

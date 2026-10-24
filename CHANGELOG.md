@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 (2026-10-24)
+
+- Review: flashcards in decks with spaced repetition, a due queue, a week-ahead forecast and
+  retention. A daily quest to clear the queue, experience for cards and reviews, and six new
+  achievements (Deep focus, Memory seeds, First recall, A hundred recalls, Still water, Long memory).
+- Focus timer from Home or a course; logs the session when it ends.
+- Portfolio: copy skills, work and finished courses as Markdown.
+- Progress: retention and longest focus.
+- Quest experience labels now use the app font.
+- The database moves to version 2; existing data is kept.
+
 ## 0.1.1 (2026-10-24)
 
 - Sync setup and pairing links (vidya://) now open and work in Vidya.

@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 
 import '../db/database.dart';
 import 'achievements.dart';
+import 'review.dart';
 import 'stats.dart';
 import 'templates.dart';
 
@@ -297,6 +298,59 @@ class LearningBook {
     );
   }
 
+  // ---- flashcards ----
+
+  /// Adds a card, or changes the text of [existing] without touching its
+  /// schedule. A new card is due today.
+  Future<void> saveCard(
+    String front,
+    String back, {
+    required String today,
+    String deck = 'General',
+    String? courseId,
+    Flashcard? existing,
+  }) {
+    final id = existing?.id ?? newId();
+    if (existing != null) {
+      return save(
+        db.learnCards,
+        existing.copyWith(front: front, back: back, deck: deck, courseId: Value(courseId)),
+        id,
+      );
+    }
+    return save(
+      db.learnCards,
+      LearnCardsCompanion.insert(
+        id: id,
+        front: front,
+        back: back,
+        deck: Value(deck),
+        courseId: Value(courseId),
+        due: today,
+        created: today,
+      ),
+      id,
+    );
+  }
+
+  /// Records a review and moves the card to its next due day.
+  Future<void> reviewCard(Flashcard c, Grade g, {required String today}) => db.transaction(() async {
+    final n = nextSchedule(c, g, today);
+    await save(
+      db.learnCards,
+      c.copyWith(interval: n.interval, ease: n.ease, reps: n.reps, lapses: n.lapses, due: n.due),
+      c.id,
+    );
+    final id = newId();
+    await save(
+      db.learnReviews,
+      LearnReviewsCompanion.insert(id: id, cardId: c.id, day: today, grade: g.index),
+      id,
+    );
+  });
+
+  Future<void> removeCard(String id) => remove(db.learnCards, id);
+
   // ---- measures and achievements ----
 
   Future<Stats> stats(String today) async {
@@ -311,6 +365,8 @@ class LearningBook {
       skills: await (db.select(db.learnSkills)..where((r) => r.deleted.not())).get(),
       portfolio: await (db.select(db.learnPortfolio)..where((r) => r.deleted.not())).get(),
       notes: await (db.select(db.learnNotes)..where((r) => r.deleted.not())).get(),
+      cards: await (db.select(db.learnCards)..where((r) => r.deleted.not())).get(),
+      reviews: await (db.select(db.learnReviews)..where((r) => r.deleted.not())).get(),
       unlocked: unlocks.length,
     );
   }

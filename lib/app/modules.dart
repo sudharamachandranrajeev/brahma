@@ -7,6 +7,7 @@ import '../ui/learn_page.dart';
 import '../ui/notes_page.dart';
 import '../ui/portfolio_page.dart';
 import '../ui/progress_page.dart';
+import '../ui/review_page.dart';
 import '../ui/skills_page.dart';
 import 'settings_page.dart';
 
@@ -41,6 +42,7 @@ final learningModule = AppModule(
       const AchievementsPage(),
       primary: true,
     ),
+    _d('review', 'Review', Icons.style_outlined, Icons.style, const ReviewPage()),
     _d('skills', 'Skills', Icons.track_changes, Icons.track_changes, const SkillsPage()),
     _d('portfolio', 'Portfolio', Icons.folder_special_outlined, Icons.folder_special, const PortfolioPage()),
     _d('notes', 'Notes', Icons.edit_note, Icons.edit_note, const NotesPage()),

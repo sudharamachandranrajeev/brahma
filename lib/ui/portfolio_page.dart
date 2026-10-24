@@ -1,9 +1,11 @@
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../domain/book.dart';
+import '../domain/export.dart';
 import 'charts.dart';
 import 'common.dart';
 import 'dialogs.dart';
@@ -25,6 +27,18 @@ class PortfolioPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => PageScaffold(
     title: 'Portfolio',
     banner: 'page.portfolio',
+    actions: [
+      HintIconButton(
+        'action.export',
+        icon: Icons.content_copy,
+        label: 'Copy as Markdown',
+        onPressed: () async {
+          final s = await ref.read(statsProvider.future);
+          await Clipboard.setData(ClipboardData(text: portfolioMarkdown(s)));
+          if (context.mounted) showMessage(context, 'Portfolio copied as Markdown.');
+        },
+      ),
+    ],
     fab: FloatingActionButton.extended(
       onPressed: () => portfolioDialog(context, ref),
       icon: const Icon(Icons.add),

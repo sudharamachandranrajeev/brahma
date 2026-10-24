@@ -1,4 +1,5 @@
 import 'package:vidya/domain/book.dart';
+import 'package:vidya/domain/review.dart';
 import 'package:vidya/domain/templates.dart';
 
 /// A made-up learner, for tests and screenshots. Dates are relative to
@@ -42,6 +43,16 @@ Future<void> seedBook(LearningBook book, {String today = '2026-10-24'}) async {
     'algorithms, revision',
     today: day(1),
   );
+  for (final (q, a) in [
+    ('What is the time complexity of binary search?', 'O(log n)'),
+    ('What does a hash map trade for constant-time lookup?', 'Memory, and order'),
+    ('Stack or queue: last in, first out?', 'Stack'),
+  ]) {
+    await book.saveCard(q, a, today: day(5), deck: 'Algorithms');
+  }
+  final cards = await book.db.select(book.db.learnCards).get();
+  await book.reviewCard(cards.first, Grade.good, today: day(5));
+  await book.reviewCard(cards[1], Grade.again, today: day(1));
   await book.unlockNew(today);
   assert(pid.isNotEmpty);
 }

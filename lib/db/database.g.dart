@@ -3848,6 +3848,976 @@ class LearnUnlocksCompanion extends UpdateCompanion<Unlock> {
   }
 }
 
+class $LearnCardsTable extends LearnCards with TableInfo<$LearnCardsTable, Flashcard> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearnCardsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta('deleted');
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("deleted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _frontMeta = const VerificationMeta('front');
+  @override
+  late final GeneratedColumn<String> front = GeneratedColumn<String>(
+    'front',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _backMeta = const VerificationMeta('back');
+  @override
+  late final GeneratedColumn<String> back = GeneratedColumn<String>(
+    'back',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deckMeta = const VerificationMeta('deck');
+  @override
+  late final GeneratedColumn<String> deck = GeneratedColumn<String>(
+    'deck',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('General'),
+  );
+  static const VerificationMeta _courseIdMeta = const VerificationMeta('courseId');
+  @override
+  late final GeneratedColumn<String> courseId = GeneratedColumn<String>(
+    'course_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dueMeta = const VerificationMeta('due');
+  @override
+  late final GeneratedColumn<String> due = GeneratedColumn<String>(
+    'due',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _intervalMeta = const VerificationMeta('interval');
+  @override
+  late final GeneratedColumn<int> interval = GeneratedColumn<int>(
+    'interval',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _easeMeta = const VerificationMeta('ease');
+  @override
+  late final GeneratedColumn<double> ease = GeneratedColumn<double>(
+    'ease',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(2.5),
+  );
+  static const VerificationMeta _repsMeta = const VerificationMeta('reps');
+  @override
+  late final GeneratedColumn<int> reps = GeneratedColumn<int>(
+    'reps',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lapsesMeta = const VerificationMeta('lapses');
+  @override
+  late final GeneratedColumn<int> lapses = GeneratedColumn<int>(
+    'lapses',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdMeta = const VerificationMeta('created');
+  @override
+  late final GeneratedColumn<String> created = GeneratedColumn<String>(
+    'created',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    hlc,
+    deleted,
+    front,
+    back,
+    deck,
+    courseId,
+    due,
+    interval,
+    ease,
+    reps,
+    lapses,
+    created,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learn_cards';
+  @override
+  VerificationContext validateIntegrity(Insertable<Flashcard> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(_hlcMeta, hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta));
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(_deletedMeta, deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta));
+    }
+    if (data.containsKey('front')) {
+      context.handle(_frontMeta, front.isAcceptableOrUnknown(data['front']!, _frontMeta));
+    } else if (isInserting) {
+      context.missing(_frontMeta);
+    }
+    if (data.containsKey('back')) {
+      context.handle(_backMeta, back.isAcceptableOrUnknown(data['back']!, _backMeta));
+    } else if (isInserting) {
+      context.missing(_backMeta);
+    }
+    if (data.containsKey('deck')) {
+      context.handle(_deckMeta, deck.isAcceptableOrUnknown(data['deck']!, _deckMeta));
+    }
+    if (data.containsKey('course_id')) {
+      context.handle(_courseIdMeta, courseId.isAcceptableOrUnknown(data['course_id']!, _courseIdMeta));
+    }
+    if (data.containsKey('due')) {
+      context.handle(_dueMeta, due.isAcceptableOrUnknown(data['due']!, _dueMeta));
+    } else if (isInserting) {
+      context.missing(_dueMeta);
+    }
+    if (data.containsKey('interval')) {
+      context.handle(_intervalMeta, interval.isAcceptableOrUnknown(data['interval']!, _intervalMeta));
+    }
+    if (data.containsKey('ease')) {
+      context.handle(_easeMeta, ease.isAcceptableOrUnknown(data['ease']!, _easeMeta));
+    }
+    if (data.containsKey('reps')) {
+      context.handle(_repsMeta, reps.isAcceptableOrUnknown(data['reps']!, _repsMeta));
+    }
+    if (data.containsKey('lapses')) {
+      context.handle(_lapsesMeta, lapses.isAcceptableOrUnknown(data['lapses']!, _lapsesMeta));
+    }
+    if (data.containsKey('created')) {
+      context.handle(_createdMeta, created.isAcceptableOrUnknown(data['created']!, _createdMeta));
+    } else if (isInserting) {
+      context.missing(_createdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Flashcard map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Flashcard(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      hlc: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}hlc'])!,
+      deleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}deleted'])!,
+      front: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}front'])!,
+      back: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}back'])!,
+      deck: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}deck'])!,
+      courseId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}course_id']),
+      due: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}due'])!,
+      interval: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}interval'])!,
+      ease: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}ease'])!,
+      reps: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}reps'])!,
+      lapses: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}lapses'])!,
+      created: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}created'])!,
+    );
+  }
+
+  @override
+  $LearnCardsTable createAlias(String alias) {
+    return $LearnCardsTable(attachedDatabase, alias);
+  }
+}
+
+class Flashcard extends DataClass implements Insertable<Flashcard> {
+  final String id;
+  final String hlc;
+  final bool deleted;
+  final String front;
+  final String back;
+  final String deck;
+  final String? courseId;
+
+  /// The day it is next shown.
+  final String due;
+
+  /// Days between the last review and [due]; 0 while new or relearning.
+  final int interval;
+  final double ease;
+
+  /// Recalls in a row since it was last forgotten.
+  final int reps;
+  final int lapses;
+  final String created;
+  const Flashcard({
+    required this.id,
+    required this.hlc,
+    required this.deleted,
+    required this.front,
+    required this.back,
+    required this.deck,
+    this.courseId,
+    required this.due,
+    required this.interval,
+    required this.ease,
+    required this.reps,
+    required this.lapses,
+    required this.created,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['hlc'] = Variable<String>(hlc);
+    map['deleted'] = Variable<bool>(deleted);
+    map['front'] = Variable<String>(front);
+    map['back'] = Variable<String>(back);
+    map['deck'] = Variable<String>(deck);
+    if (!nullToAbsent || courseId != null) {
+      map['course_id'] = Variable<String>(courseId);
+    }
+    map['due'] = Variable<String>(due);
+    map['interval'] = Variable<int>(interval);
+    map['ease'] = Variable<double>(ease);
+    map['reps'] = Variable<int>(reps);
+    map['lapses'] = Variable<int>(lapses);
+    map['created'] = Variable<String>(created);
+    return map;
+  }
+
+  LearnCardsCompanion toCompanion(bool nullToAbsent) {
+    return LearnCardsCompanion(
+      id: Value(id),
+      hlc: Value(hlc),
+      deleted: Value(deleted),
+      front: Value(front),
+      back: Value(back),
+      deck: Value(deck),
+      courseId: courseId == null && nullToAbsent ? const Value.absent() : Value(courseId),
+      due: Value(due),
+      interval: Value(interval),
+      ease: Value(ease),
+      reps: Value(reps),
+      lapses: Value(lapses),
+      created: Value(created),
+    );
+  }
+
+  factory Flashcard.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Flashcard(
+      id: serializer.fromJson<String>(json['id']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      front: serializer.fromJson<String>(json['front']),
+      back: serializer.fromJson<String>(json['back']),
+      deck: serializer.fromJson<String>(json['deck']),
+      courseId: serializer.fromJson<String?>(json['courseId']),
+      due: serializer.fromJson<String>(json['due']),
+      interval: serializer.fromJson<int>(json['interval']),
+      ease: serializer.fromJson<double>(json['ease']),
+      reps: serializer.fromJson<int>(json['reps']),
+      lapses: serializer.fromJson<int>(json['lapses']),
+      created: serializer.fromJson<String>(json['created']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'hlc': serializer.toJson<String>(hlc),
+      'deleted': serializer.toJson<bool>(deleted),
+      'front': serializer.toJson<String>(front),
+      'back': serializer.toJson<String>(back),
+      'deck': serializer.toJson<String>(deck),
+      'courseId': serializer.toJson<String?>(courseId),
+      'due': serializer.toJson<String>(due),
+      'interval': serializer.toJson<int>(interval),
+      'ease': serializer.toJson<double>(ease),
+      'reps': serializer.toJson<int>(reps),
+      'lapses': serializer.toJson<int>(lapses),
+      'created': serializer.toJson<String>(created),
+    };
+  }
+
+  Flashcard copyWith({
+    String? id,
+    String? hlc,
+    bool? deleted,
+    String? front,
+    String? back,
+    String? deck,
+    Value<String?> courseId = const Value.absent(),
+    String? due,
+    int? interval,
+    double? ease,
+    int? reps,
+    int? lapses,
+    String? created,
+  }) => Flashcard(
+    id: id ?? this.id,
+    hlc: hlc ?? this.hlc,
+    deleted: deleted ?? this.deleted,
+    front: front ?? this.front,
+    back: back ?? this.back,
+    deck: deck ?? this.deck,
+    courseId: courseId.present ? courseId.value : this.courseId,
+    due: due ?? this.due,
+    interval: interval ?? this.interval,
+    ease: ease ?? this.ease,
+    reps: reps ?? this.reps,
+    lapses: lapses ?? this.lapses,
+    created: created ?? this.created,
+  );
+  Flashcard copyWithCompanion(LearnCardsCompanion data) {
+    return Flashcard(
+      id: data.id.present ? data.id.value : this.id,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      front: data.front.present ? data.front.value : this.front,
+      back: data.back.present ? data.back.value : this.back,
+      deck: data.deck.present ? data.deck.value : this.deck,
+      courseId: data.courseId.present ? data.courseId.value : this.courseId,
+      due: data.due.present ? data.due.value : this.due,
+      interval: data.interval.present ? data.interval.value : this.interval,
+      ease: data.ease.present ? data.ease.value : this.ease,
+      reps: data.reps.present ? data.reps.value : this.reps,
+      lapses: data.lapses.present ? data.lapses.value : this.lapses,
+      created: data.created.present ? data.created.value : this.created,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Flashcard(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('front: $front, ')
+          ..write('back: $back, ')
+          ..write('deck: $deck, ')
+          ..write('courseId: $courseId, ')
+          ..write('due: $due, ')
+          ..write('interval: $interval, ')
+          ..write('ease: $ease, ')
+          ..write('reps: $reps, ')
+          ..write('lapses: $lapses, ')
+          ..write('created: $created')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, hlc, deleted, front, back, deck, courseId, due, interval, ease, reps, lapses, created);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Flashcard &&
+          other.id == this.id &&
+          other.hlc == this.hlc &&
+          other.deleted == this.deleted &&
+          other.front == this.front &&
+          other.back == this.back &&
+          other.deck == this.deck &&
+          other.courseId == this.courseId &&
+          other.due == this.due &&
+          other.interval == this.interval &&
+          other.ease == this.ease &&
+          other.reps == this.reps &&
+          other.lapses == this.lapses &&
+          other.created == this.created);
+}
+
+class LearnCardsCompanion extends UpdateCompanion<Flashcard> {
+  final Value<String> id;
+  final Value<String> hlc;
+  final Value<bool> deleted;
+  final Value<String> front;
+  final Value<String> back;
+  final Value<String> deck;
+  final Value<String?> courseId;
+  final Value<String> due;
+  final Value<int> interval;
+  final Value<double> ease;
+  final Value<int> reps;
+  final Value<int> lapses;
+  final Value<String> created;
+  final Value<int> rowid;
+  const LearnCardsCompanion({
+    this.id = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.front = const Value.absent(),
+    this.back = const Value.absent(),
+    this.deck = const Value.absent(),
+    this.courseId = const Value.absent(),
+    this.due = const Value.absent(),
+    this.interval = const Value.absent(),
+    this.ease = const Value.absent(),
+    this.reps = const Value.absent(),
+    this.lapses = const Value.absent(),
+    this.created = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearnCardsCompanion.insert({
+    required String id,
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    required String front,
+    required String back,
+    this.deck = const Value.absent(),
+    this.courseId = const Value.absent(),
+    required String due,
+    this.interval = const Value.absent(),
+    this.ease = const Value.absent(),
+    this.reps = const Value.absent(),
+    this.lapses = const Value.absent(),
+    required String created,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       front = Value(front),
+       back = Value(back),
+       due = Value(due),
+       created = Value(created);
+  static Insertable<Flashcard> custom({
+    Expression<String>? id,
+    Expression<String>? hlc,
+    Expression<bool>? deleted,
+    Expression<String>? front,
+    Expression<String>? back,
+    Expression<String>? deck,
+    Expression<String>? courseId,
+    Expression<String>? due,
+    Expression<int>? interval,
+    Expression<double>? ease,
+    Expression<int>? reps,
+    Expression<int>? lapses,
+    Expression<String>? created,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (hlc != null) 'hlc': hlc,
+      if (deleted != null) 'deleted': deleted,
+      if (front != null) 'front': front,
+      if (back != null) 'back': back,
+      if (deck != null) 'deck': deck,
+      if (courseId != null) 'course_id': courseId,
+      if (due != null) 'due': due,
+      if (interval != null) 'interval': interval,
+      if (ease != null) 'ease': ease,
+      if (reps != null) 'reps': reps,
+      if (lapses != null) 'lapses': lapses,
+      if (created != null) 'created': created,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearnCardsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? hlc,
+    Value<bool>? deleted,
+    Value<String>? front,
+    Value<String>? back,
+    Value<String>? deck,
+    Value<String?>? courseId,
+    Value<String>? due,
+    Value<int>? interval,
+    Value<double>? ease,
+    Value<int>? reps,
+    Value<int>? lapses,
+    Value<String>? created,
+    Value<int>? rowid,
+  }) {
+    return LearnCardsCompanion(
+      id: id ?? this.id,
+      hlc: hlc ?? this.hlc,
+      deleted: deleted ?? this.deleted,
+      front: front ?? this.front,
+      back: back ?? this.back,
+      deck: deck ?? this.deck,
+      courseId: courseId ?? this.courseId,
+      due: due ?? this.due,
+      interval: interval ?? this.interval,
+      ease: ease ?? this.ease,
+      reps: reps ?? this.reps,
+      lapses: lapses ?? this.lapses,
+      created: created ?? this.created,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (front.present) {
+      map['front'] = Variable<String>(front.value);
+    }
+    if (back.present) {
+      map['back'] = Variable<String>(back.value);
+    }
+    if (deck.present) {
+      map['deck'] = Variable<String>(deck.value);
+    }
+    if (courseId.present) {
+      map['course_id'] = Variable<String>(courseId.value);
+    }
+    if (due.present) {
+      map['due'] = Variable<String>(due.value);
+    }
+    if (interval.present) {
+      map['interval'] = Variable<int>(interval.value);
+    }
+    if (ease.present) {
+      map['ease'] = Variable<double>(ease.value);
+    }
+    if (reps.present) {
+      map['reps'] = Variable<int>(reps.value);
+    }
+    if (lapses.present) {
+      map['lapses'] = Variable<int>(lapses.value);
+    }
+    if (created.present) {
+      map['created'] = Variable<String>(created.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearnCardsCompanion(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('front: $front, ')
+          ..write('back: $back, ')
+          ..write('deck: $deck, ')
+          ..write('courseId: $courseId, ')
+          ..write('due: $due, ')
+          ..write('interval: $interval, ')
+          ..write('ease: $ease, ')
+          ..write('reps: $reps, ')
+          ..write('lapses: $lapses, ')
+          ..write('created: $created, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LearnReviewsTable extends LearnReviews with TableInfo<$LearnReviewsTable, CardReview> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearnReviewsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta('deleted');
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("deleted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _cardIdMeta = const VerificationMeta('cardId');
+  @override
+  late final GeneratedColumn<String> cardId = GeneratedColumn<String>(
+    'card_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<String> day = GeneratedColumn<String>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _gradeMeta = const VerificationMeta('grade');
+  @override
+  late final GeneratedColumn<int> grade = GeneratedColumn<int>(
+    'grade',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, hlc, deleted, cardId, day, grade];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learn_reviews';
+  @override
+  VerificationContext validateIntegrity(Insertable<CardReview> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(_hlcMeta, hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta));
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(_deletedMeta, deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta));
+    }
+    if (data.containsKey('card_id')) {
+      context.handle(_cardIdMeta, cardId.isAcceptableOrUnknown(data['card_id']!, _cardIdMeta));
+    } else if (isInserting) {
+      context.missing(_cardIdMeta);
+    }
+    if (data.containsKey('day')) {
+      context.handle(_dayMeta, day.isAcceptableOrUnknown(data['day']!, _dayMeta));
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    if (data.containsKey('grade')) {
+      context.handle(_gradeMeta, grade.isAcceptableOrUnknown(data['grade']!, _gradeMeta));
+    } else if (isInserting) {
+      context.missing(_gradeMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CardReview map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CardReview(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      hlc: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}hlc'])!,
+      deleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}deleted'])!,
+      cardId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}card_id'])!,
+      day: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}day'])!,
+      grade: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}grade'])!,
+    );
+  }
+
+  @override
+  $LearnReviewsTable createAlias(String alias) {
+    return $LearnReviewsTable(attachedDatabase, alias);
+  }
+}
+
+class CardReview extends DataClass implements Insertable<CardReview> {
+  final String id;
+  final String hlc;
+  final bool deleted;
+  final String cardId;
+  final String day;
+
+  /// 0 again, 1 hard, 2 good, 3 easy.
+  final int grade;
+  const CardReview({
+    required this.id,
+    required this.hlc,
+    required this.deleted,
+    required this.cardId,
+    required this.day,
+    required this.grade,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['hlc'] = Variable<String>(hlc);
+    map['deleted'] = Variable<bool>(deleted);
+    map['card_id'] = Variable<String>(cardId);
+    map['day'] = Variable<String>(day);
+    map['grade'] = Variable<int>(grade);
+    return map;
+  }
+
+  LearnReviewsCompanion toCompanion(bool nullToAbsent) {
+    return LearnReviewsCompanion(
+      id: Value(id),
+      hlc: Value(hlc),
+      deleted: Value(deleted),
+      cardId: Value(cardId),
+      day: Value(day),
+      grade: Value(grade),
+    );
+  }
+
+  factory CardReview.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CardReview(
+      id: serializer.fromJson<String>(json['id']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      cardId: serializer.fromJson<String>(json['cardId']),
+      day: serializer.fromJson<String>(json['day']),
+      grade: serializer.fromJson<int>(json['grade']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'hlc': serializer.toJson<String>(hlc),
+      'deleted': serializer.toJson<bool>(deleted),
+      'cardId': serializer.toJson<String>(cardId),
+      'day': serializer.toJson<String>(day),
+      'grade': serializer.toJson<int>(grade),
+    };
+  }
+
+  CardReview copyWith({String? id, String? hlc, bool? deleted, String? cardId, String? day, int? grade}) =>
+      CardReview(
+        id: id ?? this.id,
+        hlc: hlc ?? this.hlc,
+        deleted: deleted ?? this.deleted,
+        cardId: cardId ?? this.cardId,
+        day: day ?? this.day,
+        grade: grade ?? this.grade,
+      );
+  CardReview copyWithCompanion(LearnReviewsCompanion data) {
+    return CardReview(
+      id: data.id.present ? data.id.value : this.id,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      cardId: data.cardId.present ? data.cardId.value : this.cardId,
+      day: data.day.present ? data.day.value : this.day,
+      grade: data.grade.present ? data.grade.value : this.grade,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CardReview(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('cardId: $cardId, ')
+          ..write('day: $day, ')
+          ..write('grade: $grade')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, hlc, deleted, cardId, day, grade);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CardReview &&
+          other.id == this.id &&
+          other.hlc == this.hlc &&
+          other.deleted == this.deleted &&
+          other.cardId == this.cardId &&
+          other.day == this.day &&
+          other.grade == this.grade);
+}
+
+class LearnReviewsCompanion extends UpdateCompanion<CardReview> {
+  final Value<String> id;
+  final Value<String> hlc;
+  final Value<bool> deleted;
+  final Value<String> cardId;
+  final Value<String> day;
+  final Value<int> grade;
+  final Value<int> rowid;
+  const LearnReviewsCompanion({
+    this.id = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.cardId = const Value.absent(),
+    this.day = const Value.absent(),
+    this.grade = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearnReviewsCompanion.insert({
+    required String id,
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    required String cardId,
+    required String day,
+    required int grade,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       cardId = Value(cardId),
+       day = Value(day),
+       grade = Value(grade);
+  static Insertable<CardReview> custom({
+    Expression<String>? id,
+    Expression<String>? hlc,
+    Expression<bool>? deleted,
+    Expression<String>? cardId,
+    Expression<String>? day,
+    Expression<int>? grade,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (hlc != null) 'hlc': hlc,
+      if (deleted != null) 'deleted': deleted,
+      if (cardId != null) 'card_id': cardId,
+      if (day != null) 'day': day,
+      if (grade != null) 'grade': grade,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearnReviewsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? hlc,
+    Value<bool>? deleted,
+    Value<String>? cardId,
+    Value<String>? day,
+    Value<int>? grade,
+    Value<int>? rowid,
+  }) {
+    return LearnReviewsCompanion(
+      id: id ?? this.id,
+      hlc: hlc ?? this.hlc,
+      deleted: deleted ?? this.deleted,
+      cardId: cardId ?? this.cardId,
+      day: day ?? this.day,
+      grade: grade ?? this.grade,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (cardId.present) {
+      map['card_id'] = Variable<String>(cardId.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<String>(day.value);
+    }
+    if (grade.present) {
+      map['grade'] = Variable<int>(grade.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearnReviewsCompanion(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('cardId: $cardId, ')
+          ..write('day: $day, ')
+          ..write('grade: $grade, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PrefsTable extends Prefs with TableInfo<$PrefsTable, Pref> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -4709,6 +5679,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LearnPortfolioTable learnPortfolio = $LearnPortfolioTable(this);
   late final $LearnNotesTable learnNotes = $LearnNotesTable(this);
   late final $LearnUnlocksTable learnUnlocks = $LearnUnlocksTable(this);
+  late final $LearnCardsTable learnCards = $LearnCardsTable(this);
+  late final $LearnReviewsTable learnReviews = $LearnReviewsTable(this);
   late final $PrefsTable prefs = $PrefsTable(this);
   late final $OutboxTable outbox = $OutboxTable(this);
   late final $SyncCursorsTable syncCursors = $SyncCursorsTable(this);
@@ -4727,6 +5699,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     learnPortfolio,
     learnNotes,
     learnUnlocks,
+    learnCards,
+    learnReviews,
     prefs,
     outbox,
     syncCursors,
@@ -6632,6 +7606,470 @@ typedef $$LearnUnlocksTableProcessedTableManager =
       Unlock,
       PrefetchHooks Function()
     >;
+typedef $$LearnCardsTableCreateCompanionBuilder = LearnCardsCompanion Function({
+  required String id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  required String front,
+  required String back,
+  Value<String> deck,
+  Value<String?> courseId,
+  required String due,
+  Value<int> interval,
+  Value<double> ease,
+  Value<int> reps,
+  Value<int> lapses,
+  required String created,
+  Value<int> rowid,
+});
+typedef $$LearnCardsTableUpdateCompanionBuilder = LearnCardsCompanion Function({
+  Value<String> id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  Value<String> front,
+  Value<String> back,
+  Value<String> deck,
+  Value<String?> courseId,
+  Value<String> due,
+  Value<int> interval,
+  Value<double> ease,
+  Value<int> reps,
+  Value<int> lapses,
+  Value<String> created,
+  Value<int> rowid,
+});
+
+class $$LearnCardsTableFilterComposer extends Composer<_$AppDatabase, $LearnCardsTable> {
+  $$LearnCardsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get front =>
+      $composableBuilder(column: $table.front, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get back =>
+      $composableBuilder(column: $table.back, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get deck =>
+      $composableBuilder(column: $table.deck, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get courseId =>
+      $composableBuilder(column: $table.courseId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get due =>
+      $composableBuilder(column: $table.due, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get interval =>
+      $composableBuilder(column: $table.interval, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get ease =>
+      $composableBuilder(column: $table.ease, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get reps =>
+      $composableBuilder(column: $table.reps, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get lapses =>
+      $composableBuilder(column: $table.lapses, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get created =>
+      $composableBuilder(column: $table.created, builder: (column) => ColumnFilters(column));
+}
+
+class $$LearnCardsTableOrderingComposer extends Composer<_$AppDatabase, $LearnCardsTable> {
+  $$LearnCardsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get front =>
+      $composableBuilder(column: $table.front, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get back =>
+      $composableBuilder(column: $table.back, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get deck =>
+      $composableBuilder(column: $table.deck, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get courseId =>
+      $composableBuilder(column: $table.courseId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get due =>
+      $composableBuilder(column: $table.due, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get interval =>
+      $composableBuilder(column: $table.interval, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get ease =>
+      $composableBuilder(column: $table.ease, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get reps =>
+      $composableBuilder(column: $table.reps, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get lapses =>
+      $composableBuilder(column: $table.lapses, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get created =>
+      $composableBuilder(column: $table.created, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LearnCardsTableAnnotationComposer extends Composer<_$AppDatabase, $LearnCardsTable> {
+  $$LearnCardsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc => $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<String> get front => $composableBuilder(column: $table.front, builder: (column) => column);
+
+  GeneratedColumn<String> get back => $composableBuilder(column: $table.back, builder: (column) => column);
+
+  GeneratedColumn<String> get deck => $composableBuilder(column: $table.deck, builder: (column) => column);
+
+  GeneratedColumn<String> get courseId =>
+      $composableBuilder(column: $table.courseId, builder: (column) => column);
+
+  GeneratedColumn<String> get due => $composableBuilder(column: $table.due, builder: (column) => column);
+
+  GeneratedColumn<int> get interval =>
+      $composableBuilder(column: $table.interval, builder: (column) => column);
+
+  GeneratedColumn<double> get ease => $composableBuilder(column: $table.ease, builder: (column) => column);
+
+  GeneratedColumn<int> get reps => $composableBuilder(column: $table.reps, builder: (column) => column);
+
+  GeneratedColumn<int> get lapses => $composableBuilder(column: $table.lapses, builder: (column) => column);
+
+  GeneratedColumn<String> get created =>
+      $composableBuilder(column: $table.created, builder: (column) => column);
+}
+
+class $$LearnCardsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearnCardsTable,
+          Flashcard,
+          $$LearnCardsTableFilterComposer,
+          $$LearnCardsTableOrderingComposer,
+          $$LearnCardsTableAnnotationComposer,
+          $$LearnCardsTableCreateCompanionBuilder,
+          $$LearnCardsTableUpdateCompanionBuilder,
+          (Flashcard, BaseReferences<_$AppDatabase, $LearnCardsTable, Flashcard>),
+          Flashcard,
+          PrefetchHooks Function()
+        > {
+  $$LearnCardsTableTableManager(_$AppDatabase db, $LearnCardsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$LearnCardsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$LearnCardsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$LearnCardsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String> front = const Value.absent(),
+                Value<String> back = const Value.absent(),
+                Value<String> deck = const Value.absent(),
+                Value<String?> courseId = const Value.absent(),
+                Value<String> due = const Value.absent(),
+                Value<int> interval = const Value.absent(),
+                Value<double> ease = const Value.absent(),
+                Value<int> reps = const Value.absent(),
+                Value<int> lapses = const Value.absent(),
+                Value<String> created = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearnCardsCompanion(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                front: front,
+                back: back,
+                deck: deck,
+                courseId: courseId,
+                due: due,
+                interval: interval,
+                ease: ease,
+                reps: reps,
+                lapses: lapses,
+                created: created,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                required String front,
+                required String back,
+                Value<String> deck = const Value.absent(),
+                Value<String?> courseId = const Value.absent(),
+                required String due,
+                Value<int> interval = const Value.absent(),
+                Value<double> ease = const Value.absent(),
+                Value<int> reps = const Value.absent(),
+                Value<int> lapses = const Value.absent(),
+                required String created,
+                Value<int> rowid = const Value.absent(),
+              }) => LearnCardsCompanion.insert(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                front: front,
+                back: back,
+                deck: deck,
+                courseId: courseId,
+                due: due,
+                interval: interval,
+                ease: ease,
+                reps: reps,
+                lapses: lapses,
+                created: created,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LearnCardsTable, Flashcard>(table),
+                  BaseReferences<_$AppDatabase, $LearnCardsTable, Flashcard>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LearnCardsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearnCardsTable,
+      Flashcard,
+      $$LearnCardsTableFilterComposer,
+      $$LearnCardsTableOrderingComposer,
+      $$LearnCardsTableAnnotationComposer,
+      $$LearnCardsTableCreateCompanionBuilder,
+      $$LearnCardsTableUpdateCompanionBuilder,
+      (Flashcard, BaseReferences<_$AppDatabase, $LearnCardsTable, Flashcard>),
+      Flashcard,
+      PrefetchHooks Function()
+    >;
+typedef $$LearnReviewsTableCreateCompanionBuilder = LearnReviewsCompanion Function({
+  required String id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  required String cardId,
+  required String day,
+  required int grade,
+  Value<int> rowid,
+});
+typedef $$LearnReviewsTableUpdateCompanionBuilder = LearnReviewsCompanion Function({
+  Value<String> id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  Value<String> cardId,
+  Value<String> day,
+  Value<int> grade,
+  Value<int> rowid,
+});
+
+class $$LearnReviewsTableFilterComposer extends Composer<_$AppDatabase, $LearnReviewsTable> {
+  $$LearnReviewsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cardId =>
+      $composableBuilder(column: $table.cardId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get grade =>
+      $composableBuilder(column: $table.grade, builder: (column) => ColumnFilters(column));
+}
+
+class $$LearnReviewsTableOrderingComposer extends Composer<_$AppDatabase, $LearnReviewsTable> {
+  $$LearnReviewsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cardId =>
+      $composableBuilder(column: $table.cardId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get grade =>
+      $composableBuilder(column: $table.grade, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LearnReviewsTableAnnotationComposer extends Composer<_$AppDatabase, $LearnReviewsTable> {
+  $$LearnReviewsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc => $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<String> get cardId =>
+      $composableBuilder(column: $table.cardId, builder: (column) => column);
+
+  GeneratedColumn<String> get day => $composableBuilder(column: $table.day, builder: (column) => column);
+
+  GeneratedColumn<int> get grade => $composableBuilder(column: $table.grade, builder: (column) => column);
+}
+
+class $$LearnReviewsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearnReviewsTable,
+          CardReview,
+          $$LearnReviewsTableFilterComposer,
+          $$LearnReviewsTableOrderingComposer,
+          $$LearnReviewsTableAnnotationComposer,
+          $$LearnReviewsTableCreateCompanionBuilder,
+          $$LearnReviewsTableUpdateCompanionBuilder,
+          (CardReview, BaseReferences<_$AppDatabase, $LearnReviewsTable, CardReview>),
+          CardReview,
+          PrefetchHooks Function()
+        > {
+  $$LearnReviewsTableTableManager(_$AppDatabase db, $LearnReviewsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$LearnReviewsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$LearnReviewsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$LearnReviewsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String> cardId = const Value.absent(),
+                Value<String> day = const Value.absent(),
+                Value<int> grade = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearnReviewsCompanion(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                cardId: cardId,
+                day: day,
+                grade: grade,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                required String cardId,
+                required String day,
+                required int grade,
+                Value<int> rowid = const Value.absent(),
+              }) => LearnReviewsCompanion.insert(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                cardId: cardId,
+                day: day,
+                grade: grade,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LearnReviewsTable, CardReview>(table),
+                  BaseReferences<_$AppDatabase, $LearnReviewsTable, CardReview>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LearnReviewsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearnReviewsTable,
+      CardReview,
+      $$LearnReviewsTableFilterComposer,
+      $$LearnReviewsTableOrderingComposer,
+      $$LearnReviewsTableAnnotationComposer,
+      $$LearnReviewsTableCreateCompanionBuilder,
+      $$LearnReviewsTableUpdateCompanionBuilder,
+      (CardReview, BaseReferences<_$AppDatabase, $LearnReviewsTable, CardReview>),
+      CardReview,
+      PrefetchHooks Function()
+    >;
 typedef $$PrefsTableCreateCompanionBuilder = PrefsCompanion Function({
   required String id,
   Value<String> hlc,
@@ -7144,6 +8582,8 @@ class $AppDatabaseManager {
       $$LearnPortfolioTableTableManager(_db, _db.learnPortfolio);
   $$LearnNotesTableTableManager get learnNotes => $$LearnNotesTableTableManager(_db, _db.learnNotes);
   $$LearnUnlocksTableTableManager get learnUnlocks => $$LearnUnlocksTableTableManager(_db, _db.learnUnlocks);
+  $$LearnCardsTableTableManager get learnCards => $$LearnCardsTableTableManager(_db, _db.learnCards);
+  $$LearnReviewsTableTableManager get learnReviews => $$LearnReviewsTableTableManager(_db, _db.learnReviews);
   $$PrefsTableTableManager get prefs => $$PrefsTableTableManager(_db, _db.prefs);
   $$OutboxTableTableManager get outbox => $$OutboxTableTableManager(_db, _db.outbox);
   $$SyncCursorsTableTableManager get syncCursors => $$SyncCursorsTableTableManager(_db, _db.syncCursors);

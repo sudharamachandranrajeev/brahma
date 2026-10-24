@@ -10,7 +10,9 @@ import 'charts.dart';
 import 'common.dart';
 import 'course_page.dart';
 import 'dialogs.dart';
+import 'focus_page.dart';
 import 'notes_page.dart';
+import 'review_page.dart';
 import 'zen.dart';
 
 String _greeting() {
@@ -32,6 +34,12 @@ class HomePage extends ConsumerWidget {
     title: 'Vidya',
     banner: 'page.home',
     actions: [
+      HintIconButton(
+        'action.focus',
+        icon: Icons.self_improvement,
+        label: 'Focus',
+        onPressed: () => openFocus(context),
+      ),
       HintIconButton(
         'nav.home',
         icon: Icons.timer_outlined,
@@ -276,14 +284,12 @@ class _Quests extends ConsumerWidget {
               style: q.done ? const TextStyle(decoration: TextDecoration.lineThrough) : null,
             ),
             subtitle: q.done || q.detail == null ? null : Text(q.detail!),
-            trailing: Text(
-              '+${q.xp}',
-              style: tabular.copyWith(color: q.done ? null : clay, fontWeight: FontWeight.w600),
-            ),
+            trailing: Text('+${q.xp} xp', style: TextStyle(color: q.done ? null : clay)),
             onTap: q.done
                 ? null
                 : switch (q.id) {
-                    'study' => () => logSessionDialog(context, ref),
+                    'study' => () => openFocus(context),
+                    'review' => () => startReview(context),
                     'note' => () => noteEditor(context, ref),
                     _ => null,
                   },

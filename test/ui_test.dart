@@ -48,4 +48,40 @@ void main() {
     expect(find.textContaining('Achievement earned: First step'), findsOneWidget);
     await app.close();
   });
+
+  testWidgets('a new card is reviewed and the queue clears', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    await app.go('Review');
+    await app.tapText('Card');
+    await app.enter('Front: the question', 'Capital of Japan?');
+    await app.enter('Back: the answer', 'Tokyo');
+    await app.tapText('Save');
+    expect(find.text('1 card due'), findsOneWidget);
+    await app.tapText('Begin review');
+    await app.tapText('Show answer');
+    expect(find.text('Tokyo'), findsOneWidget);
+    await app.tapText('Good');
+    expect(find.text('All clear.'), findsOneWidget);
+    expect(find.textContaining('Achievement earned: First recall'), findsOneWidget);
+    await app.tapText('Done');
+    expect(find.text('Nothing due'), findsOneWidget);
+    await app.close();
+  });
+
+  testWidgets('the focus timer opens from Home and can be paused', (tester) async {
+    final app = AppHarness(tester)..phone();
+    await app.open();
+    await app.run();
+    await app.tap(find.byIcon(Icons.self_improvement).first);
+    expect(find.text('25:00'), findsOneWidget);
+    await app.tapText('15 min');
+    expect(find.text('15:00'), findsOneWidget);
+    await app.tapText('Begin');
+    await app.tapText('Pause');
+    expect(find.text('paused'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
 }

@@ -117,6 +117,18 @@ class _Body extends StatelessWidget {
                       caption: 'in your knowledge base',
                     ),
                     KpiTile(
+                      label: 'Retention',
+                      value: s.retention == null ? '–' : pct(s.retention!),
+                      icon: Icons.psychology_outlined,
+                      caption: '${s.reviewsTotal} reviews · ${s.matureCards} cards held',
+                    ),
+                    KpiTile(
+                      label: 'Longest focus',
+                      value: minutesText(s.longestSession),
+                      icon: Icons.self_improvement,
+                      caption: 'in one sitting',
+                    ),
+                    KpiTile(
                       label: 'Programs',
                       value: '${s.programsDone}/${s.programs.length}',
                       icon: Icons.emoji_events_outlined,

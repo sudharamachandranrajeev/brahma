@@ -15,6 +15,7 @@ requests of its own.
 
 <p>
   <img src="docs/screenshots/home-light.png" width="200" alt="Home">
+  <img src="docs/screenshots/review-light.png" width="200" alt="Review">
   <img src="docs/screenshots/achievements-light.png" width="200" alt="Achievements">
 </p>
 <img src="docs/screenshots/home-desktop.png" width="640" alt="Home on desktop">
@@ -29,18 +30,24 @@ the parts a self-learner needs added.
   project, practice), each with *topics*. Tick topics off and the course moves on by itself; finish
   every course and the program completes. Start from a template (Software engineer, Data analyst,
   Cloud and DevOps) or write your own.
-- **Study log.** Log minutes against a course. Record tests with a score and maximum.
+- **Study log and focus timer.** Log minutes against a course, or run a quiet 15 to 60 minute
+  focus timer that logs the time when it ends. Record tests with a score and maximum.
+- **Review.** Flashcards in decks, scheduled by spaced repetition (a day-granular SM-2): Again
+  brings a card back today, Good and Easy push it further out each time. Shows what is due, the
+  week ahead and your 30-day retention.
 - **Skills.** Rate each skill 0 to 5 and set a target. The gap is your to-do list.
 - **Portfolio.** Projects, certificates, publications, talks, contributions and degrees, each tied
-  to the skills it proves. A score rewards volume, variety and skills with evidence.
+  to the skills it proves. A score rewards volume, variety and skills with evidence. Copy it all
+  (skills, work, finished courses) as Markdown for a CV or profile.
 - **Notes.** A searchable, tagged knowledge base.
 - **Progress.** Experience, study time, streak and longest streak, 30-day consistency, topics and
   courses done, average and best score and the score trend, on-time rate, skill mastery and gaps,
-  portfolio strength, weekly study chart and time by course. All worked out from the rows; nothing
+  portfolio strength, flashcard retention, longest focus, weekly study chart and time by course. All worked out from the rows; nothing
   is typed in by hand.
-- **Quests and achievements.** Three small quests a day (study 25 minutes, finish a topic, capture a
-  note). Experience comes from topics, study time (capped per day), tests, courses, programs, skill
-  levels, portfolio, notes and achievements. Level *n* starts at 50·n·(n−1) experience; ranks run
+- **Quests and achievements.** Small quests each day (study 25 minutes, finish a topic, capture a
+  note, and clear the review queue once you have cards). Experience comes from topics, study time
+  (capped per day), tests, courses, programs, skill levels, portfolio, notes, cards and reviews
+  (capped per day) and achievements. 34 achievements. Level *n* starts at 50·n·(n−1) experience; ranks run
   from Seed to Sage. Achievements unlock once and stay.
 - **Zen look.** Washi paper and stone with moss and clay, hairline borders, an ensō behind the page,
   short slow motion that stops when the system asks for reduced motion, light and dark.

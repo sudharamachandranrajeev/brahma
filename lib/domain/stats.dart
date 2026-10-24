@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:brahma_core/brahma_core.dart';
 
 import '../db/database.dart';
+import 'review.dart';
 
 /// Everything Vidya measures, worked out from the rows. Nothing here is
 /// stored: experience, level, streak and the daily quests always agree with
@@ -18,6 +19,8 @@ class Stats {
     this.skills = const [],
     this.portfolio = const [],
     this.notes = const [],
+    this.cards = const [],
+    this.reviews = const [],
     this.unlocked = 0,
   }) {
     for (final t in topics) {
@@ -36,6 +39,10 @@ class Stats {
     for (final n in notes) {
       _active.add(n.created);
     }
+    for (final r in reviews) {
+      _active.add(r.day);
+      _reviewsOn[r.day] = (_reviewsOn[r.day] ?? 0) + 1;
+    }
   }
 
   final String today;
@@ -47,22 +54,31 @@ class Stats {
   final List<Skill> skills;
   final List<PortfolioItem> portfolio;
   final List<Note> notes;
+  final List<Flashcard> cards;
+  final List<CardReview> reviews;
   final int unlocked;
 
   final _active = <String>{};
   final _minutes = <String, int>{};
+  final _reviewsOn = <String, int>{};
 
   // ---- experience and level ----
 
   static const xpTopic = 20, xpCourse = 100, xpProgram = 250, xpPortfolio = 60, xpNote = 10;
+  static const xpReview = 2, xpNewCard = 3;
   static const xpAssessment = 25, xpAssessmentHigh = 25, xpSkillLevel = 15, xpAchievement = 25;
 
   /// Minutes of study count once, at most four hours a day, so one long
   /// idle session cannot buy a level.
   int get xpStudy => _minutes.values.fold<int>(0, (a, m) => a + math.min(m, 240) ~/ 2);
 
+  /// Reviews count up to 100 a day, so cramming the same cards does not pay.
+  int get xpReviews => _reviewsOn.values.fold<int>(0, (a, n) => a + math.min(n, 100) * xpReview);
+
   int get xp =>
       topicsDone * xpTopic +
+      xpReviews +
+      cards.length * xpNewCard +
       xpStudy +
       coursesDone * xpCourse +
       programsDone * xpProgram +
@@ -235,12 +251,47 @@ class Stats {
     return skills.where((s) => s.level > 0 && !backed.contains(s.name.toLowerCase())).toList();
   }
 
+  // ---- flashcards ----
+
+  List<Flashcard> get dueCards =>
+      cards.where((c) => c.due.compareTo(today) <= 0).toList()
+        ..sort((a, b) => a.due == b.due ? a.created.compareTo(b.created) : a.due.compareTo(b.due));
+  int get reviewsToday => _reviewsOn[today] ?? 0;
+  int get reviewsTotal => reviews.length;
+  int get matureCards => cards.where((c) => c.interval >= matureDays).length;
+
+  /// Share of reviews in the last 30 days that were remembered, null with none.
+  double? get retention {
+    final since = addDays(today, -29);
+    final recent = reviews.where((r) => r.day.compareTo(since) >= 0).toList();
+    if (recent.isEmpty) return null;
+    return recent.where((r) => r.grade > Grade.again.index).length / recent.length;
+  }
+
+  /// Cards due on each of the next [days] days, today (with any overdue) first.
+  List<int> forecast([int days = 7]) => [
+    for (var d = 0; d < days; d++)
+      cards.where((c) => d == 0 ? c.due.compareTo(today) <= 0 : c.due == addDays(today, d)).length,
+  ];
+
+  /// The longest single study session, in minutes.
+  int get longestSession => sessions.fold(0, (a, s) => math.max(a, s.minutes));
+
   // ---- daily quests ----
 
   List<Quest> get quests => [
     Quest('study', 'Study for 25 minutes', todayMinutes >= 25, 12, '${math.min(todayMinutes, 25)}/25 min'),
     Quest('topic', 'Finish a topic', topicsToday >= 1, 20, '$topicsToday/1'),
     Quest('note', 'Capture a note', notes.any((n) => n.created == today), 10, null),
+    // Only once there are cards to review; done when today's queue is empty.
+    if (cards.isNotEmpty)
+      Quest(
+        'review',
+        'Clear today’s reviews',
+        reviewsToday > 0 && dueCards.isEmpty,
+        10,
+        dueCards.isEmpty ? null : '${dueCards.length} due',
+      ),
   ];
 
   /// Overall progress for the day, 0 to 1.

@@ -76,7 +76,7 @@ void main() {
       final mode = dark ? 'dark' : 'light';
       await shot('home-$mode');
       if (!dark) {
-        for (final page in ['Learn', 'Progress', 'Achievements', 'Skills', 'Portfolio', 'Notes']) {
+        for (final page in ['Learn', 'Progress', 'Achievements', 'Review', 'Skills', 'Portfolio', 'Notes']) {
           await h.go(page);
           await shot('${page.toLowerCase()}-$mode');
         }

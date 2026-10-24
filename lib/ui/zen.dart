@@ -58,6 +58,9 @@ ThemeData vidyaTheme(Brightness b) {
   return base.copyWith(
     colorScheme: scheme,
     textTheme: type,
+    // The default trailing style is not built from [type], so it would
+    // miss the app's font.
+    listTileTheme: ListTileThemeData(leadingAndTrailingTextStyle: type.labelLarge),
     scaffoldBackgroundColor: Colors.transparent,
     canvasColor: scheme.surface,
     appBarTheme: AppBarTheme(

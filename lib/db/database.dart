@@ -18,6 +18,8 @@ part 'database.g.dart';
     LearnPortfolio,
     LearnNotes,
     LearnUnlocks,
+    LearnCards,
+    LearnReviews,
     Prefs,
     Outbox,
     SyncCursors,
@@ -41,11 +43,13 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     'learn_portfolio',
     'learn_notes',
     'learn_unlocks',
+    'learn_cards',
+    'learn_reviews',
     'prefs',
   ];
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -55,11 +59,23 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
         await customStatement(sql);
       }
     },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(learnCards);
+        await m.createTable(learnReviews);
+        for (final sql in _indexes.skip(3)) {
+          await customStatement(sql);
+        }
+      }
+    },
   );
 
   static const _indexes = [
     'CREATE INDEX learn_courses_program ON learn_courses (program_id)',
     'CREATE INDEX learn_topics_course ON learn_topics (course_id)',
     'CREATE INDEX learn_sessions_day ON learn_sessions (day)',
+    // Added in version 2; onUpgrade creates these from the fourth on.
+    'CREATE INDEX learn_cards_due ON learn_cards (due)',
+    'CREATE INDEX learn_reviews_day ON learn_reviews (day)',
   ];
 }

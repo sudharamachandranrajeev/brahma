@@ -8,6 +8,7 @@ import '../domain/stats.dart';
 import 'charts.dart';
 import 'common.dart';
 import 'dialogs.dart';
+import 'focus_page.dart';
 import 'zen.dart';
 
 class CoursePage extends ConsumerWidget {
@@ -30,6 +31,11 @@ class CoursePage extends ConsumerWidget {
           appBar: AppBar(
             title: Text(c.title),
             actions: [
+              IconButton(
+                tooltip: 'Focus on this course',
+                icon: const Icon(Icons.self_improvement),
+                onPressed: () => openFocus(context, courseId: id),
+              ),
               if (c.url.isNotEmpty)
                 IconButton(
                   tooltip: 'Open link',

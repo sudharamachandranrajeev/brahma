@@ -59,8 +59,18 @@ class _RingPainter extends CustomPainter {
 
 /// Vertical bars with a label under each; the last is highlighted.
 class BarChart extends StatelessWidget {
-  const BarChart({super.key, required this.values, required this.labels, this.height = 120, this.unit = ''});
+  const BarChart({
+    super.key,
+    required this.values,
+    required this.labels,
+    this.height = 120,
+    this.unit = '',
+    this.highlight,
+  });
   final List<num> values;
+
+  /// The bar drawn solid; the last (the latest) when null.
+  final int? highlight;
   final List<String> labels;
   final double height;
   final String unit;
@@ -90,7 +100,9 @@ class BarChart extends StatelessWidget {
                         height: math.max(4, (height - 4) * f),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         decoration: BoxDecoration(
-                          color: i == values.length - 1 ? primary : primary.withValues(alpha: 0.35),
+                          color: i == (highlight ?? values.length - 1)
+                              ? primary
+                              : primary.withValues(alpha: 0.35),
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
