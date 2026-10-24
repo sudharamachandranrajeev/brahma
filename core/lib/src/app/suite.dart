@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 import '../identity.dart';
 import '../security/key_vault.dart';
 import '../ui/widgets.dart';
-import 'modules.dart';
 import 'session.dart';
 
 /// One Brahma app as the Brahma suite app hosts it: everything the suite
@@ -22,11 +21,11 @@ class SuiteApp {
     required this.overrides,
     required this.hints,
     required this.theme,
-    required this.destinations,
+    required this.home,
     required this.summary,
+    this.themeMode,
     this.builder,
     this.onStart,
-    this.floating = false,
   });
 
   final AppIdentity identity;
@@ -46,7 +45,14 @@ class SuiteApp {
   /// The app's hint texts by id, without [coreHints].
   final Map<String, String> hints;
   final ThemeData Function(Brightness) theme;
-  final List<Destination> destinations;
+
+  /// The app's own light or dark choice, when it has one; otherwise the
+  /// suite's.
+  final ThemeMode? Function(WidgetRef ref)? themeMode;
+
+  /// The app's screens, usually an [AppShell] over its destinations.
+  /// [onHome] goes back to the suite's home screen (see [AppShell.onHome]).
+  final Widget Function(VoidCallback onHome) home;
 
   /// The app's card body on the home screen: a few live figures, drawn in
   /// the app's theme.
@@ -57,9 +63,6 @@ class SuiteApp {
 
   /// Background work to start with the suite (e.g. a routine refresh).
   final void Function(WidgetRef ref)? onStart;
-
-  /// Whether the app uses the floating navigation bar ([AppShell.floating]).
-  final bool floating;
 }
 
 /// A home-screen card body: a few figures and, optionally, the next thing
