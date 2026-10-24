@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (2026-10-24)
+
+- n8n lead workflow: connect your own n8n (Settings) and a job's Contacts card can ask it for
+  recruiters, hiring managers and agencies. A ready-made workflow and a study of what LinkedIn
+  allows are in `docs/n8n`. It uses search-engine results and Claude; you send every connection
+  request yourself.
+
 ## 0.1.0 (2026-10-24)
 
 First test release.

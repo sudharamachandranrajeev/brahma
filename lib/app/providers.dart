@@ -12,6 +12,7 @@ import '../domain/book.dart';
 import '../domain/claude.dart';
 import '../domain/profile.dart';
 import '../domain/refresh.dart';
+import '../domain/n8n.dart';
 import '../ui/hints.dart';
 import 'session.dart';
 
@@ -110,6 +111,12 @@ final profileProvider = FutureProvider<CandidateProfile>((ref) {
 final latestReportProvider = FutureProvider.family<Report?, String>((ref, kind) {
   ref.watch(revisionProvider);
   return ref.watch(sessionProvider).book.latestReport(kind);
+});
+
+/// The user's n8n lead workflow (not set until they connect one).
+final n8nLinkProvider = FutureProvider<N8nLink>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).book.n8nLink();
 });
 
 /// The adviser with the user's key and model, or null until a key is set.

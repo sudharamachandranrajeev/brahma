@@ -19,6 +19,7 @@ const udyogaHints = <String, String>{
   'jobs.add': 'Paste a job link or the advert text.',
   'jobs.portals': 'Open searches for your roles on the main job sites, in your browser.',
   'jobs.fit': 'How well the job fits you, 0 to 100. A star means the AI assessed it.',
+  'job.n8n': 'Sends this job (not your name or contact details) to your n8n workflow and adds the contacts it finds.',
   'job.assess': 'Claude reads the advert, researches the employer and scores your fit honestly.',
   'job.tailor': 'A CV and cover letter for this job, from your real experience only.',
   'job.leads': 'Find the recruiter, hiring manager and agencies for this job.',
@@ -34,6 +35,7 @@ const udyogaHints = <String, String>{
   'career.target': 'Adds this path\'s steps as goals and its certifications to Growth.',
   'career.assess': 'A candid assessment of where you stand in today\'s market.',
   // Settings
+  'settings.n8n': 'A webhook in your own n8n that takes a job and answers with contacts. See docs/n8n in the Udyoga repository.',
   'settings.ai': 'Your own Claude API key. Requests go straight from this device to Anthropic.',
   'settings.routine':
       'Let the AI search for jobs and refresh your career map on its own. Each run costs a little.',

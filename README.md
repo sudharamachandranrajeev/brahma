@@ -39,6 +39,10 @@ encryption.
 - **Contacts.** Recruiters, hiring managers and people in the field, found by Claude from public
   pages or added by you, each with a follow-up date and a drafted first message. LinkedIn is opened
   through its own search links; the app never scrapes it.
+- **n8n lead workflow (optional).** Connect your own [n8n](https://n8n.io) and each job can ask it
+  for contacts: search-engine queries for public profiles and recruitment pages, ranked by Claude,
+  each with a short connection note. You send every request yourself. The workflow, set-up steps
+  and a study of what LinkedIn allows are in [docs/n8n](docs/n8n/README.md).
 - **Interview training.** Practice rounds for a job or a role: mixed, competency (STAR), technical,
   *toughest panel* and *AI and change*. Type each answer; the app measures length, speaking time,
   filler words, "I" against "we", figures and STAR coverage as you go, and Claude scores it on seven

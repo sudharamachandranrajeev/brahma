@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/book.dart';
 import '../domain/claude.dart';
 import '../domain/feeds.dart';
+import '../domain/n8n.dart';
 import '../ui/common.dart';
 import 'providers.dart';
 
@@ -17,6 +18,7 @@ final _aiSettingsProvider = FutureProvider((ref) async {
     model: await book.pref<String>(PrefKeys.aiModel, defaultModel),
     routine: await book.pref<String>(PrefKeys.aiRoutine, 'off'),
     feeds: await book.feedKeys(),
+    n8n: await book.n8nLink(),
     spend: await book.spend(today().substring(0, 7)),
   );
 });
@@ -95,6 +97,38 @@ class SettingsPage extends ConsumerWidget {
             ].join(' '),
           ),
         ),
+        SectionCard(
+          title: 'n8n lead workflow',
+          hint: 'settings.n8n',
+          trailing: TextButton(
+            onPressed: s == null ? null : () => _editN8n(context, ref, s.n8n),
+            child: Text(s?.n8n.isSet ?? false ? 'Change' : 'Connect'),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                s?.n8n.isSet ?? false
+                    ? 'Connected to ${Uri.tryParse(s!.n8n.url)?.host ?? s.n8n.url}. Each job\'s Contacts card can '
+                          'ask it for people to contact.'
+                    : 'Optional: your own n8n workflow that finds recruiters and hiring managers for a job from '
+                          'public sources, with your own search and AI keys. You send every connection request '
+                          'yourself; nothing is automated on LinkedIn.',
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => openLink(
+                    context,
+                    'https://github.com/sudharamachandranrajeev/udyoga/blob/main/docs/n8n/README.md',
+                  ),
+                  icon: const Icon(Icons.open_in_new, size: 18),
+                  label: const Text('How to set it up'),
+                ),
+              ),
+            ],
+          ),
+        ),
         const HintsCard(),
         const SyncCard(),
         const SecurityCard(
@@ -139,6 +173,39 @@ class SettingsPage extends ConsumerWidget {
         final k = key.text.trim();
         if (k.isNotEmpty && !k.startsWith('sk-')) return 'Claude keys start with sk-';
         await ref.mutate((s) => s.book.setPref(PrefKeys.aiKey, k));
+        return null;
+      },
+    );
+  }
+
+  Future<void> _editN8n(BuildContext context, WidgetRef ref, N8nLink current) {
+    final url = TextEditingController(text: current.url);
+    final secret = TextEditingController(text: current.secret);
+    return showFormDialog(
+      context,
+      title: 'n8n lead workflow',
+      fields: (_) => [
+        Field(
+          url,
+          'Webhook address',
+          autofocus: true,
+          hint: 'https://n8n.example.com/webhook/udyoga-leads',
+          helper: 'The production URL of the workflow\'s Webhook node. Leave empty to disconnect.',
+        ),
+        Field(secret, 'Secret', obscure: true, helper: 'The value the workflow checks in X-Udyoga-Secret.'),
+      ],
+      onSave: () async {
+        final u = url.text.trim();
+        if (u.isNotEmpty) {
+          try {
+            N8nLink.check(u);
+          } on N8nException catch (e) {
+            return e.message;
+          }
+        }
+        await ref.mutate(
+          (s) => s.book.setPref(PrefKeys.n8n, N8nLink(url: u, secret: secret.text.trim()).toJson()),
+        );
         return null;
       },
     );

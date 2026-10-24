@@ -1,7 +1,7 @@
 name: udyoga
 description: "Udyoga - career and job search: matched openings, tailored CVs, applications, contacts, career paths, learning and interview practice (Linux, Windows, Android). Part of Brahma."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.5

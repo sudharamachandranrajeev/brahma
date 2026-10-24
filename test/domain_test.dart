@@ -4,6 +4,7 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:udyoga/db/database.dart';
 import 'package:udyoga/domain/answer_metrics.dart';
 import 'package:udyoga/domain/book.dart';
 import 'package:udyoga/domain/calendar.dart';
@@ -11,6 +12,7 @@ import 'package:udyoga/domain/claude.dart';
 import 'package:udyoga/domain/feeds.dart';
 import 'package:udyoga/domain/insights.dart';
 import 'package:udyoga/domain/matching.dart';
+import 'package:udyoga/domain/n8n.dart';
 import 'package:udyoga/domain/pipeline.dart';
 import 'package:udyoga/domain/profile.dart';
 import 'package:udyoga/domain/resume.dart';
@@ -291,6 +293,55 @@ void main() {
       expect(p.name, sampleProfile.name);
       expect(p.targets.countries, ['GB', 'IE']);
       expect(p.experience.single.highlights, hasLength(2));
+    });
+  });
+
+  group('n8n', () {
+    late CareerBook book;
+    setUp(() async => book = CareerBook(await Store.open(memoryDatabase())));
+    tearDown(() => book.db.close());
+
+    Future<Job> job() async =>
+        book.job((await book.importPostings([samplePosting()], sampleProfile, today: '2026-10-24')).single);
+
+    test('sends the job and direction, never who the candidate is', () async {
+      late http.Request seen;
+      final client = MockClient((r) async {
+        seen = r;
+        return http.Response(
+          jsonEncode([
+            {
+              'leads': [
+                {'name': 'Sam Recruiter', 'company': 'Example Health Trust', 'kind': 'agency'},
+                {'name': '', 'company': 'nobody'},
+              ],
+            },
+          ]),
+          200,
+        );
+      });
+      const link = N8nLink(url: 'https://n8n.example.com/webhook/udyoga-leads', secret: 's3');
+      final leads = await n8nLeads(client, link, sampleProfile, await job());
+      expect(seen.headers['x-udyoga-secret'], 's3');
+      expect(seen.body, isNot(contains(sampleProfile.name)));
+      expect(seen.body, contains('Clinical Informatics Nurse'));
+      expect(leads.single.name, 'Sam Recruiter');
+      expect(leads.single.kind, 'other');
+      expect(leads.single.approach, '');
+      expect(await book.importLeads(leads, today: '2026-10-24'), 1);
+    });
+
+    test('refuses plain http to the internet and explains failures', () async {
+      expect(() => N8nLink.check('http://n8n.example.com/webhook/x'), throwsA(isA<N8nException>()));
+      expect(N8nLink.check('http://192.168.1.20:5678/webhook/x').host, '192.168.1.20');
+      final j = await job();
+      for (final (status, text) in [(403, 'secret'), (404, 'active'), (200, 'leads')]) {
+        final client = MockClient((_) async => http.Response(status == 200 ? '{}' : '', status));
+        await expectLater(
+          n8nLeads(client, const N8nLink(url: 'https://n8n.example.com/webhook/x'), sampleProfile, j),
+          throwsA(isA<N8nException>().having((e) => e.message, 'message', contains(text))),
+        );
+      }
     });
   });
 

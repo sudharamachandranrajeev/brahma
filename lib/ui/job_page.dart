@@ -7,6 +7,7 @@ import '../db/database.dart';
 import '../domain/countries.dart';
 import '../domain/insights.dart';
 import '../domain/json.dart';
+import '../domain/n8n.dart';
 import '../domain/pipeline.dart';
 import '../domain/resume.dart';
 import 'applications_page.dart';
@@ -51,6 +52,7 @@ class JobPage extends ConsumerWidget {
       );
     }
     final hasAi = ref.watch(advisorProvider).value != null;
+    final n8n = ref.watch(n8nLinkProvider).value ?? const N8nLink();
     final fit = j.assessment.isEmpty ? null : FitAssessment(decodeObject(j.assessment));
     final cvs = (ref.watch(resumesProvider).value ?? const <Resume>[]).where((r) => r.jobId == id).toList();
     final leads = (ref.watch(leadsProvider).value ?? const <Lead>[]).where((l) => l.jobId == id).toList();
@@ -184,6 +186,15 @@ class JobPage extends ConsumerWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
+                  if (n8n.isSet)
+                    Hint(
+                      'job.n8n',
+                      child: OutlinedButton.icon(
+                        onPressed: () => _findLeadsN8n(context, ref, j, n8n),
+                        icon: const Icon(Icons.account_tree_outlined),
+                        label: const Text('Ask my n8n workflow'),
+                      ),
+                    ),
                   if (j.company.isNotEmpty) ...[
                     OutlinedButton.icon(
                       onPressed: () => openUri(context, linkedInPeople('recruiter ${j.company}')),
@@ -252,6 +263,22 @@ class JobPage extends ConsumerWidget {
       ),
     );
     if (context.mounted) await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ResumePage(id)));
+  }
+
+  Future<void> _findLeadsN8n(BuildContext context, WidgetRef ref, Job j, N8nLink link) async {
+    final p = await ref.read(profileProvider.future);
+    if (!context.mounted) return;
+    final leads = await runAi(
+      context,
+      title: 'Asking your n8n workflow',
+      task: (progress) {
+        progress('Waiting for n8n…');
+        return n8nLeads(ref.read(httpClientProvider), link, p, j);
+      },
+    );
+    if (leads == null) return;
+    final n = await ref.mutate((s) => s.book.importLeads(leads, jobId: j.id, today: today()));
+    if (context.mounted) showMessage(context, n == 0 ? 'No new contacts found.' : 'Added $n contacts.');
   }
 
   Future<void> _findLeads(BuildContext context, WidgetRef ref, Job j) async {

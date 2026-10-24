@@ -9,6 +9,7 @@ import 'feeds.dart';
 import 'insights.dart';
 import 'json.dart';
 import 'matching.dart';
+import 'n8n.dart';
 import 'pipeline.dart';
 import 'profile.dart';
 import 'resume.dart';
@@ -24,6 +25,9 @@ abstract final class PrefKeys {
   /// off | weekly | daily.
   static const aiRoutine = 'udyoga.ai.routine';
   static const feedKeys = 'udyoga.feeds';
+
+  /// The user's n8n lead workflow: {"url": ..., "secret": ...}.
+  static const n8n = 'udyoga.n8n';
 }
 
 /// Device-only settings (local_settings).
@@ -62,6 +66,9 @@ class CareerBook {
 
   Future<FeedKeys> feedKeys() async =>
       FeedKeys.fromJson(await pref<Map<String, Object?>>(PrefKeys.feedKeys, const {}));
+
+  Future<N8nLink> n8nLink() async =>
+      N8nLink.fromJson(await pref<Map<String, Object?>>(PrefKeys.n8n, const {}));
 
   /// Saves a row of any Udyoga table.
   Future<void> save<T extends Table, D>(TableInfo<T, D> table, Insertable<D> row, String id) =>
