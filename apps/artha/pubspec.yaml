@@ -1,0 +1,63 @@
+name: artha
+description: "Artha - personal finance, accounting and investment manager (Linux, Windows, Android)."
+publish_to: 'none'
+version: 0.2.0-beta.6+7
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  # Shared core of the Brahma apps. pubspec_overrides.yaml points it at a
+  # local checkout during development.
+  brahma_core:
+    git:
+      url: https://github.com/sudharamachandranrajeev/brahma.git
+      path: core
+  cryptography: ^2.9.0
+  drift: ^2.35.2
+  drift_flutter: ^0.3.1
+  file_picker: ^13.1.0
+  fl_chart: ^1.2.0
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  flutter_secure_storage: ^11.2.0
+  http: ^1.6.0
+  intl: ^0.20.3
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  pdfrx: 2.6.5
+  pocketbase: ^0.25.2
+  qr: ^4.0.0
+  sqlite3: ^3.7.1
+  uuid: ^4.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.35.1
+  build_runner: ^2.16.2
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-400.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-500.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-600.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-700.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-800.ttf
+          weight: 800
+
+# Bundle SQLite3MultipleCiphers instead of plain SQLite so the local database
+# is encrypted at rest on every platform (see doc/hook.md in package:sqlite3).
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
