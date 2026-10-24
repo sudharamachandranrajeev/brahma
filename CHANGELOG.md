@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Cars: buy a car, new or used. Search links for AutoTrader, Gumtree, Facebook Marketplace, eBay,
   UsedCarsNI, DoneDeal, PistonHeads, online stores, dealer groups and new-car deal sites, filled in
