@@ -77,6 +77,7 @@ export const mastodon: Adapter = {
       if (!obj) throw new PlatformError("The media file is gone from storage", 400, false, false);
       const fd = new FormData();
       fd.set("file", new File([await obj.arrayBuffer()], f.filename, { type: f.contentType }));
+      if (f.alt) fd.set("description", f.alt);
       let att = await m(ctx, account, "/api/v2/media", { method: "POST", body: fd });
       // Video is processed in the background: wait until it has a URL.
       for (let i = 0; !att.url && i < 10; i++) {

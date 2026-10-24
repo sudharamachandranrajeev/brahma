@@ -1,7 +1,7 @@
 // In-memory stand-ins for the Worker bindings: D1 on node:sqlite, KV and R2
 // on Maps, and a scripted fetch. Enough of each API for the hub's code paths.
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import type { SocialEnv } from "../src/social/store.ts";
 
@@ -34,7 +34,9 @@ class Statement {
 
 export function d1(): D1Database {
   const db = new DatabaseSync(":memory:");
-  db.exec(readFileSync(new URL("../migrations/0001_social.sql", import.meta.url), "utf8"));
+  // Every migration, in order, as wrangler applies them.
+  const dir = new URL("../migrations/", import.meta.url);
+  for (const f of readdirSync(dir).filter((f) => f.endsWith(".sql")).sort()) db.exec(readFileSync(new URL(f, dir), "utf8"));
   return {
     prepare: (sql: string) => new Statement(db, sql),
     batch: async (stmts: Statement[]) => {
@@ -81,7 +83,10 @@ export function r2(): R2Bucket {
     },
     put: async (key: string, body: string | Uint8Array, opts?: { httpMetadata?: { contentType?: string } }) =>
       void objects.set(key, { body: typeof body === "string" ? new TextEncoder().encode(body) : body, contentType: opts?.httpMetadata?.contentType }),
-    delete: async (key: string) => void objects.delete(key),
+    delete: async (keys: string | string[]) => {
+      for (const k of [keys].flat()) objects.delete(k);
+    },
+    keys: () => [...objects.keys()],
   } as unknown as R2Bucket;
 }
 

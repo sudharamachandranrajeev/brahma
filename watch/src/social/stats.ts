@@ -1,10 +1,13 @@
 // Analytics from stored snapshots and content, plus the daily housekeeping run.
 
 import { dailyAccounts } from "./accounts.ts";
-import { hasAi, ideas as askIdeas } from "./ai.ts";
+import { hasAi, ideas as askIdeas, weekly } from "./ai.ts";
+import { raise } from "./alerts.ts";
+import { InputError } from "./http.ts";
 import type { Ctx } from "./platforms/adapter.ts";
+import { eachProfile } from "./profiles.ts";
 import type { Store } from "./store.ts";
-import type { Content, Stats } from "./types.ts";
+import type { Alert, Content, Stats } from "./types.ts";
 
 const engagement = (c: Content) => c.likes + 2 * c.comments + (c.views ?? 0) / 100;
 
@@ -70,8 +73,27 @@ export async function refreshIdeas(store: Store, now = new Date()): Promise<Idea
   return result;
 }
 
-/** 03:00 UTC: account checks and snapshots, fresh ideas, pruning. */
+/** The last 7 days in a few lines, raised as a "summary" alert (so it reaches the phone too). */
+export async function weeklySummary(ctx: Ctx): Promise<Alert> {
+  const { store, now } = ctx;
+  const since = new Date(now.getTime() - 7 * 86400_000).toISOString();
+  const accounts = await store.accounts();
+  if (!accounts.length) throw new InputError("connect an account first", [], 409);
+  const posted = (await store.content(undefined, 200)).filter((c) => c.at >= since);
+  const inbox = await store.inboxSummary(since);
+  const stats = await Promise.all(accounts.map(async (a) => ({ ...(await store.accountStats(a.id)), name: a.name, platform: a.platform })));
+  const note = await weekly(store, { accounts: stats, posted, inbox });
+  const [alert] = await raise(ctx.env, store, [{ kind: "summary", title: note.title, body: note.body, url: null, image: null, ref: null }], now.toISOString());
+  return alert;
+}
+
+/** 03:00 UTC, in every profile: account checks and snapshots, fresh ideas, on Mondays the weekly summary. Then pruning. */
 export async function daily(ctx: Ctx): Promise<void> {
+  await eachProfile(ctx, "daily", dailyProfile);
+  await ctx.store.prune(ctx.now);
+}
+
+async function dailyProfile(ctx: Ctx): Promise<void> {
   await dailyAccounts(ctx);
   if (await hasAi(ctx.store)) {
     try {
@@ -79,6 +101,12 @@ export async function daily(ctx: Ctx): Promise<void> {
     } catch (err) {
       console.log(`ideas: ${err instanceof Error ? err.message : err}`);
     }
+    if (ctx.now.getUTCDay() === 1) {
+      try {
+        await weeklySummary(ctx);
+      } catch (err) {
+        console.log(`weekly summary: ${err instanceof Error ? err.message : err}`);
+      }
+    }
   }
-  await ctx.store.prune(ctx.now);
 }

@@ -4,9 +4,10 @@
 import { metaSignatureOk, pkce, randomToken, sameText, webhookVerifyToken } from "./crypto.ts";
 import { InputError } from "./http.ts";
 import { pollAll } from "./inbox.ts";
+import { inProfile } from "./profiles.ts";
 import { platformInfo, providerPlatforms, type Ctx } from "./platforms/adapter.ts";
 import { oauthFlows } from "./platforms/index.ts";
-import type { SocialEnv } from "./store.ts";
+import { defaultProfile, type SocialEnv } from "./store.ts";
 import type { Account, Provider } from "./types.ts";
 
 const stateTtl = 600;
@@ -20,7 +21,7 @@ export async function startConnect(ctx: Ctx, provider: Provider): Promise<{ url:
   const flow = oauthFlows[provider];
   const state = randomToken();
   const p = flow.pkce ? await pkce() : null;
-  await ctx.env.KV.put(`social:oauth:${state}`, JSON.stringify({ provider, verifier: p?.verifier }), { expirationTtl: stateTtl });
+  await ctx.env.KV.put(`social:oauth:${state}`, JSON.stringify({ provider, verifier: p?.verifier, profile: ctx.store.profile }), { expirationTtl: stateTtl });
   return { url: flow.authorizeUrl({ clientId: cred.publicId, redirectUri: redirectUri(ctx.env, provider), state, challenge: p?.challenge }) };
 }
 
@@ -36,16 +37,20 @@ function page(title: string, body: string, status = 200) {
   );
 }
 
-/** GET /oauth/:provider/callback */
-export async function oauthCallback(ctx: Ctx, provider: string, url: URL): Promise<Response> {
+/** GET /oauth/:provider/callback: the accounts join the profile the sign-in started in. */
+export async function oauthCallback(hub: Ctx, provider: string, url: URL): Promise<Response> {
   if (!(provider in oauthFlows)) return page("Unknown sign-in", "", 404);
   const state = url.searchParams.get("state") ?? "";
   const kvKey = `social:oauth:${state}`;
-  const saved = state ? await ctx.env.KV.get<{ provider: string; verifier?: string }>(kvKey, "json") : null;
+  const saved = state ? await hub.env.KV.get<{ provider: string; verifier?: string; profile?: string }>(kvKey, "json") : null;
   if (!saved || saved.provider !== provider) {
     return page("This sign-in link has expired", `<p>Start again from Vani's Accounts page.</p>`, 400);
   }
-  await ctx.env.KV.delete(kvKey);
+  await hub.env.KV.delete(kvKey);
+  const ctx = inProfile(hub, saved.profile ?? defaultProfile);
+  if (ctx.store.profile !== defaultProfile && !(await ctx.store.profileById(ctx.store.profile))) {
+    return page("Not connected", "<p>The profile this sign-in started in was deleted.</p>", 400);
+  }
   const denied = url.searchParams.get("error_description") ?? url.searchParams.get("error");
   const code = url.searchParams.get("code");
   if (denied || !code) return page("Not connected", `<p>${esc(denied ?? "No authorisation code came back.")}</p>`, 400);
@@ -65,9 +70,20 @@ export async function oauthCallback(ctx: Ctx, provider: string, url: URL): Promi
       return page("Nothing to connect", `<p>${esc(hint)}</p>`, 400);
     }
     const accounts: Account[] = [];
-    for (const c of connected) accounts.push(await ctx.store.saveAccount(c.account, c.secret));
+    // One login can bring several Pages; those already in another profile stay there.
+    const elsewhere: string[] = [];
+    for (const c of connected) {
+      try {
+        accounts.push(await ctx.store.saveAccount(c.account, c.secret));
+      } catch (err) {
+        if (!(err instanceof InputError) || err.status !== 409) throw err;
+        elsewhere.push(err.message);
+      }
+    }
     const list = accounts.map((a) => `<li>${esc(platformInfo[a.platform].name)}: ${esc(a.name)} <span class="muted">${esc(a.handle)}</span></li>`).join("");
-    return page("Connected", `<ul>${list}</ul><p class="muted">You can close this tab and go back to Vani.</p>`);
+    const skipped = elsewhere.map((e) => `<li class="muted">${esc(e)}</li>`).join("");
+    if (!accounts.length) return page("Nothing new to connect", `<ul>${skipped}</ul>`, 409);
+    return page("Connected", `<ul>${list}${skipped}</ul><p class="muted">You can close this tab and go back to Vani.</p>`);
   } catch (err) {
     console.log(`oauth ${provider}: ${err instanceof Error ? err.message : err}`);
     return page("Not connected", `<p>${esc(err instanceof Error ? err.message : String(err))}</p>`, 502);
@@ -100,18 +116,26 @@ export async function webhook(ctx: Ctx, which: string, req: Request, waitUntil: 
     return new Response("bad json", { status: 400 });
   }
   const platforms = providerPlatforms[which];
-  const candidates = (await ctx.store.accounts()).filter((a) => platforms.includes(a.platform) && a.status !== "broken");
+  const candidates = (await ctx.store.allAccounts()).filter(
+    ({ account: a }) => platforms.includes(a.platform) && a.status !== "broken",
+  );
   const ids = new Set<string>((payload?.entry ?? []).map((e: any) => String(e?.id)));
-  const named = candidates.filter((a) => ids.has(a.remoteId));
+  const named = candidates.filter(({ account: a }) => ids.has(a.remoteId));
   const targets = named.length ? named : candidates;
   // Bursts of events (a busy live) poll each account at most once a minute.
-  const due: Account[] = [];
-  for (const a of targets) {
+  const due = new Map<string, Account[]>();
+  for (const { profile, account: a } of targets) {
     const key = `social:webhook-poll:${a.id}`;
     if (await ctx.env.KV.get(key)) continue;
     await ctx.env.KV.put(key, "1", { expirationTtl: 60 });
-    due.push(a);
+    due.set(profile, [...(due.get(profile) ?? []), a]);
   }
-  if (due.length) waitUntil(pollAll(ctx, due).catch((err) => console.log(`webhook poll: ${err instanceof Error ? err.message : err}`)));
+  if (due.size) {
+    waitUntil(
+      (async () => {
+        for (const [profile, accounts] of due) await pollAll(inProfile(ctx, profile), accounts);
+      })().catch((err) => console.log(`webhook poll: ${err instanceof Error ? err.message : err}`)),
+    );
+  }
   return new Response("ok");
 }

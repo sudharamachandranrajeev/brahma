@@ -9,6 +9,7 @@ import { pollAll } from "./social/inbox.ts";
 import { serve } from "./social/media.ts";
 import { oauthCallback, webhook } from "./social/oauth.ts";
 import type { Ctx } from "./social/platforms/adapter.ts";
+import { eachProfile } from "./social/profiles.ts";
 import { publishDue } from "./social/publish.ts";
 import { daily } from "./social/stats.ts";
 import { Store, type SocialEnv } from "./social/store.ts";
@@ -196,22 +197,23 @@ async function step(name: string, run: () => Promise<unknown>) {
 
 /**
  * The cron fires every minute. Publishing runs every time; property watches,
- * the inbox and discovery every 10 minutes; account checks daily at 03:05 UTC
+ * the inbox and discovery every 10 minutes (each social pass goes through
+ * every profile on the one budget); account checks daily at 03:05 UTC
  * (its own run, so it gets a whole subrequest budget).
  */
 export async function runCron(env: Env, now: Date) {
   const minute = now.getUTCMinutes();
   const daySlot = now.getUTCHours() === 3 && minute === 5;
   const ctx = socialCtx(env, now);
-  if (socialReady(env)) await step("publish", () => publishDue(ctx));
+  if (socialReady(env)) await step("publish", () => eachProfile(ctx, "publish", publishDue));
   if (minute % 10 === 0) {
     // Property watches fetch outside the budget; set aside what they use.
     const watches = (await loadWatches(env)).filter((w) => !w.paused).length;
     ctx.budget.take(Math.min(ctx.budget.left, watches * 3));
     await step("property watches", () => runWatches(env, now.toISOString()));
     if (socialReady(env)) {
-      await step("inbox", () => pollAll(ctx));
-      await step("discovery", () => runDue(ctx));
+      await step("inbox", () => eachProfile(ctx, "inbox", (c) => pollAll(c)));
+      await step("discovery", () => eachProfile(ctx, "discovery", runDue));
     }
   }
   if (daySlot && socialReady(env)) await step("daily", () => daily(ctx));

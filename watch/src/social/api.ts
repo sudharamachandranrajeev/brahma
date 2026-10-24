@@ -3,20 +3,22 @@
 
 import { z } from "zod";
 import { checkAccount } from "./accounts.ts";
-import { caption, hasAi, suggestReplies, suggestWatch } from "./ai.ts";
+import { caption, describeImage, hasAi, suggestReplies, suggestWatch, translate } from "./ai.ts";
 import { raise, type NewAlert } from "./alerts.ts";
 import { webhookVerifyToken } from "./crypto.ts";
 import { runState, runWatch, saveRunState } from "./discovery.ts";
 import { InputError, PlatformError } from "./http.ts";
-import { pollAll, replyTo } from "./inbox.ts";
-import { completeUpload, deleteMedia, startUpload, uploadPart, withUrl } from "./media.ts";
+import { moderate, pollAll, replyTo, translateItem } from "./inbox.ts";
+import { completeUpload, deleteMedia, setAlt, signedUrl, startUpload, uploadPart, withUrl } from "./media.ts";
 import { redirectUri, startConnect } from "./oauth.ts";
 import { platformInfo, type Ctx } from "./platforms/adapter.ts";
 import { connectBluesky } from "./platforms/bluesky.ts";
 import { connectMastodon } from "./platforms/mastodon.ts";
+import { connectTelegram } from "./platforms/telegram.ts";
+import { addProfile, deleteProfile, profileInput, renameProfile, requestProfile } from "./profiles.ts";
 import { overall, postInput, publishPost, retryPost, savePost } from "./publish.ts";
 import { discoveryInput, getRules, getSettings, getWatches, rulesInput, settingsInput } from "./settings.ts";
-import { cachedIdeas, getStats, refreshIdeas } from "./stats.ts";
+import { cachedIdeas, getStats, refreshIdeas, weeklySummary } from "./stats.ts";
 import type { CredentialProvider, Platform, Provider } from "./types.ts";
 
 const providers = ["meta", "threads", "google", "linkedin"] as const satisfies readonly Provider[];
@@ -97,6 +99,19 @@ route("DELETE", "/social/credentials/:provider", async ({ ctx, params }) => {
   return { deleted: true };
 });
 
+// ---- profiles (hub-wide; every other route works in the x-vani-profile profile) ----
+
+route("GET", "/social/profiles", async ({ ctx }) => ctx.store.profiles());
+
+route("POST", "/social/profiles", async ({ ctx, body }) => addProfile(ctx, (await body(profileInput)).name));
+
+route("PATCH", "/social/profiles/:id", async ({ ctx, params, body }) => renameProfile(ctx, params.id, (await body(profileInput)).name));
+
+route("DELETE", "/social/profiles/:id", async ({ ctx, params }) => {
+  await deleteProfile(ctx, params.id);
+  return { ok: true };
+});
+
 // ---- accounts ----
 
 route("GET", "/social/accounts", async ({ ctx }) => ctx.store.accounts());
@@ -114,6 +129,14 @@ route("POST", "/social/accounts/bluesky", async ({ ctx, body }) => {
 route("POST", "/social/accounts/mastodon", async ({ ctx, body }) => {
   const input = await body(z.object({ instance: z.string().trim().min(3).max(253), accessToken: z.string().trim().min(10).max(500) }));
   const c = await connectMastodon(ctx, input.instance, input.accessToken);
+  return ctx.store.saveAccount(c.account, c.secret);
+});
+
+route("POST", "/social/accounts/telegram", async ({ ctx, body }) => {
+  const input = await body(
+    z.object({ botToken: z.string().trim().regex(/^\d{5,20}:[\w-]{30,60}$/, "that doesn't look like a bot token"), chat: z.string().trim().min(2).max(100) }),
+  );
+  const c = await connectTelegram(ctx, input.botToken, input.chat);
   return ctx.store.saveAccount(c.account, c.secret);
 });
 
@@ -145,6 +168,19 @@ route("PUT", "/social/media/:id/parts/:n", async ({ ctx, req, params }) =>
 route("POST", "/social/media/:id/complete", async ({ ctx, params, body }) => {
   const input = await body(z.object({ parts: z.array(z.object({ n: z.number().int().min(1).max(10000), etag: z.string().min(1).max(200) })).min(1).max(10000) }));
   return completeUpload(ctx.store, params.id, input.parts);
+});
+
+route("PATCH", "/social/media/:id", async ({ ctx, params, body }) => {
+  const { alt } = await body(z.object({ alt: z.string().max(1500) }));
+  return setAlt(ctx.store, params.id, alt);
+});
+
+route("POST", "/social/media/:id/alt", async ({ ctx, params, body }) => {
+  const { context } = await body(z.object({ context: z.string().max(4000).optional() }));
+  const m = await need(ctx.store.media(params.id), "media");
+  if (m.status !== "ready") throw new InputError("the file is still uploading", [], 409);
+  if (!/^image\/(jpeg|png|webp|gif)$/.test(m.contentType)) throw new InputError("alt text can be drafted for JPEG, PNG, WebP and GIF images only", [], 422);
+  return setAlt(ctx.store, m.id, await describeImage(ctx.store, await signedUrl(ctx.store, m.id, 1), context ?? ""));
 });
 
 route("DELETE", "/social/media/:id", async ({ ctx, params }) => {
@@ -197,6 +233,7 @@ route("GET", "/social/inbox", async ({ ctx, query }) => ({
     platform: query.get("platform") ?? undefined,
     kind: query.get("kind") ?? undefined,
     accountId: query.get("accountId") ?? undefined,
+    triage: query.get("triage") ?? undefined,
     before: query.get("before") ?? undefined,
     limit: int(query.get("limit"), 50),
   }),
@@ -228,6 +265,13 @@ route("POST", "/social/inbox/:id/suggest", async ({ ctx, params }) => {
   const account = await need(ctx.store.account(item.accountId), "account");
   return { suggestions: await suggestReplies(ctx.store, item, account, (await getSettings(ctx.store)).savedReplies) };
 });
+
+route("POST", "/social/inbox/:id/moderate", async ({ ctx, params, body }) => {
+  const { action } = await body(z.object({ action: z.enum(["hide", "unhide", "delete"]) }));
+  return moderate(ctx, params.id, action);
+});
+
+route("POST", "/social/inbox/:id/translate", async ({ ctx, params }) => translateItem(ctx, params.id));
 
 route("GET", "/social/content", async ({ ctx, query }) => ctx.store.content(query.get("accountId") ?? undefined, Math.min(int(query.get("limit"), 50), 500)));
 
@@ -287,9 +331,16 @@ route("PUT", "/social/settings", async ({ ctx, body }) => {
 });
 
 route("POST", "/social/ai/caption", async ({ ctx, body }) => {
-  const input = await body(z.object({ brief: z.string().trim().min(3).max(4000), platforms: z.array(z.enum(platforms)).min(1).max(7), tone: z.string().max(100).optional() }));
+  const input = await body(z.object({ brief: z.string().trim().min(3).max(4000), platforms: z.array(z.enum(platforms)).min(1).max(8), tone: z.string().max(100).optional() }));
   return caption(ctx.store, input.brief, input.platforms, input.tone);
 });
+
+route("POST", "/social/ai/translate", async ({ ctx, body }) => {
+  const input = await body(z.object({ text: z.string().trim().min(1).max(5000), to: z.string().trim().min(2).max(40).regex(/^[\p{L} ()-]+$/u) }));
+  return translate(ctx.store, input.text, input.to);
+});
+
+route("POST", "/social/ai/weekly", async ({ ctx }) => weeklySummary(ctx));
 
 route("GET", "/social/ai/ideas", async ({ ctx }) => {
   const cached = await cachedIdeas(ctx.store);
@@ -322,7 +373,8 @@ export async function handleSocial(ctx: Ctx, req: Request): Promise<Response> {
       return schema.parse(raw);
     };
     try {
-      return json(await r.handler({ ctx, req, params, query: url.searchParams, body }));
+      const inside = url.pathname.startsWith("/social/profiles") ? ctx : await requestProfile(ctx, req);
+      return json(await r.handler({ ctx: inside, req, params, query: url.searchParams, body }));
     } catch (err) {
       return errorResponse(err);
     }

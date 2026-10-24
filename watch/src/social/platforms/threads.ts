@@ -102,13 +102,15 @@ export const threads: Adapter = {
         children.push(
           (await tPost(ctx, `/${s.userId}/threads`, s.token, isVideo(m)
             ? { media_type: "VIDEO", video_url: m.url, is_carousel_item: true }
-            : { media_type: "IMAGE", image_url: m.url, is_carousel_item: true })).id,
+            : { media_type: "IMAGE", image_url: m.url, is_carousel_item: true, alt_text: m.alt || undefined })).id,
         );
       }
       for (const id of children) await ready(ctx, id, s.token);
       body = { media_type: "CAROUSEL", children: children.join(","), text };
     } else if (media.length === 1) {
-      body = isVideo(media[0]) ? { media_type: "VIDEO", video_url: media[0].url, text } : { media_type: "IMAGE", image_url: media[0].url, text };
+      body = isVideo(media[0])
+        ? { media_type: "VIDEO", video_url: media[0].url, text }
+        : { media_type: "IMAGE", image_url: media[0].url, text, alt_text: media[0].alt || undefined };
     } else {
       body = { media_type: "TEXT", text };
     }

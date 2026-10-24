@@ -5,13 +5,14 @@ import type { DiscoveryWatch, InboxRule, Settings } from "./types.ts";
 
 export const defaultModel = "claude-opus-5-5";
 
-const defaults: Settings = { timezone: "Europe/London", queue: [], savedReplies: [], model: defaultModel };
+const defaults: Settings = { timezone: "Europe/London", queue: [], savedReplies: [], model: defaultModel, language: "English" };
 
 export const settingsInput = z.object({
   timezone: z.string().max(64).refine(validZone, "unknown time zone"),
   queue: z.array(z.object({ day: z.number().int().min(0).max(6), time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/) })).max(100),
   savedReplies: z.array(z.object({ id: z.string().max(64), title: z.string().max(100), text: z.string().max(5000) })).max(200),
   model: z.string().regex(/^claude-[a-z0-9-]+$/).max(64),
+  language: z.string().trim().min(2).max(40).regex(/^[\p{L} ()-]+$/u).default("English"),
 });
 
 export async function getSettings(store: Store): Promise<Settings> {

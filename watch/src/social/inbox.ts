@@ -1,16 +1,19 @@
 // The unified inbox: polling accounts, applying rules to what is new, replying.
 
 import { markBroken } from "./accounts.ts";
-import { hasAi, judgeRules } from "./ai.ts";
+import { hasAi, judgeRules, translate, triage } from "./ai.ts";
 import { raise, type NewAlert } from "./alerts.ts";
 import { InputError, OutOfBudget, PlatformError } from "./http.ts";
 import { platformInfo, type Ctx } from "./platforms/adapter.ts";
 import { adapters } from "./platforms/index.ts";
-import { getRules } from "./settings.ts";
-import type { Account, InboxItem, InboxRule } from "./types.ts";
+import { getRules, getSettings } from "./settings.ts";
+import type { Account, InboxItem, InboxRule, ModerateAction } from "./types.ts";
 
 /** Rules only act on items this recent, so a long outage doesn't trigger a burst of late auto-replies. */
 const actWithinMs = 24 * 3600_000;
+
+/** Only this much history is triaged, so a first poll doesn't send months of comments to Claude. */
+const triageWithinMs = 7 * 86400_000;
 
 /** Polls one account; returns the items it had not seen before. */
 export async function pollAccount(ctx: Ctx, account: Account): Promise<InboxItem[]> {
@@ -20,6 +23,7 @@ export async function pollAccount(ctx: Ctx, account: Account): Promise<InboxItem
   const fresh = await store.addInbox(result.items);
   await store.saveContent(result.content);
   await store.setPollState(account.id, result.state, ctx.now.toISOString());
+  await triageFresh(ctx, fresh);
   // The first poll brings history; rules are for what arrives from now on.
   if (polledAt && fresh.length) await applyRules(ctx, account, fresh);
   return fresh;
@@ -44,6 +48,24 @@ export async function pollAll(ctx: Ctx, only?: Account[]): Promise<{ polled: num
   }
   if (alerts.length) await raise(ctx.env, ctx.store, alerts);
   return { polled, items };
+}
+
+/** Tags recent new items with Claude's mood, priority and language. Best effort: the inbox works without it. */
+async function triageFresh(ctx: Ctx, fresh: InboxItem[]) {
+  const recent = fresh.filter((x) => ctx.now.getTime() - new Date(x.at).getTime() < triageWithinMs).slice(0, 60);
+  if (!recent.length || ctx.budget.left < 8 || !(await hasAi(ctx.store))) return;
+  ctx.budget.take(Math.ceil(recent.length / 30));
+  try {
+    const tags = await triage(ctx.store, recent);
+    for (const item of recent) {
+      const t = tags.get(item.id);
+      if (!t) continue;
+      item.triage = t;
+      await ctx.store.saveInboxItem(item);
+    }
+  } catch (err) {
+    console.log(`triage: ${err instanceof Error ? err.message : err}`);
+  }
 }
 
 const hasKeyword = (rule: InboxRule, text: string) => {
@@ -129,26 +151,67 @@ async function sendReply(ctx: Ctx, account: Account, item: InboxItem, text: stri
   item.status = "done";
 }
 
-/** Replies from the app. */
-export async function replyTo(ctx: Ctx, itemId: string, text: string, privately: boolean): Promise<InboxItem> {
+async function itemAndAccount(ctx: Ctx, itemId: string) {
   const item = await ctx.store.inboxItem(itemId);
   if (!item) throw new InputError("no such inbox item", [], 404);
   const account = await ctx.store.account(item.accountId);
   if (!account) throw new InputError("that account was removed", [], 410);
+  return { item, account };
+}
+
+/** A platform failure as the API reports it; auth failures also mark the account broken. */
+async function platformFailure(ctx: Ctx, account: Account, err: unknown): Promise<never> {
+  if (err instanceof PlatformError && err.auth) {
+    const alerts: NewAlert[] = [];
+    await markBroken(ctx, account, err.message, alerts);
+    await raise(ctx.env, ctx.store, alerts);
+  }
+  if (err instanceof PlatformError) throw new InputError(`${platformInfo[account.platform].name}: ${err.message}`, [], err.transient ? 503 : 502);
+  throw err;
+}
+
+/** Replies from the app. */
+export async function replyTo(ctx: Ctx, itemId: string, text: string, privately: boolean): Promise<InboxItem> {
+  const { item, account } = await itemAndAccount(ctx, itemId);
   if (privately && !canReplyPrivately(account, item)) throw new InputError("a private reply isn't possible here", [], 409);
   const max = platformInfo[account.platform].maxText;
   if (text.length > max) throw new InputError(`the reply is longer than ${max} characters`);
   try {
     await sendReply(ctx, account, item, text, privately);
   } catch (err) {
-    if (err instanceof PlatformError && err.auth) {
-      const alerts: NewAlert[] = [];
-      await markBroken(ctx, account, err.message, alerts);
-      await raise(ctx.env, ctx.store, alerts);
-    }
-    if (err instanceof PlatformError) throw new InputError(`${platformInfo[account.platform].name}: ${err.message}`, [], err.transient ? 503 : 502);
-    throw err;
+    await platformFailure(ctx, account, err);
   }
+  await ctx.store.saveInboxItem(item);
+  return item;
+}
+
+/** Hides, unhides or deletes someone's comment on the platform. */
+export async function moderate(ctx: Ctx, itemId: string, action: ModerateAction): Promise<InboxItem> {
+  const { item, account } = await itemAndAccount(ctx, itemId);
+  const allowed = platformInfo[account.platform].moderation;
+  const adapter = adapters[account.platform];
+  if (!adapter.moderate || !allowed.includes(action === "unhide" ? "hide" : action) || (item.kind !== "comment" && item.kind !== "reply")) {
+    throw new InputError(`${platformInfo[account.platform].name} doesn't let you ${action} this`, [], 409);
+  }
+  if (item.moderation === "deleted") throw new InputError("this comment is already deleted", [], 409);
+  try {
+    await adapter.moderate(ctx, account, item, action);
+  } catch (err) {
+    await platformFailure(ctx, account, err);
+  }
+  item.moderation = action === "hide" ? "hidden" : action === "delete" ? "deleted" : undefined;
+  if (action !== "unhide") item.status = "done";
+  await ctx.store.saveInboxItem(item);
+  return item;
+}
+
+/** The item in the owner's language (kept on the item, so it is translated once). */
+export async function translateItem(ctx: Ctx, itemId: string): Promise<InboxItem> {
+  const item = await ctx.store.inboxItem(itemId);
+  if (!item) throw new InputError("no such inbox item", [], 404);
+  const to = (await getSettings(ctx.store)).language;
+  if (item.translation?.to === to) return item;
+  item.translation = { ...(await translate(ctx.store, item.text, to)), to };
   await ctx.store.saveInboxItem(item);
   return item;
 }

@@ -124,10 +124,10 @@ export const linkedin: Adapter = {
     let content: object | undefined;
     const video = media.find(isVideo);
     if (video) content = { media: { id: await uploadVideo(ctx, s, video) } };
-    else if (media.length === 1) content = { media: { id: await uploadImage(ctx, s, media[0]) } };
+    else if (media.length === 1) content = { media: { id: await uploadImage(ctx, s, media[0]), ...(media[0].alt ? { altText: media[0].alt } : {}) } };
     else if (media.length > 1) {
       const images = [];
-      for (const m of media) images.push({ id: await uploadImage(ctx, s, m) });
+      for (const m of media) images.push({ id: await uploadImage(ctx, s, m), ...(m.alt ? { altText: m.alt } : {}) });
       content = { multiImage: { images } };
     }
     progress.commit();

@@ -125,7 +125,7 @@ export const bluesky: Adapter = {
       const obj = await ctx.env.MEDIA.get(m.key);
       if (!obj) throw new PlatformError("The media file is gone from storage", 400, false, false);
       const r = await bsky(ctx, account, "com.atproto.repo.uploadBlob", { raw: { data: await obj.arrayBuffer(), type: m.contentType } });
-      images.push({ alt: "", image: r.blob });
+      images.push({ alt: m.alt, image: r.blob });
     }
     progress.commit();
     const r = await createPost(ctx, account, {

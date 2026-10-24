@@ -1,7 +1,7 @@
 // The social hub's data model. These shapes are the HTTP API's JSON too
 // (Vani reads and writes them), so change them with the app in mind.
 
-export type Platform = "instagram" | "facebook" | "youtube" | "linkedin" | "threads" | "bluesky" | "mastodon";
+export type Platform = "instagram" | "facebook" | "youtube" | "linkedin" | "threads" | "bluesky" | "mastodon" | "telegram";
 
 /** Where an OAuth sign-in starts; one provider can bring several accounts (a Meta login brings Pages and their Instagram accounts). */
 export type Provider = "meta" | "threads" | "google" | "linkedin";
@@ -35,6 +35,8 @@ export interface Media {
   size: number;
   status: "uploading" | "ready";
   createdAt: string;
+  /** Description for people using screen readers; sent as alt text where the platform takes it. */
+  alt?: string;
   /** Signed, time-limited public URL (platforms fetch media from it). */
   url: string;
 }
@@ -108,7 +110,26 @@ export interface InboxItem {
   /** Names of the rules that matched it. */
   labels: string[];
   likes?: number;
+  /** Claude's read of a new item (when AI is on). */
+  triage?: Triage;
+  /** The text in the owner's language (Settings.language), made on request. */
+  /** The text in `to` (the owner's language when it was asked); `lang` is the original's ISO 639-1 code. */
+  translation?: { lang: string; to: string; text: string };
+  /** What the owner did to it on the platform. */
+  moderation?: "hidden" | "deleted";
 }
+
+export type Mood = "positive" | "neutral" | "question" | "complaint" | "spam";
+
+export interface Triage {
+  mood: Mood;
+  /** high: needs an answer soon (a complaint, a buyer, a problem); low: nothing to do. */
+  priority: "high" | "normal" | "low";
+  /** ISO 639-1 code of the item's language. */
+  lang: string;
+}
+
+export type ModerateAction = "hide" | "unhide" | "delete";
 
 /** A post, reel or video on a connected account, with its latest numbers. */
 export interface Content {
@@ -180,7 +201,14 @@ export interface Find {
   at: string | null;
 }
 
-export type AlertKind = "discovery" | "inbox" | "publish" | "account" | "system";
+/** A separate workspace on the hub: its own accounts, posts, inbox, rules and settings. */
+export interface Profile {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export type AlertKind = "discovery" | "inbox" | "publish" | "account" | "system" | "summary";
 
 export interface Alert {
   id: string;
@@ -234,6 +262,8 @@ export interface Settings {
   savedReplies: { id: string; title: string; text: string }[];
   /** Model for drafting and matching. */
   model: string;
+  /** Language inbox items are translated into, in English ("English", "Malayalam"). */
+  language: string;
 }
 
 /** Per-platform limits and formats; the app's composer reads them from GET /social/meta. */
@@ -244,6 +274,8 @@ export interface PlatformInfo {
   /** Formats that need at least one media file. */
   mediaRequired: Format[];
   maxMedia: number;
+  /** What the owner can do to other people's comments there ("unhide" comes with "hide"). */
+  moderation: ("hide" | "delete")[];
 }
 
 /** Which provider credentials are stored (never the secrets themselves). */

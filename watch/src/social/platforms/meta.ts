@@ -14,6 +14,7 @@ import {
   type Adapter,
   type Connected,
   type Ctx,
+  type MediaFile,
   type OAuthFlow,
   type PollResult,
 } from "./adapter.ts";
@@ -160,6 +161,9 @@ async function waitForContainer(ctx: Ctx, id: string, token: string, maxSeconds 
   }
 }
 
+const alt = (m: MediaFile) => (m.alt ? { alt_text: m.alt } : {});
+const fbAlt = (m: MediaFile) => (m.alt ? { alt_text_custom: m.alt } : {});
+
 const igPublish: Adapter["publish"] = async (ctx, account, { target, text, media }, progress) => {
   const { pageToken: token } = await ctx.store.secretOf<MetaSecret>(account.id);
   const ig = account.remoteId;
@@ -173,7 +177,7 @@ const igPublish: Adapter["publish"] = async (ctx, account, { target, text, media
       for (const m of media) {
         const child = await gPost(ctx, `/${ig}/media`, token, isVideo(m)
           ? { media_type: "VIDEO", video_url: m.url, is_carousel_item: true }
-          : { image_url: m.url, is_carousel_item: true });
+          : { image_url: m.url, is_carousel_item: true, ...alt(m) });
         children.push(child.id);
       }
       for (const [i, m] of media.entries()) if (isVideo(m)) await waitForContainer(ctx, children[i], token);
@@ -183,7 +187,7 @@ const igPublish: Adapter["publish"] = async (ctx, account, { target, text, media
     } else if (target.format === "reel" || isVideo(one)) {
       body = { media_type: "REELS", video_url: one.url, caption: text, share_to_feed: true };
     } else {
-      body = { image_url: one.url, caption: text };
+      body = { image_url: one.url, caption: text, ...alt(one) };
     }
     creation = (await gPost(ctx, `/${ig}/media`, token, body)).id as string;
     await progress.saveContainer(creation);
@@ -211,11 +215,11 @@ const fbPublish: Adapter["publish"] = async (ctx, account, { target, text, media
     id = (await gPost(ctx, `/${page}/videos`, token, { file_url: video.url, description: text, title: target.title }, graphVideo)).id;
   } else if (media.length === 1) {
     progress.commit();
-    const r = await gPost(ctx, `/${page}/photos`, token, { url: media[0].url, caption: text });
+    const r = await gPost(ctx, `/${page}/photos`, token, { url: media[0].url, caption: text, ...fbAlt(media[0]) });
     id = r.post_id ?? r.id;
   } else if (media.length > 1) {
     const ids: string[] = [];
-    for (const m of media) ids.push((await gPost(ctx, `/${page}/photos`, token, { url: m.url, published: false })).id);
+    for (const m of media) ids.push((await gPost(ctx, `/${page}/photos`, token, { url: m.url, published: false, ...fbAlt(m) })).id);
     progress.commit();
     id = (await gPost(ctx, `/${page}/feed`, token, { message: text, attached_media: ids.map((media_fbid) => ({ media_fbid })) })).id;
   } else {
@@ -437,6 +441,16 @@ async function metaReply(ctx: Ctx, account: Account, item: InboxItem, text: stri
   return (await gPost(ctx, `/${item.remoteId}/comments`, token, { message: text })).id;
 }
 
+/** Instagram comments hide with `hide`, Facebook ones with `is_hidden`; both delete with DELETE. */
+const metaModerate: Adapter["moderate"] = async (ctx, account, item, action) => {
+  const { pageToken: token } = await ctx.store.secretOf<MetaSecret>(account.id);
+  if (action === "delete") {
+    await call(`${graph}/${item.remoteId}?${form({ access_token: token })}`, { method: "DELETE", budget: ctx.budget, label: "Meta" });
+    return;
+  }
+  await gPost(ctx, `/${item.remoteId}`, token, account.platform === "instagram" ? { hide: action === "hide" } : { is_hidden: action === "hide" });
+};
+
 async function metaCheck(ctx: Ctx, account: Account): Promise<Account> {
   const { pageToken: token } = await ctx.store.secretOf<MetaSecret>(account.id);
   const fields = account.platform === "instagram" ? "username,name,profile_picture_url" : "name,username,picture{url}";
@@ -459,6 +473,7 @@ export const instagram: Adapter = {
   },
   poll: igPoll,
   reply: metaReply,
+  moderate: metaModerate,
   async snapshot(ctx, account) {
     const { pageToken: token } = await ctx.store.secretOf<MetaSecret>(account.id);
     const me = await g(ctx, `/${account.remoteId}`, token, { fields: "followers_count,media_count" });
@@ -489,6 +504,7 @@ export const facebook: Adapter = {
   },
   poll: fbPoll,
   reply: metaReply,
+  moderate: metaModerate,
   async snapshot(ctx, account) {
     const { pageToken: token } = await ctx.store.secretOf<MetaSecret>(account.id);
     const me = await g(ctx, `/${account.remoteId}`, token, { fields: "followers_count,fan_count" });

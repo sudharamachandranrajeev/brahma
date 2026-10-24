@@ -71,7 +71,7 @@ function errorText(body: any): string {
   const e = body.error;
   if (typeof e === "string") return body.error_description ?? body.message ?? e;
   if (e && typeof e === "object") return e.error_user_msg ?? e.message ?? JSON.stringify(e).slice(0, 300);
-  return body.message ?? body.detail ?? JSON.stringify(body).slice(0, 300);
+  return body.message ?? body.detail ?? body.description ?? JSON.stringify(body).slice(0, 300);
 }
 
 function isAuthFailure(status: number, body: any): boolean {

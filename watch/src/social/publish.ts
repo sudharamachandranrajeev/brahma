@@ -82,6 +82,14 @@ export async function problemsWith(store: Store, input: PostInput): Promise<stri
     if (a.platform === "youtube" && !t.title?.trim()) problems.push(`${where}: a title is needed`);
     if (a.platform === "bluesky" && videos > 0) problems.push(`${where}: video is not supported here yet`);
     if (a.platform === "linkedin" && videos > 0 && images > 0) problems.push(`${where}: a post has either images or one video`);
+    if (a.platform === "telegram") {
+      if (input.media.length && text.length > 1024) problems.push(`${where}: a caption under photos or video is limited to 1024 characters`);
+      if (t.firstComment?.trim()) problems.push(`${where} doesn't take a first comment`);
+      for (const m of media) {
+        if (m?.contentType.startsWith("image/") && m.size > 5 * 1024 * 1024) problems.push(`${where}: ${m.filename} is over Telegram's 5 MB photo limit`);
+        if (m?.contentType.startsWith("video/") && m.size > 20 * 1024 * 1024) problems.push(`${where}: ${m.filename} is over Telegram's 20 MB video limit`);
+      }
+    }
     if (!text.trim() && !input.media.length) problems.push(`${where}: nothing to post`);
     if (!a.capabilities.includes("publish")) problems.push(`${where} can't publish`);
   }

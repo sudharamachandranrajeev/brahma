@@ -1,7 +1,7 @@
 import { hashId } from "../crypto.ts";
 import type { Budget } from "../http.ts";
 import type { SocialEnv, Store } from "../store.ts";
-import type { Account, Content, InboxItem, Platform, PlatformInfo, Post, Provider, Target } from "../types.ts";
+import type { Account, Content, InboxItem, ModerateAction, Platform, PlatformInfo, Post, Provider, Target } from "../types.ts";
 
 /** What every platform call gets: storage, secrets and this run's subrequest budget. */
 export interface Ctx {
@@ -19,6 +19,8 @@ export interface MediaFile {
   contentType: string;
   size: number;
   filename: string;
+  /** Alt text; "" when there is none. */
+  alt: string;
 }
 
 export const isVideo = (m: MediaFile) => m.contentType.startsWith("video/");
@@ -64,6 +66,8 @@ export interface Adapter {
   poll(ctx: Ctx, account: Account, state: any): Promise<PollResult>;
   /** Replies to an inbox item; returns the reply's remote id. */
   reply(ctx: Ctx, account: Account, item: InboxItem, text: string, privately: boolean): Promise<string>;
+  /** Hides, unhides or deletes someone's comment (only the actions platformInfo lists). */
+  moderate?(ctx: Ctx, account: Account, item: InboxItem, action: ModerateAction): Promise<void>;
   snapshot(ctx: Ctx, account: Account): Promise<Snapshot>;
   /** Re-reads the profile and token health; returns the updated account (not yet saved). */
   check(ctx: Ctx, account: Account): Promise<Account>;
@@ -88,13 +92,14 @@ export interface OAuthFlow {
 }
 
 export const platformInfo: Record<Platform, PlatformInfo> = {
-  instagram: { name: "Instagram", maxText: 2200, formats: ["post", "carousel", "reel", "story"], mediaRequired: ["post", "carousel", "reel", "story"], maxMedia: 10 },
-  facebook: { name: "Facebook Page", maxText: 63206, formats: ["post", "video"], mediaRequired: ["video"], maxMedia: 10 },
-  youtube: { name: "YouTube", maxText: 5000, formats: ["video", "short"], mediaRequired: ["video", "short"], maxMedia: 1 },
-  linkedin: { name: "LinkedIn", maxText: 3000, formats: ["post", "video"], mediaRequired: ["video"], maxMedia: 9 },
-  threads: { name: "Threads", maxText: 500, formats: ["post", "carousel"], mediaRequired: ["carousel"], maxMedia: 10 },
-  bluesky: { name: "Bluesky", maxText: 300, formats: ["post"], mediaRequired: [], maxMedia: 4 },
-  mastodon: { name: "Mastodon", maxText: 500, formats: ["post"], mediaRequired: [], maxMedia: 4 },
+  instagram: { name: "Instagram", maxText: 2200, formats: ["post", "carousel", "reel", "story"], mediaRequired: ["post", "carousel", "reel", "story"], maxMedia: 10, moderation: ["hide", "delete"] },
+  facebook: { name: "Facebook Page", maxText: 63206, formats: ["post", "video"], mediaRequired: ["video"], maxMedia: 10, moderation: ["hide", "delete"] },
+  youtube: { name: "YouTube", maxText: 5000, formats: ["video", "short"], mediaRequired: ["video", "short"], maxMedia: 1, moderation: ["hide"] },
+  linkedin: { name: "LinkedIn", maxText: 3000, formats: ["post", "video"], mediaRequired: ["video"], maxMedia: 9, moderation: [] },
+  threads: { name: "Threads", maxText: 500, formats: ["post", "carousel"], mediaRequired: ["carousel"], maxMedia: 10, moderation: [] },
+  bluesky: { name: "Bluesky", maxText: 300, formats: ["post"], mediaRequired: [], maxMedia: 4, moderation: [] },
+  mastodon: { name: "Mastodon", maxText: 500, formats: ["post"], mediaRequired: [], maxMedia: 4, moderation: [] },
+  telegram: { name: "Telegram", maxText: 4096, formats: ["post"], mediaRequired: [], maxMedia: 10, moderation: ["delete"] },
 };
 
 export const providerPlatforms: Record<Provider, Platform[]> = {

@@ -296,6 +296,12 @@ export const youtube: Adapter = {
     return r.id;
   },
 
+  // Held for review = hidden from the public until approved; YouTube only lets you delete your own comments.
+  async moderate(ctx, account, item, action) {
+    const status = action === "hide" ? "heldForReview" : "published";
+    await yt(ctx, account, `/comments/setModerationStatus?id=${encodeURIComponent(item.remoteId)}&moderationStatus=${status}`, { method: "POST" });
+  },
+
   async snapshot(ctx, account) {
     const r = await yt(ctx, account, "/channels?part=statistics&mine=true");
     const st = r.items?.[0]?.statistics;

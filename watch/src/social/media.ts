@@ -11,7 +11,8 @@ export const partSize = 20 * 1024 * 1024;
 const maxSize = 4 * 1024 * 1024 * 1024;
 const allowed = /^(image\/(jpeg|png|webp|gif|heic)|video\/(mp4|quicktime|webm))$/;
 
-const key = (id: string) => `media/${id}`;
+export const mediaKey = (id: string) => `media/${id}`;
+const key = mediaKey;
 
 /** A link platforms (and the app) can fetch for [hours] without the API token. */
 export async function signedUrl(store: Store, id: string, hours = 24): Promise<string> {
@@ -70,6 +71,15 @@ export async function completeUpload(store: Store, id: string, parts: { n: numbe
   return withUrl(store, done);
 }
 
+export async function setAlt(store: Store, id: string, alt: string): Promise<Media> {
+  const m = await store.media(id);
+  if (!m) throw new InputError("no such media", [], 404);
+  const { uploadId, ...media } = m;
+  const next = { ...media, alt: alt.trim() || undefined };
+  await store.putMedia(next, uploadId);
+  return withUrl(store, next);
+}
+
 export async function deleteMedia(store: Store, id: string) {
   const m = await store.media(id);
   if (!m) return;
@@ -84,7 +94,7 @@ export async function mediaFiles(store: Store, ids: string[]): Promise<MediaFile
   for (const id of ids) {
     const m = await store.media(id);
     if (!m || m.status !== "ready") throw new InputError(`media ${id} is missing or still uploading`);
-    out.push({ id, key: key(id), url: await signedUrl(store, id, 6), contentType: m.contentType, size: m.size, filename: m.filename });
+    out.push({ id, key: key(id), url: await signedUrl(store, id, 6), contentType: m.contentType, size: m.size, filename: m.filename, alt: m.alt ?? "" });
   }
   return out;
 }
