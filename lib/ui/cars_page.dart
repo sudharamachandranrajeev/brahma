@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:brahma_core/brahma_core.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -10,10 +8,13 @@ import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/book.dart';
 import '../domain/car_finance.dart';
+import '../domain/car_owning.dart';
+import '../domain/car_buying.dart';
 import '../domain/car_sources.dart';
 import '../domain/contact_links.dart';
 import '../domain/pipeline.dart';
 import '../domain/vehicles.dart';
+import 'car_page.dart';
 import 'common.dart';
 
 enum _Tab { search, garage, finance, guide }
@@ -366,7 +367,11 @@ class _VehicleCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    final checks = (jsonDecode(v.meta) as Map)['checks'] as List? ?? const [];
+    final due = deadlines(
+      v,
+      nation: ref.watch(carSearchProvider).value?.nation,
+      today: today(),
+    ).where((d) => d.soon).toList();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -427,7 +432,7 @@ class _VehicleCard extends ConsumerWidget {
                       case 'call':
                         await openUri(context, callUri(v.sellerPhone));
                       case 'remove':
-                        await ref.mutate((s) => s.book.remove(s.db.vehicles, v.id));
+                        await ref.mutate((s) => s.book.removeVehicle(v.id));
                     }
                   },
                   itemBuilder: (_) => [
@@ -450,8 +455,7 @@ class _VehicleCard extends ConsumerWidget {
                   ChoiceChip(
                     label: Text(carStageLabel(s)),
                     selected: Stage.of(v.stage) == s,
-                    onSelected: (_) =>
-                        ref.mutate((x) => x.book.save(x.db.vehicles, v.copyWith(stage: s.id), v.id)),
+                    onSelected: (_) => ref.mutate((x) => x.book.setVehicleStage(v, s)),
                   ),
               ],
             ),
@@ -467,54 +471,30 @@ class _VehicleCard extends ConsumerWidget {
                     ),
                   ),
                 const Spacer(),
-                Text('${checks.length} of ${vehicleChecks.length} checks', style: t.bodySmall),
-                TextButton(onPressed: () => _checks(context, ref), child: const Text('Checks')),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => CarPage(v.id))),
+                  child: const Text('Open'),
+                ),
                 TextButton(onPressed: onFinance, child: const Text('Finance')),
               ],
             ),
+            if (due.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  spacing: 12,
+                  children: [
+                    for (final d in due)
+                      StatusLabel(
+                        d.overdue ? Status.critical : Status.warning,
+                        '${d.kind.label} ${d.overdue ? '${-d.days} days overdue' : 'in ${d.days} days'}',
+                      ),
+                  ],
+                ),
+              ),
             if (v.notes.isNotEmpty) Text(v.notes, style: t.bodySmall),
           ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _checks(BuildContext context, WidgetRef ref) async {
-    final meta = (jsonDecode(v.meta) as Map).cast<String, Object?>();
-    final done = {for (final c in (meta['checks'] as List? ?? const [])) '$c'};
-    await showDialog<void>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text('Checks: ${v.title}'),
-          scrollable: true,
-          content: SizedBox(
-            width: 480,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final c in vehicleChecks)
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    value: done.contains(c.id),
-                    title: Text(c.title),
-                    subtitle: Text(c.body),
-                    onChanged: (on) async {
-                      on == true ? done.add(c.id) : done.remove(c.id);
-                      setState(() {});
-                      await ref.mutate(
-                        (x) => x.book.save(
-                          x.db.vehicles,
-                          v.copyWith(meta: jsonEncode({...meta, 'checks': done.toList()})),
-                          v.id,
-                        ),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Done'))],
         ),
       ),
     );
@@ -889,57 +869,6 @@ class _PlanTile extends StatelessWidget {
 
 // Guide -------------------------------------------------------------------
 
-/// Checks before paying for a used car.
-const vehicleChecks = <({String id, String title, String body})>[
-  (
-    id: 'history',
-    title: 'History check',
-    body:
-        'Finance owing, stolen, written off, scrapped, plate changes, mileage records (HPI, Experian, RAC).',
-  ),
-  (
-    id: 'mot',
-    title: 'MOT history',
-    body: 'Free on GOV.UK: past failures, advisories and mileage at each test.',
-  ),
-  (
-    id: 'recall',
-    title: 'Recalls',
-    body: 'Free on GOV.UK by registration. Open recalls should be fixed free by a dealer.',
-  ),
-  (
-    id: 'v5c',
-    title: 'V5C logbook',
-    body: 'Seller\'s name and address match, chassis number matches the car, keeper history makes sense.',
-  ),
-  (
-    id: 'service',
-    title: 'Service history',
-    body: 'Stamped book or invoices, cambelt and major work done on time.',
-  ),
-  (
-    id: 'drive',
-    title: 'Test drive',
-    body: 'Cold start, brakes, steering, clutch, warning lights, noises, all electrics.',
-  ),
-  (
-    id: 'inspect',
-    title: 'Independent inspection',
-    body: 'AA or RAC inspection, or a trusted garage, for anything of value.',
-  ),
-  (
-    id: 'insurance',
-    title: 'Insurance quote',
-    body: 'Quote the exact car first; it can change the price you can afford.',
-  ),
-  (
-    id: 'payment',
-    title: 'Safe payment',
-    body:
-        'Bank transfer or credit card after seeing the car. Never pay a deposit to someone you have not met.',
-  ),
-];
-
 const _links = <(String, String)>[
   ('MOT history', 'https://www.check-mot.service.gov.uk/'),
   ('Vehicle recalls', 'https://www.check-vehicle-recalls.service.gov.uk/'),
@@ -1038,7 +967,7 @@ class _GuideTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final c in vehicleChecks)
+              for (final c in buyChecks.items)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Column(

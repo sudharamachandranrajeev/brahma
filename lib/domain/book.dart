@@ -5,8 +5,10 @@ import 'package:drift/drift.dart';
 
 import '../db/database.dart';
 import 'contact_links.dart';
+import 'car_owning.dart';
 import 'listing.dart';
 import 'pipeline.dart';
+import 'tax.dart';
 import 'vehicles.dart';
 
 /// Pref keys. The prefs table is shared by every Brahma app, so Anveshana's
@@ -230,6 +232,14 @@ class PropertyBook {
       if (existing != null) ...(jsonDecode(existing.meta) as Map).cast<String, Object?>(),
       if (a.description.isNotEmpty) 'description': a.description,
       if (a.colour.isNotEmpty) 'colour': a.colour,
+      if (existing != null && a.price != null && a.price != existing.price)
+        'prices': [
+          ...(((jsonDecode(existing.meta) as Map)['prices'] as List?) ??
+              [
+                if (existing.price != null) {'date': existing.added, 'price': existing.price},
+              ]),
+          {'date': today ?? DateTime.now().toIso8601String().substring(0, 10), 'price': a.price},
+        ],
     };
     String keep(String fresh, String? old) => fresh.isNotEmpty ? fresh : old ?? '';
     final id = existing?.id ?? newId();
@@ -261,4 +271,65 @@ class PropertyBook {
     );
     return (id: id, added: existing == null);
   });
+
+  /// Moves a car along. Buying it starts its ownership.
+  Future<void> setVehicleStage(Vehicle v, Stage stage, {String? today}) {
+    final buying = stage == Stage.agreed && v.boughtOn == null;
+    final day = today ?? DateTime.now().toIso8601String().substring(0, 10);
+    return save(
+      db.vehicles,
+      v.copyWith(stage: stage.id, boughtOn: buying ? Value(day) : const Value.absent()),
+      v.id,
+    );
+  }
+
+  /// Writes a logbook entry and moves on the car's due dates and mileage
+  /// that it settles (an MOT pass, a service, a renewal).
+  Future<String> addCarLog(
+    Vehicle v, {
+    required LogKind kind,
+    required String date,
+    int? odometer,
+    int? costPence,
+    double? amount,
+    String provider = '',
+    String notes = '',
+    Nation? nation,
+  }) => db.transaction(() async {
+    final id = newId();
+    await save(
+      db.carLogs,
+      CarLogsCompanion.insert(
+        id: id,
+        vehicleId: v.id,
+        date: date,
+        kind: kind.name,
+        odometer: Value(odometer),
+        costPence: Value(costPence),
+        amount: Value(amount),
+        provider: Value(provider),
+        notes: Value(notes),
+      ),
+      id,
+    );
+    var car = afterLog(v, kind, date, nation: nation);
+    if (odometer != null && (car.mileage ?? 0) < odometer && v.soldOn == null) {
+      car = car.copyWith(mileage: Value(odometer));
+    }
+    if (car != v) await save(db.vehicles, car, v.id);
+    return id;
+  });
+
+  /// Removes a car with its logbook.
+  Future<void> removeVehicle(String id) => db.transaction(() async {
+    final logs = await (db.select(db.carLogs)..where((l) => l.vehicleId.equals(id) & l.deleted.not())).get();
+    for (final l in logs) {
+      await store.remove(db.carLogs, l.id);
+    }
+    await store.remove(db.vehicles, id);
+  });
+
+  /// Updates the car's meta JSON with [change].
+  Future<void> setVehicleMeta(Vehicle v, Map<String, Object?> change) =>
+      save(db.vehicles, v.copyWith(meta: jsonEncode({...(jsonDecode(v.meta) as Map), ...change})), v.id);
 }

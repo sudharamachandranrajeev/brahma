@@ -42,6 +42,11 @@ const anveshanaHints = <String, String>{
   'cars.compare':
       'Real cost is everything you pay less what the car is worth at the end. It is the fair way to compare '
       'cash, a loan, HP, PCP and a lease.',
+  'cars.dates':
+      'MOT, tax, insurance and service dates. They count down here and on the Garage list. The calendar '
+      'button adds a reminder to your own calendar.',
+  'cars.flags': 'Things that buyers report most: prices that are too good, odd mileage, and missing details.',
+  'cars.logbook': 'Fuel, services, repairs, MOT and insurance. Totals build up, and logging an MOT or service moves its date on.',
   // Settings
   'settings.applicant': 'Goes into enquiries you send. Stays on your devices.',
   'settings.home': 'Where distances are measured from, e.g. home or work.',

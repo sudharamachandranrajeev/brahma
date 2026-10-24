@@ -125,6 +125,28 @@ void main() {
     await app.close();
   });
 
+  testWidgets('cars: buy, log an MOT, see dates and rights', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    await app.go('Cars');
+    await app.tapText('Garage');
+    await app.tapText('Add');
+    await app.tapText('Type it in');
+    await app.enter('Car', '2019 Ford Focus');
+    await app.enter('Price', '9000');
+    await app.tapText('Save');
+    await app.tapText('Open');
+    expect(find.text('Before you pay'), findsOneWidget);
+    await app.tapText('I bought it');
+    expect(find.text('Your rights as the buyer'), findsOneWidget);
+    expect(find.text('Logbook'), findsOneWidget);
+    await app.tapText('Add');
+    await app.tapText('Save');
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
+
   testWidgets('the hunt groups by stage and measures from the home point', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open(seed: seed);

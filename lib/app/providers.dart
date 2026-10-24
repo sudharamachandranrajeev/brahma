@@ -121,6 +121,11 @@ final customSourcesProvider = FutureProvider<List<CustomSource>>((ref) async {
   return [for (final e in l) CustomSource.fromJson((e as Map).cast())];
 });
 
+final carLogsProvider = _rows<$CarLogsTable, CarLog>(
+  (db) => db.carLogs,
+  orderBy: [(l) => OrderingTerm.desc(l.date)],
+);
+
 final homeProvider = FutureProvider<HomePoint?>((ref) {
   ref.watch(revisionProvider);
   return ref.watch(sessionProvider).book.home();

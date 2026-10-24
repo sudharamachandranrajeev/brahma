@@ -7,7 +7,18 @@
   from your make, model, budget and postcode (Northern Ireland sites first for BT postcodes), plus
   your own sites. A garage for cars you find (from an advert link or typed in) with stages, ratings
   and a pre-purchase checklist. Cash, loan, HP, PCP and lease compared by real cost, running costs,
-  and a guide to rights, tax and the motor finance redress scheme. Database schema 2.
+  and a guide to rights, tax and the motor finance redress scheme.
+- Cars, from the most reported buyer, owner and seller problems:
+  - Buying: price against similar saved cars, red flags (too cheap, odd mileage, no phone, used EV),
+    asking-price history when an advert is refreshed, free GOV.UK checks, and longer checklists for
+    before paying and collection day.
+  - Owning: MOT, tax, insurance and service dates counting down (first MOT 3 years on, 4 in
+    Northern Ireland; an early MOT keeps its date in Great Britain), a calendar reminder for each,
+    a logbook of fuel, services, repairs, tyres and insurance with real economy, cost a mile and
+    renewal change, PCP mileage pace, and dealer rights with the 30-day and 6-month dates.
+  - Selling: offers side by side, a safe-selling list, the DVLA steps, a copy of the service
+    history for an advert, and the true cost of owning once sold.
+  - Database schema 3 (adds a vehicle logbook and ownership dates).
 
 ## 0.1.0
 

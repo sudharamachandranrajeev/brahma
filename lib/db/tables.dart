@@ -211,8 +211,40 @@ class Vehicles extends Table with SyncedRow {
   TextColumn get notes => text().withDefault(const Constant(''))();
   TextColumn get added => text()();
 
-  /// JSON extras: description, colour, the checks done.
+  /// Owning it (yyyy-MM-dd): first registered (sets the first MOT), the
+  /// dates things fall due, and when it was bought and sold.
+  TextColumn get firstRegistered => text().nullable()();
+  TextColumn get motDue => text().nullable()();
+  TextColumn get taxDue => text().nullable()();
+  TextColumn get insuranceDue => text().nullable()();
+  TextColumn get serviceDue => text().nullable()();
+  TextColumn get boughtOn => text().nullable()();
+  TextColumn get soldOn => text().nullable()();
+  IntColumn get soldPrice => integer().nullable()();
+
+  /// JSON extras: description, colour, price history, checklists ticked,
+  /// a PCP's mileage allowance.
   TextColumn get meta => text().withDefault(const Constant('{}'))();
+}
+
+/// A car's logbook: fuel, services, repairs, MOTs, tyres, insurance, tax,
+/// valuations. Costs in pence.
+@DataClassName('CarLog')
+class CarLogs extends Table with SyncedRow {
+  TextColumn get vehicleId => text()();
+  TextColumn get date => text()();
+
+  /// See domain/car_owning.dart (LogKind).
+  TextColumn get kind => text()();
+  IntColumn get odometer => integer().nullable()();
+  IntColumn get costPence => integer().nullable()();
+
+  /// Litres, kWh, or tread depth in mm, by kind.
+  RealColumn get amount => real().nullable()();
+
+  /// The garage, insurer or buyer.
+  TextColumn get provider => text().withDefault(const Constant(''))();
+  TextColumn get notes => text().withDefault(const Constant(''))();
 }
 
 // The tables sync needs; their columns come from brahma_core.

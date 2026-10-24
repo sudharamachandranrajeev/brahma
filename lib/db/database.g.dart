@@ -5909,6 +5909,78 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _firstRegisteredMeta = const VerificationMeta('firstRegistered');
+  @override
+  late final GeneratedColumn<String> firstRegistered = GeneratedColumn<String>(
+    'first_registered',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _motDueMeta = const VerificationMeta('motDue');
+  @override
+  late final GeneratedColumn<String> motDue = GeneratedColumn<String>(
+    'mot_due',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taxDueMeta = const VerificationMeta('taxDue');
+  @override
+  late final GeneratedColumn<String> taxDue = GeneratedColumn<String>(
+    'tax_due',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _insuranceDueMeta = const VerificationMeta('insuranceDue');
+  @override
+  late final GeneratedColumn<String> insuranceDue = GeneratedColumn<String>(
+    'insurance_due',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serviceDueMeta = const VerificationMeta('serviceDue');
+  @override
+  late final GeneratedColumn<String> serviceDue = GeneratedColumn<String>(
+    'service_due',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _boughtOnMeta = const VerificationMeta('boughtOn');
+  @override
+  late final GeneratedColumn<String> boughtOn = GeneratedColumn<String>(
+    'bought_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _soldOnMeta = const VerificationMeta('soldOn');
+  @override
+  late final GeneratedColumn<String> soldOn = GeneratedColumn<String>(
+    'sold_on',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _soldPriceMeta = const VerificationMeta('soldPrice');
+  @override
+  late final GeneratedColumn<int> soldPrice = GeneratedColumn<int>(
+    'sold_price',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _metaMeta = const VerificationMeta('meta');
   @override
   late final GeneratedColumn<String> meta = GeneratedColumn<String>(
@@ -5946,6 +6018,14 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
     rating,
     notes,
     added,
+    firstRegistered,
+    motDue,
+    taxDue,
+    insuranceDue,
+    serviceDue,
+    boughtOn,
+    soldOn,
+    soldPrice,
     meta,
   ];
   @override
@@ -6050,6 +6130,39 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
     } else if (isInserting) {
       context.missing(_addedMeta);
     }
+    if (data.containsKey('first_registered')) {
+      context.handle(
+        _firstRegisteredMeta,
+        firstRegistered.isAcceptableOrUnknown(data['first_registered']!, _firstRegisteredMeta),
+      );
+    }
+    if (data.containsKey('mot_due')) {
+      context.handle(_motDueMeta, motDue.isAcceptableOrUnknown(data['mot_due']!, _motDueMeta));
+    }
+    if (data.containsKey('tax_due')) {
+      context.handle(_taxDueMeta, taxDue.isAcceptableOrUnknown(data['tax_due']!, _taxDueMeta));
+    }
+    if (data.containsKey('insurance_due')) {
+      context.handle(
+        _insuranceDueMeta,
+        insuranceDue.isAcceptableOrUnknown(data['insurance_due']!, _insuranceDueMeta),
+      );
+    }
+    if (data.containsKey('service_due')) {
+      context.handle(
+        _serviceDueMeta,
+        serviceDue.isAcceptableOrUnknown(data['service_due']!, _serviceDueMeta),
+      );
+    }
+    if (data.containsKey('bought_on')) {
+      context.handle(_boughtOnMeta, boughtOn.isAcceptableOrUnknown(data['bought_on']!, _boughtOnMeta));
+    }
+    if (data.containsKey('sold_on')) {
+      context.handle(_soldOnMeta, soldOn.isAcceptableOrUnknown(data['sold_on']!, _soldOnMeta));
+    }
+    if (data.containsKey('sold_price')) {
+      context.handle(_soldPriceMeta, soldPrice.isAcceptableOrUnknown(data['sold_price']!, _soldPriceMeta));
+    }
     if (data.containsKey('meta')) {
       context.handle(_metaMeta, meta.isAcceptableOrUnknown(data['meta']!, _metaMeta));
     }
@@ -6099,6 +6212,23 @@ class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
       rating: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}rating'])!,
       notes: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}notes'])!,
       added: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}added'])!,
+      firstRegistered: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}first_registered'],
+      ),
+      motDue: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}mot_due']),
+      taxDue: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}tax_due']),
+      insuranceDue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}insurance_due'],
+      ),
+      serviceDue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}service_due'],
+      ),
+      boughtOn: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}bought_on']),
+      soldOn: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}sold_on']),
+      soldPrice: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}sold_price']),
       meta: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}meta'])!,
     );
   }
@@ -6146,7 +6276,19 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
   final String notes;
   final String added;
 
-  /// JSON extras: description, colour, the checks done.
+  /// Owning it (yyyy-MM-dd): first registered (sets the first MOT), the
+  /// dates things fall due, and when it was bought and sold.
+  final String? firstRegistered;
+  final String? motDue;
+  final String? taxDue;
+  final String? insuranceDue;
+  final String? serviceDue;
+  final String? boughtOn;
+  final String? soldOn;
+  final int? soldPrice;
+
+  /// JSON extras: description, colour, price history, checklists ticked,
+  /// a PCP's mileage allowance.
   final String meta;
   const Vehicle({
     required this.id,
@@ -6174,6 +6316,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     required this.rating,
     required this.notes,
     required this.added,
+    this.firstRegistered,
+    this.motDue,
+    this.taxDue,
+    this.insuranceDue,
+    this.serviceDue,
+    this.boughtOn,
+    this.soldOn,
+    this.soldPrice,
     required this.meta,
   });
   @override
@@ -6212,6 +6362,30 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     map['rating'] = Variable<int>(rating);
     map['notes'] = Variable<String>(notes);
     map['added'] = Variable<String>(added);
+    if (!nullToAbsent || firstRegistered != null) {
+      map['first_registered'] = Variable<String>(firstRegistered);
+    }
+    if (!nullToAbsent || motDue != null) {
+      map['mot_due'] = Variable<String>(motDue);
+    }
+    if (!nullToAbsent || taxDue != null) {
+      map['tax_due'] = Variable<String>(taxDue);
+    }
+    if (!nullToAbsent || insuranceDue != null) {
+      map['insurance_due'] = Variable<String>(insuranceDue);
+    }
+    if (!nullToAbsent || serviceDue != null) {
+      map['service_due'] = Variable<String>(serviceDue);
+    }
+    if (!nullToAbsent || boughtOn != null) {
+      map['bought_on'] = Variable<String>(boughtOn);
+    }
+    if (!nullToAbsent || soldOn != null) {
+      map['sold_on'] = Variable<String>(soldOn);
+    }
+    if (!nullToAbsent || soldPrice != null) {
+      map['sold_price'] = Variable<int>(soldPrice);
+    }
     map['meta'] = Variable<String>(meta);
     return map;
   }
@@ -6243,6 +6417,16 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       rating: Value(rating),
       notes: Value(notes),
       added: Value(added),
+      firstRegistered: firstRegistered == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firstRegistered),
+      motDue: motDue == null && nullToAbsent ? const Value.absent() : Value(motDue),
+      taxDue: taxDue == null && nullToAbsent ? const Value.absent() : Value(taxDue),
+      insuranceDue: insuranceDue == null && nullToAbsent ? const Value.absent() : Value(insuranceDue),
+      serviceDue: serviceDue == null && nullToAbsent ? const Value.absent() : Value(serviceDue),
+      boughtOn: boughtOn == null && nullToAbsent ? const Value.absent() : Value(boughtOn),
+      soldOn: soldOn == null && nullToAbsent ? const Value.absent() : Value(soldOn),
+      soldPrice: soldPrice == null && nullToAbsent ? const Value.absent() : Value(soldPrice),
       meta: Value(meta),
     );
   }
@@ -6275,6 +6459,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       rating: serializer.fromJson<int>(json['rating']),
       notes: serializer.fromJson<String>(json['notes']),
       added: serializer.fromJson<String>(json['added']),
+      firstRegistered: serializer.fromJson<String?>(json['firstRegistered']),
+      motDue: serializer.fromJson<String?>(json['motDue']),
+      taxDue: serializer.fromJson<String?>(json['taxDue']),
+      insuranceDue: serializer.fromJson<String?>(json['insuranceDue']),
+      serviceDue: serializer.fromJson<String?>(json['serviceDue']),
+      boughtOn: serializer.fromJson<String?>(json['boughtOn']),
+      soldOn: serializer.fromJson<String?>(json['soldOn']),
+      soldPrice: serializer.fromJson<int?>(json['soldPrice']),
       meta: serializer.fromJson<String>(json['meta']),
     );
   }
@@ -6307,6 +6499,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       'rating': serializer.toJson<int>(rating),
       'notes': serializer.toJson<String>(notes),
       'added': serializer.toJson<String>(added),
+      'firstRegistered': serializer.toJson<String?>(firstRegistered),
+      'motDue': serializer.toJson<String?>(motDue),
+      'taxDue': serializer.toJson<String?>(taxDue),
+      'insuranceDue': serializer.toJson<String?>(insuranceDue),
+      'serviceDue': serializer.toJson<String?>(serviceDue),
+      'boughtOn': serializer.toJson<String?>(boughtOn),
+      'soldOn': serializer.toJson<String?>(soldOn),
+      'soldPrice': serializer.toJson<int?>(soldPrice),
       'meta': serializer.toJson<String>(meta),
     };
   }
@@ -6337,6 +6537,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     int? rating,
     String? notes,
     String? added,
+    Value<String?> firstRegistered = const Value.absent(),
+    Value<String?> motDue = const Value.absent(),
+    Value<String?> taxDue = const Value.absent(),
+    Value<String?> insuranceDue = const Value.absent(),
+    Value<String?> serviceDue = const Value.absent(),
+    Value<String?> boughtOn = const Value.absent(),
+    Value<String?> soldOn = const Value.absent(),
+    Value<int?> soldPrice = const Value.absent(),
     String? meta,
   }) => Vehicle(
     id: id ?? this.id,
@@ -6364,6 +6572,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     rating: rating ?? this.rating,
     notes: notes ?? this.notes,
     added: added ?? this.added,
+    firstRegistered: firstRegistered.present ? firstRegistered.value : this.firstRegistered,
+    motDue: motDue.present ? motDue.value : this.motDue,
+    taxDue: taxDue.present ? taxDue.value : this.taxDue,
+    insuranceDue: insuranceDue.present ? insuranceDue.value : this.insuranceDue,
+    serviceDue: serviceDue.present ? serviceDue.value : this.serviceDue,
+    boughtOn: boughtOn.present ? boughtOn.value : this.boughtOn,
+    soldOn: soldOn.present ? soldOn.value : this.soldOn,
+    soldPrice: soldPrice.present ? soldPrice.value : this.soldPrice,
     meta: meta ?? this.meta,
   );
   Vehicle copyWithCompanion(VehiclesCompanion data) {
@@ -6393,6 +6609,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
       rating: data.rating.present ? data.rating.value : this.rating,
       notes: data.notes.present ? data.notes.value : this.notes,
       added: data.added.present ? data.added.value : this.added,
+      firstRegistered: data.firstRegistered.present ? data.firstRegistered.value : this.firstRegistered,
+      motDue: data.motDue.present ? data.motDue.value : this.motDue,
+      taxDue: data.taxDue.present ? data.taxDue.value : this.taxDue,
+      insuranceDue: data.insuranceDue.present ? data.insuranceDue.value : this.insuranceDue,
+      serviceDue: data.serviceDue.present ? data.serviceDue.value : this.serviceDue,
+      boughtOn: data.boughtOn.present ? data.boughtOn.value : this.boughtOn,
+      soldOn: data.soldOn.present ? data.soldOn.value : this.soldOn,
+      soldPrice: data.soldPrice.present ? data.soldPrice.value : this.soldPrice,
       meta: data.meta.present ? data.meta.value : this.meta,
     );
   }
@@ -6425,6 +6649,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           ..write('rating: $rating, ')
           ..write('notes: $notes, ')
           ..write('added: $added, ')
+          ..write('firstRegistered: $firstRegistered, ')
+          ..write('motDue: $motDue, ')
+          ..write('taxDue: $taxDue, ')
+          ..write('insuranceDue: $insuranceDue, ')
+          ..write('serviceDue: $serviceDue, ')
+          ..write('boughtOn: $boughtOn, ')
+          ..write('soldOn: $soldOn, ')
+          ..write('soldPrice: $soldPrice, ')
           ..write('meta: $meta')
           ..write(')'))
         .toString();
@@ -6457,6 +6689,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
     rating,
     notes,
     added,
+    firstRegistered,
+    motDue,
+    taxDue,
+    insuranceDue,
+    serviceDue,
+    boughtOn,
+    soldOn,
+    soldPrice,
     meta,
   ]);
   @override
@@ -6488,6 +6728,14 @@ class Vehicle extends DataClass implements Insertable<Vehicle> {
           other.rating == this.rating &&
           other.notes == this.notes &&
           other.added == this.added &&
+          other.firstRegistered == this.firstRegistered &&
+          other.motDue == this.motDue &&
+          other.taxDue == this.taxDue &&
+          other.insuranceDue == this.insuranceDue &&
+          other.serviceDue == this.serviceDue &&
+          other.boughtOn == this.boughtOn &&
+          other.soldOn == this.soldOn &&
+          other.soldPrice == this.soldPrice &&
           other.meta == this.meta);
 }
 
@@ -6517,6 +6765,14 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
   final Value<int> rating;
   final Value<String> notes;
   final Value<String> added;
+  final Value<String?> firstRegistered;
+  final Value<String?> motDue;
+  final Value<String?> taxDue;
+  final Value<String?> insuranceDue;
+  final Value<String?> serviceDue;
+  final Value<String?> boughtOn;
+  final Value<String?> soldOn;
+  final Value<int?> soldPrice;
   final Value<String> meta;
   final Value<int> rowid;
   const VehiclesCompanion({
@@ -6545,6 +6801,14 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     this.rating = const Value.absent(),
     this.notes = const Value.absent(),
     this.added = const Value.absent(),
+    this.firstRegistered = const Value.absent(),
+    this.motDue = const Value.absent(),
+    this.taxDue = const Value.absent(),
+    this.insuranceDue = const Value.absent(),
+    this.serviceDue = const Value.absent(),
+    this.boughtOn = const Value.absent(),
+    this.soldOn = const Value.absent(),
+    this.soldPrice = const Value.absent(),
     this.meta = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -6574,6 +6838,14 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     this.rating = const Value.absent(),
     this.notes = const Value.absent(),
     required String added,
+    this.firstRegistered = const Value.absent(),
+    this.motDue = const Value.absent(),
+    this.taxDue = const Value.absent(),
+    this.insuranceDue = const Value.absent(),
+    this.serviceDue = const Value.absent(),
+    this.boughtOn = const Value.absent(),
+    this.soldOn = const Value.absent(),
+    this.soldPrice = const Value.absent(),
     this.meta = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -6605,6 +6877,14 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     Expression<int>? rating,
     Expression<String>? notes,
     Expression<String>? added,
+    Expression<String>? firstRegistered,
+    Expression<String>? motDue,
+    Expression<String>? taxDue,
+    Expression<String>? insuranceDue,
+    Expression<String>? serviceDue,
+    Expression<String>? boughtOn,
+    Expression<String>? soldOn,
+    Expression<int>? soldPrice,
     Expression<String>? meta,
     Expression<int>? rowid,
   }) {
@@ -6634,6 +6914,14 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
       if (rating != null) 'rating': rating,
       if (notes != null) 'notes': notes,
       if (added != null) 'added': added,
+      if (firstRegistered != null) 'first_registered': firstRegistered,
+      if (motDue != null) 'mot_due': motDue,
+      if (taxDue != null) 'tax_due': taxDue,
+      if (insuranceDue != null) 'insurance_due': insuranceDue,
+      if (serviceDue != null) 'service_due': serviceDue,
+      if (boughtOn != null) 'bought_on': boughtOn,
+      if (soldOn != null) 'sold_on': soldOn,
+      if (soldPrice != null) 'sold_price': soldPrice,
       if (meta != null) 'meta': meta,
       if (rowid != null) 'rowid': rowid,
     });
@@ -6665,6 +6953,14 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     Value<int>? rating,
     Value<String>? notes,
     Value<String>? added,
+    Value<String?>? firstRegistered,
+    Value<String?>? motDue,
+    Value<String?>? taxDue,
+    Value<String?>? insuranceDue,
+    Value<String?>? serviceDue,
+    Value<String?>? boughtOn,
+    Value<String?>? soldOn,
+    Value<int?>? soldPrice,
     Value<String>? meta,
     Value<int>? rowid,
   }) {
@@ -6694,6 +6990,14 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
       rating: rating ?? this.rating,
       notes: notes ?? this.notes,
       added: added ?? this.added,
+      firstRegistered: firstRegistered ?? this.firstRegistered,
+      motDue: motDue ?? this.motDue,
+      taxDue: taxDue ?? this.taxDue,
+      insuranceDue: insuranceDue ?? this.insuranceDue,
+      serviceDue: serviceDue ?? this.serviceDue,
+      boughtOn: boughtOn ?? this.boughtOn,
+      soldOn: soldOn ?? this.soldOn,
+      soldPrice: soldPrice ?? this.soldPrice,
       meta: meta ?? this.meta,
       rowid: rowid ?? this.rowid,
     );
@@ -6777,6 +7081,30 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
     if (added.present) {
       map['added'] = Variable<String>(added.value);
     }
+    if (firstRegistered.present) {
+      map['first_registered'] = Variable<String>(firstRegistered.value);
+    }
+    if (motDue.present) {
+      map['mot_due'] = Variable<String>(motDue.value);
+    }
+    if (taxDue.present) {
+      map['tax_due'] = Variable<String>(taxDue.value);
+    }
+    if (insuranceDue.present) {
+      map['insurance_due'] = Variable<String>(insuranceDue.value);
+    }
+    if (serviceDue.present) {
+      map['service_due'] = Variable<String>(serviceDue.value);
+    }
+    if (boughtOn.present) {
+      map['bought_on'] = Variable<String>(boughtOn.value);
+    }
+    if (soldOn.present) {
+      map['sold_on'] = Variable<String>(soldOn.value);
+    }
+    if (soldPrice.present) {
+      map['sold_price'] = Variable<int>(soldPrice.value);
+    }
     if (meta.present) {
       map['meta'] = Variable<String>(meta.value);
     }
@@ -6814,7 +7142,569 @@ class VehiclesCompanion extends UpdateCompanion<Vehicle> {
           ..write('rating: $rating, ')
           ..write('notes: $notes, ')
           ..write('added: $added, ')
+          ..write('firstRegistered: $firstRegistered, ')
+          ..write('motDue: $motDue, ')
+          ..write('taxDue: $taxDue, ')
+          ..write('insuranceDue: $insuranceDue, ')
+          ..write('serviceDue: $serviceDue, ')
+          ..write('boughtOn: $boughtOn, ')
+          ..write('soldOn: $soldOn, ')
+          ..write('soldPrice: $soldPrice, ')
           ..write('meta: $meta, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CarLogsTable extends CarLogs with TableInfo<$CarLogsTable, CarLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CarLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta('deleted');
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("deleted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _vehicleIdMeta = const VerificationMeta('vehicleId');
+  @override
+  late final GeneratedColumn<String> vehicleId = GeneratedColumn<String>(
+    'vehicle_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dateMeta = const VerificationMeta('date');
+  @override
+  late final GeneratedColumn<String> date = GeneratedColumn<String>(
+    'date',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _odometerMeta = const VerificationMeta('odometer');
+  @override
+  late final GeneratedColumn<int> odometer = GeneratedColumn<int>(
+    'odometer',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _costPenceMeta = const VerificationMeta('costPence');
+  @override
+  late final GeneratedColumn<int> costPence = GeneratedColumn<int>(
+    'cost_pence',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<double> amount = GeneratedColumn<double>(
+    'amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _providerMeta = const VerificationMeta('provider');
+  @override
+  late final GeneratedColumn<String> provider = GeneratedColumn<String>(
+    'provider',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    hlc,
+    deleted,
+    vehicleId,
+    date,
+    kind,
+    odometer,
+    costPence,
+    amount,
+    provider,
+    notes,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'car_logs';
+  @override
+  VerificationContext validateIntegrity(Insertable<CarLog> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(_hlcMeta, hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta));
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(_deletedMeta, deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta));
+    }
+    if (data.containsKey('vehicle_id')) {
+      context.handle(_vehicleIdMeta, vehicleId.isAcceptableOrUnknown(data['vehicle_id']!, _vehicleIdMeta));
+    } else if (isInserting) {
+      context.missing(_vehicleIdMeta);
+    }
+    if (data.containsKey('date')) {
+      context.handle(_dateMeta, date.isAcceptableOrUnknown(data['date']!, _dateMeta));
+    } else if (isInserting) {
+      context.missing(_dateMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(_kindMeta, kind.isAcceptableOrUnknown(data['kind']!, _kindMeta));
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('odometer')) {
+      context.handle(_odometerMeta, odometer.isAcceptableOrUnknown(data['odometer']!, _odometerMeta));
+    }
+    if (data.containsKey('cost_pence')) {
+      context.handle(_costPenceMeta, costPence.isAcceptableOrUnknown(data['cost_pence']!, _costPenceMeta));
+    }
+    if (data.containsKey('amount')) {
+      context.handle(_amountMeta, amount.isAcceptableOrUnknown(data['amount']!, _amountMeta));
+    }
+    if (data.containsKey('provider')) {
+      context.handle(_providerMeta, provider.isAcceptableOrUnknown(data['provider']!, _providerMeta));
+    }
+    if (data.containsKey('notes')) {
+      context.handle(_notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CarLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CarLog(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      hlc: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}hlc'])!,
+      deleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}deleted'])!,
+      vehicleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vehicle_id'],
+      )!,
+      date: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}date'])!,
+      kind: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}kind'])!,
+      odometer: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}odometer']),
+      costPence: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}cost_pence']),
+      amount: attachedDatabase.typeMapping.read(DriftSqlType.double, data['${effectivePrefix}amount']),
+      provider: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}provider'])!,
+      notes: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}notes'])!,
+    );
+  }
+
+  @override
+  $CarLogsTable createAlias(String alias) {
+    return $CarLogsTable(attachedDatabase, alias);
+  }
+}
+
+class CarLog extends DataClass implements Insertable<CarLog> {
+  final String id;
+  final String hlc;
+  final bool deleted;
+  final String vehicleId;
+  final String date;
+
+  /// See domain/car_owning.dart (LogKind).
+  final String kind;
+  final int? odometer;
+  final int? costPence;
+
+  /// Litres, kWh, or tread depth in mm, by kind.
+  final double? amount;
+
+  /// The garage, insurer or buyer.
+  final String provider;
+  final String notes;
+  const CarLog({
+    required this.id,
+    required this.hlc,
+    required this.deleted,
+    required this.vehicleId,
+    required this.date,
+    required this.kind,
+    this.odometer,
+    this.costPence,
+    this.amount,
+    required this.provider,
+    required this.notes,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['hlc'] = Variable<String>(hlc);
+    map['deleted'] = Variable<bool>(deleted);
+    map['vehicle_id'] = Variable<String>(vehicleId);
+    map['date'] = Variable<String>(date);
+    map['kind'] = Variable<String>(kind);
+    if (!nullToAbsent || odometer != null) {
+      map['odometer'] = Variable<int>(odometer);
+    }
+    if (!nullToAbsent || costPence != null) {
+      map['cost_pence'] = Variable<int>(costPence);
+    }
+    if (!nullToAbsent || amount != null) {
+      map['amount'] = Variable<double>(amount);
+    }
+    map['provider'] = Variable<String>(provider);
+    map['notes'] = Variable<String>(notes);
+    return map;
+  }
+
+  CarLogsCompanion toCompanion(bool nullToAbsent) {
+    return CarLogsCompanion(
+      id: Value(id),
+      hlc: Value(hlc),
+      deleted: Value(deleted),
+      vehicleId: Value(vehicleId),
+      date: Value(date),
+      kind: Value(kind),
+      odometer: odometer == null && nullToAbsent ? const Value.absent() : Value(odometer),
+      costPence: costPence == null && nullToAbsent ? const Value.absent() : Value(costPence),
+      amount: amount == null && nullToAbsent ? const Value.absent() : Value(amount),
+      provider: Value(provider),
+      notes: Value(notes),
+    );
+  }
+
+  factory CarLog.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CarLog(
+      id: serializer.fromJson<String>(json['id']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      vehicleId: serializer.fromJson<String>(json['vehicleId']),
+      date: serializer.fromJson<String>(json['date']),
+      kind: serializer.fromJson<String>(json['kind']),
+      odometer: serializer.fromJson<int?>(json['odometer']),
+      costPence: serializer.fromJson<int?>(json['costPence']),
+      amount: serializer.fromJson<double?>(json['amount']),
+      provider: serializer.fromJson<String>(json['provider']),
+      notes: serializer.fromJson<String>(json['notes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'hlc': serializer.toJson<String>(hlc),
+      'deleted': serializer.toJson<bool>(deleted),
+      'vehicleId': serializer.toJson<String>(vehicleId),
+      'date': serializer.toJson<String>(date),
+      'kind': serializer.toJson<String>(kind),
+      'odometer': serializer.toJson<int?>(odometer),
+      'costPence': serializer.toJson<int?>(costPence),
+      'amount': serializer.toJson<double?>(amount),
+      'provider': serializer.toJson<String>(provider),
+      'notes': serializer.toJson<String>(notes),
+    };
+  }
+
+  CarLog copyWith({
+    String? id,
+    String? hlc,
+    bool? deleted,
+    String? vehicleId,
+    String? date,
+    String? kind,
+    Value<int?> odometer = const Value.absent(),
+    Value<int?> costPence = const Value.absent(),
+    Value<double?> amount = const Value.absent(),
+    String? provider,
+    String? notes,
+  }) => CarLog(
+    id: id ?? this.id,
+    hlc: hlc ?? this.hlc,
+    deleted: deleted ?? this.deleted,
+    vehicleId: vehicleId ?? this.vehicleId,
+    date: date ?? this.date,
+    kind: kind ?? this.kind,
+    odometer: odometer.present ? odometer.value : this.odometer,
+    costPence: costPence.present ? costPence.value : this.costPence,
+    amount: amount.present ? amount.value : this.amount,
+    provider: provider ?? this.provider,
+    notes: notes ?? this.notes,
+  );
+  CarLog copyWithCompanion(CarLogsCompanion data) {
+    return CarLog(
+      id: data.id.present ? data.id.value : this.id,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      vehicleId: data.vehicleId.present ? data.vehicleId.value : this.vehicleId,
+      date: data.date.present ? data.date.value : this.date,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      odometer: data.odometer.present ? data.odometer.value : this.odometer,
+      costPence: data.costPence.present ? data.costPence.value : this.costPence,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      provider: data.provider.present ? data.provider.value : this.provider,
+      notes: data.notes.present ? data.notes.value : this.notes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CarLog(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('vehicleId: $vehicleId, ')
+          ..write('date: $date, ')
+          ..write('kind: $kind, ')
+          ..write('odometer: $odometer, ')
+          ..write('costPence: $costPence, ')
+          ..write('amount: $amount, ')
+          ..write('provider: $provider, ')
+          ..write('notes: $notes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, hlc, deleted, vehicleId, date, kind, odometer, costPence, amount, provider, notes);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CarLog &&
+          other.id == this.id &&
+          other.hlc == this.hlc &&
+          other.deleted == this.deleted &&
+          other.vehicleId == this.vehicleId &&
+          other.date == this.date &&
+          other.kind == this.kind &&
+          other.odometer == this.odometer &&
+          other.costPence == this.costPence &&
+          other.amount == this.amount &&
+          other.provider == this.provider &&
+          other.notes == this.notes);
+}
+
+class CarLogsCompanion extends UpdateCompanion<CarLog> {
+  final Value<String> id;
+  final Value<String> hlc;
+  final Value<bool> deleted;
+  final Value<String> vehicleId;
+  final Value<String> date;
+  final Value<String> kind;
+  final Value<int?> odometer;
+  final Value<int?> costPence;
+  final Value<double?> amount;
+  final Value<String> provider;
+  final Value<String> notes;
+  final Value<int> rowid;
+  const CarLogsCompanion({
+    this.id = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.vehicleId = const Value.absent(),
+    this.date = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.odometer = const Value.absent(),
+    this.costPence = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CarLogsCompanion.insert({
+    required String id,
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    required String vehicleId,
+    required String date,
+    required String kind,
+    this.odometer = const Value.absent(),
+    this.costPence = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.provider = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       vehicleId = Value(vehicleId),
+       date = Value(date),
+       kind = Value(kind);
+  static Insertable<CarLog> custom({
+    Expression<String>? id,
+    Expression<String>? hlc,
+    Expression<bool>? deleted,
+    Expression<String>? vehicleId,
+    Expression<String>? date,
+    Expression<String>? kind,
+    Expression<int>? odometer,
+    Expression<int>? costPence,
+    Expression<double>? amount,
+    Expression<String>? provider,
+    Expression<String>? notes,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (hlc != null) 'hlc': hlc,
+      if (deleted != null) 'deleted': deleted,
+      if (vehicleId != null) 'vehicle_id': vehicleId,
+      if (date != null) 'date': date,
+      if (kind != null) 'kind': kind,
+      if (odometer != null) 'odometer': odometer,
+      if (costPence != null) 'cost_pence': costPence,
+      if (amount != null) 'amount': amount,
+      if (provider != null) 'provider': provider,
+      if (notes != null) 'notes': notes,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CarLogsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? hlc,
+    Value<bool>? deleted,
+    Value<String>? vehicleId,
+    Value<String>? date,
+    Value<String>? kind,
+    Value<int?>? odometer,
+    Value<int?>? costPence,
+    Value<double?>? amount,
+    Value<String>? provider,
+    Value<String>? notes,
+    Value<int>? rowid,
+  }) {
+    return CarLogsCompanion(
+      id: id ?? this.id,
+      hlc: hlc ?? this.hlc,
+      deleted: deleted ?? this.deleted,
+      vehicleId: vehicleId ?? this.vehicleId,
+      date: date ?? this.date,
+      kind: kind ?? this.kind,
+      odometer: odometer ?? this.odometer,
+      costPence: costPence ?? this.costPence,
+      amount: amount ?? this.amount,
+      provider: provider ?? this.provider,
+      notes: notes ?? this.notes,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (vehicleId.present) {
+      map['vehicle_id'] = Variable<String>(vehicleId.value);
+    }
+    if (date.present) {
+      map['date'] = Variable<String>(date.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (odometer.present) {
+      map['odometer'] = Variable<int>(odometer.value);
+    }
+    if (costPence.present) {
+      map['cost_pence'] = Variable<int>(costPence.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<double>(amount.value);
+    }
+    if (provider.present) {
+      map['provider'] = Variable<String>(provider.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CarLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('vehicleId: $vehicleId, ')
+          ..write('date: $date, ')
+          ..write('kind: $kind, ')
+          ..write('odometer: $odometer, ')
+          ..write('costPence: $costPence, ')
+          ..write('amount: $amount, ')
+          ..write('provider: $provider, ')
+          ..write('notes: $notes, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7684,6 +8574,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ComplianceItemsTable complianceItems = $ComplianceItemsTable(this);
   late final $AreasTable areas = $AreasTable(this);
   late final $VehiclesTable vehicles = $VehiclesTable(this);
+  late final $CarLogsTable carLogs = $CarLogsTable(this);
   late final $PrefsTable prefs = $PrefsTable(this);
   late final $OutboxTable outbox = $OutboxTable(this);
   late final $SyncCursorsTable syncCursors = $SyncCursorsTable(this);
@@ -7704,6 +8595,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     complianceItems,
     areas,
     vehicles,
+    carLogs,
     prefs,
     outbox,
     syncCursors,
@@ -10326,6 +11218,14 @@ typedef $$VehiclesTableCreateCompanionBuilder = VehiclesCompanion Function({
   Value<int> rating,
   Value<String> notes,
   required String added,
+  Value<String?> firstRegistered,
+  Value<String?> motDue,
+  Value<String?> taxDue,
+  Value<String?> insuranceDue,
+  Value<String?> serviceDue,
+  Value<String?> boughtOn,
+  Value<String?> soldOn,
+  Value<int?> soldPrice,
   Value<String> meta,
   Value<int> rowid,
 });
@@ -10355,6 +11255,14 @@ typedef $$VehiclesTableUpdateCompanionBuilder = VehiclesCompanion Function({
   Value<int> rating,
   Value<String> notes,
   Value<String> added,
+  Value<String?> firstRegistered,
+  Value<String?> motDue,
+  Value<String?> taxDue,
+  Value<String?> insuranceDue,
+  Value<String?> serviceDue,
+  Value<String?> boughtOn,
+  Value<String?> soldOn,
+  Value<int?> soldPrice,
   Value<String> meta,
   Value<int> rowid,
 });
@@ -10441,6 +11349,30 @@ class $$VehiclesTableFilterComposer extends Composer<_$AppDatabase, $VehiclesTab
 
   ColumnFilters<String> get added =>
       $composableBuilder(column: $table.added, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get firstRegistered =>
+      $composableBuilder(column: $table.firstRegistered, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get motDue =>
+      $composableBuilder(column: $table.motDue, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get taxDue =>
+      $composableBuilder(column: $table.taxDue, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get insuranceDue =>
+      $composableBuilder(column: $table.insuranceDue, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get serviceDue =>
+      $composableBuilder(column: $table.serviceDue, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get boughtOn =>
+      $composableBuilder(column: $table.boughtOn, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get soldOn =>
+      $composableBuilder(column: $table.soldOn, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get soldPrice =>
+      $composableBuilder(column: $table.soldPrice, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get meta =>
       $composableBuilder(column: $table.meta, builder: (column) => ColumnFilters(column));
@@ -10529,6 +11461,30 @@ class $$VehiclesTableOrderingComposer extends Composer<_$AppDatabase, $VehiclesT
   ColumnOrderings<String> get added =>
       $composableBuilder(column: $table.added, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get firstRegistered =>
+      $composableBuilder(column: $table.firstRegistered, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get motDue =>
+      $composableBuilder(column: $table.motDue, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get taxDue =>
+      $composableBuilder(column: $table.taxDue, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get insuranceDue =>
+      $composableBuilder(column: $table.insuranceDue, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get serviceDue =>
+      $composableBuilder(column: $table.serviceDue, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get boughtOn =>
+      $composableBuilder(column: $table.boughtOn, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get soldOn =>
+      $composableBuilder(column: $table.soldOn, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get soldPrice =>
+      $composableBuilder(column: $table.soldPrice, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get meta =>
       $composableBuilder(column: $table.meta, builder: (column) => ColumnOrderings(column));
 }
@@ -10601,6 +11557,30 @@ class $$VehiclesTableAnnotationComposer extends Composer<_$AppDatabase, $Vehicle
 
   GeneratedColumn<String> get added => $composableBuilder(column: $table.added, builder: (column) => column);
 
+  GeneratedColumn<String> get firstRegistered =>
+      $composableBuilder(column: $table.firstRegistered, builder: (column) => column);
+
+  GeneratedColumn<String> get motDue =>
+      $composableBuilder(column: $table.motDue, builder: (column) => column);
+
+  GeneratedColumn<String> get taxDue =>
+      $composableBuilder(column: $table.taxDue, builder: (column) => column);
+
+  GeneratedColumn<String> get insuranceDue =>
+      $composableBuilder(column: $table.insuranceDue, builder: (column) => column);
+
+  GeneratedColumn<String> get serviceDue =>
+      $composableBuilder(column: $table.serviceDue, builder: (column) => column);
+
+  GeneratedColumn<String> get boughtOn =>
+      $composableBuilder(column: $table.boughtOn, builder: (column) => column);
+
+  GeneratedColumn<String> get soldOn =>
+      $composableBuilder(column: $table.soldOn, builder: (column) => column);
+
+  GeneratedColumn<int> get soldPrice =>
+      $composableBuilder(column: $table.soldPrice, builder: (column) => column);
+
   GeneratedColumn<String> get meta => $composableBuilder(column: $table.meta, builder: (column) => column);
 }
 
@@ -10654,6 +11634,14 @@ class $$VehiclesTableTableManager
                 Value<int> rating = const Value.absent(),
                 Value<String> notes = const Value.absent(),
                 Value<String> added = const Value.absent(),
+                Value<String?> firstRegistered = const Value.absent(),
+                Value<String?> motDue = const Value.absent(),
+                Value<String?> taxDue = const Value.absent(),
+                Value<String?> insuranceDue = const Value.absent(),
+                Value<String?> serviceDue = const Value.absent(),
+                Value<String?> boughtOn = const Value.absent(),
+                Value<String?> soldOn = const Value.absent(),
+                Value<int?> soldPrice = const Value.absent(),
                 Value<String> meta = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VehiclesCompanion(
@@ -10682,6 +11670,14 @@ class $$VehiclesTableTableManager
                 rating: rating,
                 notes: notes,
                 added: added,
+                firstRegistered: firstRegistered,
+                motDue: motDue,
+                taxDue: taxDue,
+                insuranceDue: insuranceDue,
+                serviceDue: serviceDue,
+                boughtOn: boughtOn,
+                soldOn: soldOn,
+                soldPrice: soldPrice,
                 meta: meta,
                 rowid: rowid,
               ),
@@ -10712,6 +11708,14 @@ class $$VehiclesTableTableManager
                 Value<int> rating = const Value.absent(),
                 Value<String> notes = const Value.absent(),
                 required String added,
+                Value<String?> firstRegistered = const Value.absent(),
+                Value<String?> motDue = const Value.absent(),
+                Value<String?> taxDue = const Value.absent(),
+                Value<String?> insuranceDue = const Value.absent(),
+                Value<String?> serviceDue = const Value.absent(),
+                Value<String?> boughtOn = const Value.absent(),
+                Value<String?> soldOn = const Value.absent(),
+                Value<int?> soldPrice = const Value.absent(),
                 Value<String> meta = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VehiclesCompanion.insert(
@@ -10740,6 +11744,14 @@ class $$VehiclesTableTableManager
                 rating: rating,
                 notes: notes,
                 added: added,
+                firstRegistered: firstRegistered,
+                motDue: motDue,
+                taxDue: taxDue,
+                insuranceDue: insuranceDue,
+                serviceDue: serviceDue,
+                boughtOn: boughtOn,
+                soldOn: soldOn,
+                soldPrice: soldPrice,
                 meta: meta,
                 rowid: rowid,
               ),
@@ -10768,6 +11780,262 @@ typedef $$VehiclesTableProcessedTableManager =
       $$VehiclesTableUpdateCompanionBuilder,
       (Vehicle, BaseReferences<_$AppDatabase, $VehiclesTable, Vehicle>),
       Vehicle,
+      PrefetchHooks Function()
+    >;
+typedef $$CarLogsTableCreateCompanionBuilder = CarLogsCompanion Function({
+  required String id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  required String vehicleId,
+  required String date,
+  required String kind,
+  Value<int?> odometer,
+  Value<int?> costPence,
+  Value<double?> amount,
+  Value<String> provider,
+  Value<String> notes,
+  Value<int> rowid,
+});
+typedef $$CarLogsTableUpdateCompanionBuilder = CarLogsCompanion Function({
+  Value<String> id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  Value<String> vehicleId,
+  Value<String> date,
+  Value<String> kind,
+  Value<int?> odometer,
+  Value<int?> costPence,
+  Value<double?> amount,
+  Value<String> provider,
+  Value<String> notes,
+  Value<int> rowid,
+});
+
+class $$CarLogsTableFilterComposer extends Composer<_$AppDatabase, $CarLogsTable> {
+  $$CarLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get vehicleId =>
+      $composableBuilder(column: $table.vehicleId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get odometer =>
+      $composableBuilder(column: $table.odometer, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get costPence =>
+      $composableBuilder(column: $table.costPence, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => ColumnFilters(column));
+}
+
+class $$CarLogsTableOrderingComposer extends Composer<_$AppDatabase, $CarLogsTable> {
+  $$CarLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get vehicleId =>
+      $composableBuilder(column: $table.vehicleId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get date =>
+      $composableBuilder(column: $table.date, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get odometer =>
+      $composableBuilder(column: $table.odometer, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get costPence =>
+      $composableBuilder(column: $table.costPence, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CarLogsTableAnnotationComposer extends Composer<_$AppDatabase, $CarLogsTable> {
+  $$CarLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc => $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<String> get vehicleId =>
+      $composableBuilder(column: $table.vehicleId, builder: (column) => column);
+
+  GeneratedColumn<String> get date => $composableBuilder(column: $table.date, builder: (column) => column);
+
+  GeneratedColumn<String> get kind => $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get odometer =>
+      $composableBuilder(column: $table.odometer, builder: (column) => column);
+
+  GeneratedColumn<int> get costPence =>
+      $composableBuilder(column: $table.costPence, builder: (column) => column);
+
+  GeneratedColumn<double> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get provider =>
+      $composableBuilder(column: $table.provider, builder: (column) => column);
+
+  GeneratedColumn<String> get notes => $composableBuilder(column: $table.notes, builder: (column) => column);
+}
+
+class $$CarLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CarLogsTable,
+          CarLog,
+          $$CarLogsTableFilterComposer,
+          $$CarLogsTableOrderingComposer,
+          $$CarLogsTableAnnotationComposer,
+          $$CarLogsTableCreateCompanionBuilder,
+          $$CarLogsTableUpdateCompanionBuilder,
+          (CarLog, BaseReferences<_$AppDatabase, $CarLogsTable, CarLog>),
+          CarLog,
+          PrefetchHooks Function()
+        > {
+  $$CarLogsTableTableManager(_$AppDatabase db, $CarLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$CarLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$CarLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$CarLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String> vehicleId = const Value.absent(),
+                Value<String> date = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<int?> odometer = const Value.absent(),
+                Value<int?> costPence = const Value.absent(),
+                Value<double?> amount = const Value.absent(),
+                Value<String> provider = const Value.absent(),
+                Value<String> notes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CarLogsCompanion(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                vehicleId: vehicleId,
+                date: date,
+                kind: kind,
+                odometer: odometer,
+                costPence: costPence,
+                amount: amount,
+                provider: provider,
+                notes: notes,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                required String vehicleId,
+                required String date,
+                required String kind,
+                Value<int?> odometer = const Value.absent(),
+                Value<int?> costPence = const Value.absent(),
+                Value<double?> amount = const Value.absent(),
+                Value<String> provider = const Value.absent(),
+                Value<String> notes = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CarLogsCompanion.insert(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                vehicleId: vehicleId,
+                date: date,
+                kind: kind,
+                odometer: odometer,
+                costPence: costPence,
+                amount: amount,
+                provider: provider,
+                notes: notes,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CarLogsTable, CarLog>(table),
+                  BaseReferences<_$AppDatabase, $CarLogsTable, CarLog>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CarLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CarLogsTable,
+      CarLog,
+      $$CarLogsTableFilterComposer,
+      $$CarLogsTableOrderingComposer,
+      $$CarLogsTableAnnotationComposer,
+      $$CarLogsTableCreateCompanionBuilder,
+      $$CarLogsTableUpdateCompanionBuilder,
+      (CarLog, BaseReferences<_$AppDatabase, $CarLogsTable, CarLog>),
+      CarLog,
       PrefetchHooks Function()
     >;
 typedef $$PrefsTableCreateCompanionBuilder = PrefsCompanion Function({
@@ -11281,6 +12549,7 @@ class $AppDatabaseManager {
       $$ComplianceItemsTableTableManager(_db, _db.complianceItems);
   $$AreasTableTableManager get areas => $$AreasTableTableManager(_db, _db.areas);
   $$VehiclesTableTableManager get vehicles => $$VehiclesTableTableManager(_db, _db.vehicles);
+  $$CarLogsTableTableManager get carLogs => $$CarLogsTableTableManager(_db, _db.carLogs);
   $$PrefsTableTableManager get prefs => $$PrefsTableTableManager(_db, _db.prefs);
   $$OutboxTableTableManager get outbox => $$OutboxTableTableManager(_db, _db.outbox);
   $$SyncCursorsTableTableManager get syncCursors => $$SyncCursorsTableTableManager(_db, _db.syncCursors);

@@ -20,6 +20,7 @@ part 'database.g.dart';
     ComplianceItems,
     Areas,
     Vehicles,
+    CarLogs,
     Prefs,
     Outbox,
     SyncCursors,
@@ -45,11 +46,12 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     'compliance_items',
     'areas',
     'vehicles',
+    'car_logs',
     'prefs',
   ];
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -61,6 +63,24 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     },
     onUpgrade: (m, from, to) async {
       if (from < 2) await m.createTable(vehicles);
+      if (from == 2) {
+        for (final c in [
+          vehicles.firstRegistered,
+          vehicles.motDue,
+          vehicles.taxDue,
+          vehicles.insuranceDue,
+          vehicles.serviceDue,
+          vehicles.boughtOn,
+          vehicles.soldOn,
+          vehicles.soldPrice,
+        ]) {
+          await m.addColumn(vehicles, c);
+        }
+      }
+      if (from < 3) {
+        await m.createTable(carLogs);
+        await customStatement(_carLogsIndex);
+      }
     },
   );
 
@@ -69,5 +89,8 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     'CREATE INDEX interactions_property ON interactions (property_id)',
     'CREATE INDEX viewings_property ON viewings (property_id)',
     'CREATE INDEX rent_payments_tenancy ON rent_payments (tenancy_id)',
+    _carLogsIndex,
   ];
+
+  static const _carLogsIndex = 'CREATE INDEX car_logs_vehicle ON car_logs (vehicle_id, date)';
 }
