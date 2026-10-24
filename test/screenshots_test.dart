@@ -11,6 +11,8 @@ import 'package:anveshana/app/app.dart';
 import 'package:anveshana/app/providers.dart';
 import 'package:anveshana/db/database.dart';
 import 'package:anveshana/domain/book.dart';
+import 'package:anveshana/domain/lettings.dart';
+import 'package:brahma_core/brahma_core.dart' show addDays, addMonths, today;
 
 import 'app_harness.dart';
 
@@ -29,9 +31,11 @@ void main() {
       await loader.load();
     }
 
-    await family('Inter', [
-      for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf',
-    ]);
+    final inter = [for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf'];
+    await family('Inter', inter);
+    // A few list-tile trailing texts ask for the platform's Roboto, which the
+    // test engine lacks (it draws boxes); stand Inter in for it.
+    await family('Roboto', inter);
     final flutterRoot = Platform.environment['FLUTTER_ROOT'] ?? '';
     final icons = File('$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
     if (icons.existsSync()) await family('MaterialIcons', [icons.path]);
@@ -73,6 +77,49 @@ void main() {
         rating: Value(5),
       ),
     );
+    // A home owned and let out, so Lettings has something to show.
+    await home(
+      'd',
+      const PropertiesCompanion(
+        address: Value('4 Example Terrace, Sampletown'),
+        kind: Value('owned'),
+        price: Value(142000),
+        beds: Value(3),
+        stage: Value('agreed'),
+      ),
+    );
+    final day = today();
+    final start = addMonths(day, -14).replaceRange(8, 10, '01');
+    await book.save(
+      book.db.tenancies,
+      TenanciesCompanion.insert(
+        id: 't',
+        propertyId: 'd',
+        role: 'landlord',
+        otherParty: const Value('Sam Placeholder'),
+        start: start,
+        rent: 795,
+        deposit: const Value(795),
+        depositScheme: const Value('TDS Northern Ireland'),
+      ),
+      't',
+    );
+    // Paid up but for the latest month.
+    final dues = rentDueDates(start: start, day: 1, asOf: day);
+    for (final (i, due) in dues.take(dues.length - 1).indexed) {
+      await book.save(
+        book.db.rentPayments,
+        RentPaymentsCompanion.insert(id: 'r$i', tenancyId: 't', date: due, amount: 795),
+        'r$i',
+      );
+    }
+    for (final (kind, days) in [('gas', 18), ('alarms', 40), ('eicr', 600)]) {
+      await book.save(
+        book.db.complianceItems,
+        ComplianceItemsCompanion.insert(id: kind, propertyId: 'd', kind: kind, due: addDays(day, days)),
+        kind,
+      );
+    }
   }
 
   testWidgets('screenshots', skip: out == null, (tester) async {
@@ -131,6 +178,28 @@ void main() {
       await shot('home-$mode');
       await app.close();
     }
+
+    // One desktop-width shot: the navigation rail layout.
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    final app = AppHarness(tester);
+    tester.view.physicalSize = const Size(2160, 1350);
+    tester.view.devicePixelRatio = 1.5;
+    await app.open(seed: seed);
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: ProviderScope(
+          overrides: anveshanaOverrides(app.session),
+          retry: (_, _) => null,
+          child: const AnveshanaApp(),
+        ),
+      ),
+    );
+    await app.settle();
+    await shot('hunt-desktop-light');
+    await app.go('Lettings');
+    await shot('lettings-desktop-light');
+    await app.close();
     tester.view.reset();
     debugDisableShadows = true;
   });
