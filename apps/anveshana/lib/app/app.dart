@@ -1,0 +1,38 @@
+import 'package:brahma_core/brahma_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../ui/common.dart';
+import 'modules.dart';
+import 'providers.dart';
+
+ThemeData anveshanaTheme(Brightness b) => buildTheme(b, seed: lakeBlue, accent: amber);
+
+class AnveshanaApp extends StatelessWidget {
+  const AnveshanaApp({super.key, this.home = const _Root()});
+  final Widget home;
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    title: 'Anveshana',
+    debugShowCheckedModeBanner: false,
+    theme: anveshanaTheme(Brightness.light),
+    darkTheme: anveshanaTheme(Brightness.dark),
+    home: home,
+  );
+}
+
+/// The app, opening the links the platform hands over (a scanned pairing
+/// code). There is no onboarding: every screen works empty.
+class _Root extends ConsumerWidget {
+  const _Root();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => LinkHandler(
+    child: AppShell(
+      destinations: allDestinations,
+      // New listings from Brahma Watch since the last start.
+      onStart: (ref) => Future.microtask(() => ref.read(watchAutoProvider.future)).ignore(),
+    ),
+  );
+}

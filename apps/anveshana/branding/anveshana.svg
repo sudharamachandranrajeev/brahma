@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Anveshana ("search"): a lake-blue disc, a white house and an amber
+       magnifying glass over it. -->
+  <circle cx="512" cy="512" r="496" fill="#1D4E89"/>
+  <path d="M236 500 L452 300 L668 500 M300 444 V724 H604 V444" fill="none" stroke="#ffffff"
+        stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M410 724 V590 H494 V724" fill="none" stroke="#ffffff" stroke-width="48"
+        stroke-linejoin="round"/>
+  <circle cx="650" cy="610" r="130" fill="#1D4E89" fill-opacity=".55" stroke="#E0A100" stroke-width="56"/>
+  <path d="M746 706 L846 806" fill="none" stroke="#E0A100" stroke-width="76" stroke-linecap="round"/>
+</svg>
