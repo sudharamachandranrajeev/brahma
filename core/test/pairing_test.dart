@@ -28,6 +28,13 @@ void main() {
       expect(back.secret, secret);
     });
 
+    test('an app that joins the suite later is accepted without a core change', () {
+      final text = PairingLink(link.server, link.id, secret, scheme: 'vidya').toString();
+      expect((BrahmaLink.parse(text) as PairingLink).scheme, 'vidya');
+      expect(isBrahmaScheme('https'), isFalse);
+      expect(isBrahmaScheme('Vidya'), isFalse);
+    });
+
     test('a setup link carries the server and invite code', () {
       final setup = SetupLink(Uri.parse('http://192.168.1.20:8090'), 'Inv1te-Code_xyz');
       final back = BrahmaLink.parse(setup.toString()) as SetupLink;

@@ -20,6 +20,12 @@ class AppIdentity {
   String get linkChannel => '$androidPackage/links';
 }
 
-/// Link schemes of every Brahma app. Setup and pairing links are about the
-/// shared account, so each app accepts all of them.
-const brahmaLinkSchemes = {'artha', 'anveshana', 'udyoga'};
+/// Whether [scheme] can be a Brahma app's link scheme. Setup and pairing
+/// links are about the shared account, so each app accepts every app's
+/// links. Apps join the suite over time, so this is a rule (a plain
+/// lower-case id that is not a web scheme) rather than a list that every
+/// installed app would need rebuilding to extend.
+bool isBrahmaScheme(String scheme) =>
+    RegExp(r'^[a-z][a-z0-9]*$').hasMatch(scheme) && !_otherSchemes.contains(scheme);
+
+const _otherSchemes = {'http', 'https', 'file', 'mailto', 'tel', 'sms', 'data', 'content', 'intent'};

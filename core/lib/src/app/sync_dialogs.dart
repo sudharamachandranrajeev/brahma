@@ -61,7 +61,8 @@ class _SyncDialogState extends ConsumerState<_SyncDialog> {
 
   /// The server address field also takes a pasted setup link.
   void _serverChanged(String text) {
-    if (!brahmaLinkSchemes.any((s) => text.trim().startsWith('$s://'))) return;
+    final scheme = RegExp(r'^([a-z0-9]+)://').firstMatch(text.trim())?.group(1);
+    if (scheme == null || !isBrahmaScheme(scheme)) return;
     setState(() {
       try {
         switch (BrahmaLink.parse(text)) {

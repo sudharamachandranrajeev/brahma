@@ -24,8 +24,8 @@ sealed class BrahmaLink {
   /// that chat apps add are ignored.
   static BrahmaLink parse(String text) {
     final uri = Uri.tryParse(text.replaceAll(RegExp(r'\s'), ''));
-    if (uri == null || !brahmaLinkSchemes.contains(uri.scheme)) {
-      throw SyncException('That is not a sync link. It starts with artha:// or anveshana://');
+    if (uri == null || !isBrahmaScheme(uri.scheme)) {
+      throw SyncException("That is not a sync link. It starts with an app's name, like artha://");
     }
     final q = uri.queryParameters;
     final server = q['s'];
