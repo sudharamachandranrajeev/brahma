@@ -140,7 +140,7 @@ class JobPage extends ConsumerWidget {
               ? const NeedsKey(what: 'The fit assessment')
               : fit == null
               ? const Text(
-                  'Claude reads the advert, researches the employer and the pay, and tells you honestly how '
+                  'The AI reads the advert, researches the employer and the pay, and tells you honestly how '
                   'you match: what you meet, the gaps, your real chances and how to apply.',
                 )
               : FitView(fit),
@@ -223,7 +223,7 @@ class JobPage extends ConsumerWidget {
           child: Text(
             hasAi
                 ? 'Questions this employer is likely to ask for this role, with each answer scored.'
-                : 'Add your Claude API key in Settings to practise for this interview.',
+                : 'Add a free Gemini key or a Claude API key in Settings to practise for this interview.',
           ),
         ),
         if (j.description.isNotEmpty) SectionCard(title: 'The advert', child: SelectableText(j.description)),

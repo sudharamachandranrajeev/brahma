@@ -2,29 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:brahma_core/brahma_core.dart';
 import 'package:http/http.dart' as http;
 
+import 'ai.dart';
 import 'json.dart';
 import 'schema.dart';
-
-/// A failure talking to Claude, worded for the user.
-class AiException implements Exception, UserFacingError {
-  AiException(this.message, {this.retryable = false});
-  @override
-  final String message;
-  final bool retryable;
-  @override
-  String toString() => message;
-}
-
-/// Models the user can choose in Settings, best first.
-const aiModels = {
-  'claude-opus-5-5': 'Claude Opus 5.5 (most thorough)',
-  'claude-sonnet-5-5': 'Claude Sonnet 5.5 (faster, half the price)',
-  'claude-haiku-5-5': 'Claude Haiku 5.5 (quickest, cheapest)',
-};
-const defaultModel = 'claude-opus-5-5';
 
 /// US dollars per million input and output tokens, and per web search.
 const _prices = {
@@ -34,48 +16,16 @@ const _prices = {
 };
 const _perSearch = 0.01;
 
-/// What a request used, and roughly what it cost.
-class AiUsage {
-  const AiUsage({this.input = 0, this.output = 0, this.searches = 0, this.dollars = 0});
-  final int input, output, searches;
-  final double dollars;
-
-  AiUsage operator +(AiUsage o) => AiUsage(
-    input: input + o.input,
-    output: output + o.output,
-    searches: searches + o.searches,
-    dollars: dollars + o.dollars,
-  );
-}
-
-typedef Source = ({String title, String url});
-
-class AiResult {
-  const AiResult(this.data, {this.sources = const [], this.usage = const AiUsage()});
-  final Json data;
-
-  /// Pages the answer drew on: those Claude listed, then those it read.
-  final List<Source> sources;
-  final AiUsage usage;
-
-  /// The answer with every source in it, for storing.
-  Json get withSources => {
-    ...data,
-    'sources': [
-      for (final s in sources) {'title': s.title, 'url': s.url},
-    ],
-  };
-}
-
 /// Calls the Claude Messages API over HTTP (Dart has no official SDK) with
 /// the user's own API key. Every answer is JSON in a given schema: plain
 /// requests use structured outputs; requests that research the web first
 /// hand their answer to a `submit` tool, which the client validates.
-class Claude {
-  Claude({required this.apiKey, this.model = defaultModel, http.Client? client, this.onUsage})
+class Claude implements Ai {
+  Claude({required this.apiKey, required this.model, http.Client? client, this.onUsage})
     : _http = client ?? http.Client();
 
   final String apiKey;
+  @override
   final String model;
   final http.Client _http;
 
@@ -93,11 +43,7 @@ class Claude {
   /// basic versions.
   bool get _haiku => model.startsWith('claude-haiku');
 
-  /// Asks Claude for JSON matching [schema].
-  ///
-  /// [content] is the user turn's content blocks (text, a PDF document...).
-  /// With [web], Claude may search and read up to [searches] web pages
-  /// first. [onProgress] hears what it is doing ("Searching: ...").
+  @override
   Future<AiResult> ask({
     required String system,
     required List<Json> content,
@@ -109,7 +55,7 @@ class Claude {
     void Function(String status)? onProgress,
   }) async {
     if (apiKey.trim().isEmpty) {
-      throw AiException('Add your Claude API key in Settings to use the AI features.');
+      throw AiException(needsAiKey);
     }
     final messages = <Json>[
       {'role': 'user', 'content': content},
@@ -167,7 +113,7 @@ class Claude {
         onUsage?.call(usage);
         final text = reply.content.where((b) => b['type'] == 'text').map((b) => str(b['text'])).join();
         final data = _parse(text, schema);
-        return AiResult(data, sources: _sources(data, read), usage: usage);
+        return AiResult(data, sources: mergeSources(data, read), usage: usage);
       }
       messages.add({'role': 'assistant', 'content': reply.content});
       if (reply.stopReason == 'pause_turn') continue;
@@ -188,7 +134,7 @@ class Claude {
       if (problem == null) {
         onUsage?.call(usage);
         final data = obj(input);
-        return AiResult(data, sources: _sources(data, read), usage: usage);
+        return AiResult(data, sources: mergeSources(data, read), usage: usage);
       }
       messages.add({
         'role': 'user',
@@ -215,17 +161,6 @@ class Claude {
       // Reported below.
     }
     throw AiException('Claude answered in an unexpected form. Try again.', retryable: true);
-  }
-
-  List<Source> _sources(Json data, List<Source> read) {
-    final seen = <String>{};
-    return [
-      for (final s in [
-        for (final o in objs(data['sources'])) (title: str(o['title']), url: str(o['url'])),
-        ...read,
-      ])
-        if (s.url.startsWith('http') && seen.add(s.url)) s,
-    ];
   }
 
   /// One streamed request, retried on rate limits, overload and dropped
@@ -413,7 +348,7 @@ class _Reply {
       _searches,
       intOf(obj(u['server_tool_use'])['web_search_requests']) ?? 0,
     ].reduce((a, b) => a > b ? a : b);
-    final (pin, pout) = _prices[model] ?? _prices[defaultModel]!;
+    final (pin, pout) = _prices[model] ?? _prices[AiProvider.claude.defaultModel]!;
     usage = AiUsage(
       input: _in,
       output: _out,

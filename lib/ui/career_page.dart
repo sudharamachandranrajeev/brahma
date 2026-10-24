@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../db/database.dart';
-import '../domain/claude.dart';
+import '../domain/ai.dart';
 import '../domain/countries.dart';
 import '../domain/insights.dart';
 import '../domain/json.dart';

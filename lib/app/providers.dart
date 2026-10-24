@@ -9,27 +9,39 @@ import 'package:http/http.dart' as http;
 import '../db/database.dart';
 import '../domain/advisor.dart';
 import '../domain/book.dart';
+import '../domain/ai.dart';
 import '../domain/claude.dart';
+import '../domain/gemini.dart';
 import '../domain/profile.dart';
 import '../domain/refresh.dart';
 import '../domain/n8n.dart';
+import '../domain/update.dart';
 import '../ui/hints.dart';
 import 'session.dart';
 
 /// The open session; main() overrides this before the first frame.
 final sessionProvider = Provider<AppSession>((ref) => throw StateError('No session'));
 
-/// HTTP for Claude and the job feeds; tests override it.
+/// HTTP for the AI and the job feeds; tests override it.
 final httpClientProvider = Provider<http.Client>((ref) => http.Client());
+
+/// The self-updater: main() sets it in a release build of the standalone app.
+/// Null in the Brahma suite (which updates itself) and in tests.
+final updaterProvider = Provider<Updater?>((ref) => null);
+
+/// A newer release for this device, looked for once a run; null when this
+/// is the newest or there is no updater.
+final updateProvider = FutureProvider<Release?>((ref) async => ref.watch(updaterProvider)?.check());
 
 /// What main() and the tests override: the session, under both its Udyoga
 /// and its shared type, and the app's identity and hints.
-List<Override> udyogaOverrides(AppSession session, {http.Client? client}) => [
+List<Override> udyogaOverrides(AppSession session, {http.Client? client, Updater? updater}) => [
   sessionProvider.overrideWithValue(session),
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(udyogaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...udyogaHints}),
   if (client != null) httpClientProvider.overrideWithValue(client),
+  if (updater != null) updaterProvider.overrideWithValue(updater),
 ];
 
 extension Mutate on WidgetRef {
@@ -119,28 +131,26 @@ final n8nLinkProvider = FutureProvider<N8nLink>((ref) {
   return ref.watch(sessionProvider).book.n8nLink();
 });
 
-/// The adviser with the user's key and model, or null until a key is set.
+/// The adviser with the user's model and its key, or null until a key is set.
 final advisorProvider = FutureProvider<Advisor?>((ref) async {
   ref.watch(revisionProvider);
   final s = ref.watch(sessionProvider);
-  final key = await s.book.pref<String>(PrefKeys.aiKey, '');
-  if (key.isEmpty) return null;
-  final model = await s.book.pref<String>(PrefKeys.aiModel, defaultModel);
-  return Advisor(
-    Claude(
-      apiKey: key,
-      model: aiModels.containsKey(model) ? model : defaultModel,
-      client: ref.watch(httpClientProvider),
-      onUsage: (u) => s.book.addSpend(u, month: today().substring(0, 7)).ignore(),
-    ),
-    today: today(),
-  );
+  final keys = await s.book.aiKeys();
+  final model = effectiveModel(await s.book.pref<String>(PrefKeys.aiModel, ''), keys);
+  if (model == null) return null;
+  final key = keys[AiProvider.of(model)]!;
+  final client = ref.watch(httpClientProvider);
+  void onUsage(AiUsage u) => s.book.addSpend(u, month: today().substring(0, 7)).ignore();
+  return Advisor(switch (AiProvider.of(model)) {
+    AiProvider.claude => Claude(apiKey: key, model: model, client: client, onUsage: onUsage),
+    AiProvider.gemini => Gemini(apiKey: key, model: model, client: client, onUsage: onUsage),
+  }, today: today());
 });
 
 /// The adviser, or an error telling the user to add a key.
 Future<Advisor> requireAdvisor(WidgetRef ref) async {
   final advisor = await ref.read(advisorProvider.future);
-  if (advisor == null) throw AiException('Add your Claude API key in Settings to use the AI features.');
+  if (advisor == null) throw AiException(needsAiKey);
   return advisor;
 }
 
