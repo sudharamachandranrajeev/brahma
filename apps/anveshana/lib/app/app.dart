@@ -22,6 +22,9 @@ class AnveshanaApp extends StatelessWidget {
   );
 }
 
+/// New listings from Brahma Watch since the last start.
+void fetchWatch(WidgetRef ref) => Future.microtask(() => ref.read(watchAutoProvider.future)).ignore();
+
 /// The app, opening the links the platform hands over (a scanned pairing
 /// code). There is no onboarding: every screen works empty.
 class _Root extends ConsumerWidget {
@@ -29,10 +32,6 @@ class _Root extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => LinkHandler(
-    child: AppShell(
-      destinations: allDestinations,
-      // New listings from Brahma Watch since the last start.
-      onStart: (ref) => Future.microtask(() => ref.read(watchAutoProvider.future)).ignore(),
-    ),
+    child: AppShell(destinations: allDestinations, onStart: fetchWatch),
   );
 }
