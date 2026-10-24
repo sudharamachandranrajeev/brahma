@@ -117,9 +117,11 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
         final picked = await showModalBottomSheet<int>(
           context: context,
           showDragHandle: true,
+          // Scrolls: apps add screens over time, and a sheet is at most
+          // part of the screen's height.
           builder: (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: ListView(
+              shrinkWrap: true,
               children: [
                 for (final j in more)
                   ListTile(
