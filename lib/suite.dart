@@ -19,11 +19,10 @@ final udyogaSuite = SuiteApp(
   overrides: (s) => [sessionProvider.overrideWithValue(s as AppSession)],
   hints: udyogaHints,
   theme: udyogaTheme,
-  destinations: allDestinations,
+  home: (onHome) => AppShell(destinations: allDestinations, floating: true, onHome: onHome),
   builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
   // The routine refresh, as in the app (it runs only what is due).
   onStart: (ref) => Future.microtask(() => ref.read(refreshTickerProvider)).ignore(),
-  floating: true,
   summary: (_) => const _Summary(),
 );
 
