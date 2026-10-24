@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Vahana Anveshana ("vehicle search"): a teal disc, a white car and an
+       amber magnifying glass over it. -->
+  <circle cx="512" cy="512" r="496" fill="#0F6E6A"/>
+  <path d="M232 612 L292 456 Q304 424 340 424 H520 Q552 424 574 448 L636 520 H700 Q760 520 760 580 V636 H232 Z"
+        fill="none" stroke="#ffffff" stroke-width="56" stroke-linejoin="round"/>
+  <circle cx="352" cy="650" r="56" fill="#0F6E6A" stroke="#ffffff" stroke-width="48"/>
+  <circle cx="632" cy="650" r="56" fill="#0F6E6A" stroke="#ffffff" stroke-width="48"/>
+  <circle cx="650" cy="610" r="130" fill="#0F6E6A" fill-opacity=".45" stroke="#E0A100" stroke-width="56"/>
+  <path d="M746 706 L846 806" fill="none" stroke="#E0A100" stroke-width="76" stroke-linecap="round"/>
+</svg>
