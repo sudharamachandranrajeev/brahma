@@ -17,6 +17,8 @@ dependencies:
     path: ../apps/anveshana
   udyoga:
     path: ../apps/udyoga
+  vahana:
+    path: ../apps/vahana
   vani:
     path: ../apps/vani
   vidya:

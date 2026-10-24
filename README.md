@@ -4,8 +4,10 @@ Brahma is a life-management suite: separate apps that share one core and
 one end-to-end encrypted sync account, and one app that holds them all.
 
 - [Artha](https://github.com/sudharamachandranrajeev/artha): finance, accounting and investments
-- [Anveshana](https://github.com/sudharamachandranrajeev/anveshana): property research, renting, buying,
-  investment, development and management
+- [Graha Anveshana](https://github.com/sudharamachandranrajeev/graha-anveshana) (`apps/anveshana`):
+  property research, renting, buying, investment, development and management
+- [Vahana Anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana) (`apps/vahana`):
+  buying, running and selling a car: listings, finance plans, MOT and tax dates, logbook
 - [Udyoga](https://github.com/sudharamachandranrajeev/udyoga): career and job search: matched openings,
   tailored CVs, applications, contacts, career paths, learning and interview practice
 - [Vani](https://github.com/sudharamachandranrajeev/vani): social media: scheduled posts, one inbox,

@@ -9,6 +9,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 owner=https://github.com/sudharamachandranrajeev
 
+# apps/<name> comes from the repository of the same name, except these.
+declare -A repo=([anveshana]=graha-anveshana [vahana]=vahana-anveshana)
+
 if [ -n "$(git status --porcelain)" ]; then
   echo "Commit or stash your changes first." >&2
   exit 1
@@ -21,8 +24,9 @@ fi
 
 for name in "${names[@]}"; do
   echo "== $name"
-  git subtree pull --prefix "apps/$name" "$owner/$name.git" main \
-    -m "Update apps/$name from $name main
+  from=${repo[$name]:-$name}
+  git subtree pull --prefix "apps/$name" "$owner/$from.git" main \
+    -m "Update apps/$name from $from main
 
 Co-Authored-By: Claude Code <noreply@anthropic.com>"
 done

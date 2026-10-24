@@ -3,6 +3,11 @@
 Releases of Brahma, the suite app in `app/`. Each app keeps its own
 changelog in `apps/<name>`.
 
+## Unreleased
+
+- Anveshana splits in two: Graha Anveshana (property, still `apps/anveshana`) and the new
+  Vahana Anveshana (cars, `apps/vahana`), each with its own card, look and database.
+
 ## 0.1.0 (2026-10-24)
 
 First test release.

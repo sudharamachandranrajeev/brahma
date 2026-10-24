@@ -204,9 +204,9 @@ jobs:
           cp branding/brahma-512.png "$dir/brahma.png"
           cp scripts/install-linux.sh "$dir/install.sh"
           cat > "$dir/README.txt" <<'EOF'
-          Brahma for Linux (x86-64): Artha, Anveshana, Udyoga, Vani and Vidya in one
-          app. Needs GTK 3, libsecret and a running keyring (GNOME Keyring or
-          KWallet), which hold the database key.
+          Brahma for Linux (x86-64): Artha, Graha Anveshana, Vahana Anveshana,
+          Udyoga, Vani and Vidya in one app. Needs GTK 3, libsecret and a
+          running keyring (GNOME Keyring or KWallet), which hold the database key.
 
             ./install.sh              adds Brahma to your app menu (no root needed)
             ./install.sh --uninstall  removes it; your data stays
@@ -309,7 +309,7 @@ jobs:
             echo "::error::Brahma failed to start"; exit 1
           fi
           data=home/.local/share/dev.brahma.app
-          for name in brahma artha anveshana udyoga vani vidya; do
+          for name in brahma artha anveshana udyoga vahana vani vidya; do
             db=$data/$name.sqlite
             [[ -s $db ]] || { echo "::error::no database at $db"; ls -laR home/.local/share || true; exit 1; }
             if head -c 15 "$db" | grep -q 'SQLite format 3'; then echo "::error::$db is not encrypted"; exit 1; fi
