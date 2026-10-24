@@ -4,10 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Vahana's colours: road teal with amber as the accent.
-const roadTeal = Color(0xFF0F6E6A);
-const amber = Color(0xFFE0A100);
-
 final _gbp = NumberFormat.currency(locale: 'en_GB', symbol: '£', decimalDigits: 0);
 
 /// Whole pounds, e.g. £1,250.

@@ -12,6 +12,7 @@ import '../domain/nation.dart';
 import '../domain/vehicles.dart';
 import 'cars_page.dart';
 import 'common.dart';
+import 'look.dart';
 
 const _govLinks = <(String, String)>[
   ('Vehicle check (tax, MOT, make, colour)', 'https://vehicleenquiry.service.gov.uk/'),
@@ -44,7 +45,6 @@ class CarPage extends ConsumerWidget {
     final day = today();
     final bought = v.boughtOn != null;
     final sold = v.soldOn != null;
-    final t = Theme.of(context).textTheme;
     return PageScaffold(
       title: v.title,
       actions: [
@@ -66,11 +66,29 @@ class CarPage extends ConsumerWidget {
         ),
       ],
       children: [
-        Text(
-          [if (v.price != null) gbp(v.price!), vehicleFacts(v)].where((s) => s.isNotEmpty).join(' · '),
-          style: t.titleMedium?.merge(tabular),
+        FigureCard(
+          eyebrow: [
+            carStageLabel(Stage.of(v.stage)),
+            if (v.registration.isNotEmpty) v.registration,
+          ].join(' · '),
+          value: v.price == null ? '–' : gbp(v.price!),
+          caption: v.title,
+          detail: [vehicleFacts(v), v.location].where((s) => s.isNotEmpty).join(' · '),
         ),
-        const SizedBox(height: 8),
+        if (deadlines(v, nation: nation, today: day) case final dates when dates.isNotEmpty)
+          StatStrip([
+            for (final d in dates)
+              StatTile(
+                d.kind.label,
+                d.overdue
+                    ? '${-d.days}d late'
+                    : d.days == 0
+                    ? 'Today'
+                    : '${d.days}d',
+                detail: niceDate(d.date),
+                alert: d.soon,
+              ),
+          ]),
         Wrap(
           spacing: 8,
           runSpacing: 4,
@@ -429,13 +447,19 @@ class _Logbook extends ConsumerWidget {
                   'Log fuel, services, repairs, the MOT, insurance and tyres. Totals and the dates above follow.',
                 )
               else ...[
-                FigureRow('Spent this year', gbp(st.spentThisYear)),
-                FigureRow('Spent in all', gbp(st.spentTotal)),
-                if (st.perMile != null)
-                  FigureRow('A mile (over the miles logged)', '${(st.perMile! * 100).toStringAsFixed(1)}p'),
-                if (st.mpg != null) FigureRow('Real economy', '${st.mpg!.toStringAsFixed(1)} mpg'),
-                if (st.milesPerKwh != null)
-                  FigureRow('Real economy', '${st.milesPerKwh!.toStringAsFixed(1)} miles/kWh'),
+                StatStrip([
+                  StatTile('This year', gbp(st.spentThisYear)),
+                  StatTile('In all', gbp(st.spentTotal)),
+                  if (st.perMile != null)
+                    StatTile(
+                      'A mile',
+                      '${(st.perMile! * 100).toStringAsFixed(1)}p',
+                      detail: 'over the miles logged',
+                    ),
+                  if (st.mpg != null) StatTile('Real economy', '${st.mpg!.toStringAsFixed(1)} mpg'),
+                  if (st.milesPerKwh != null)
+                    StatTile('Real economy', '${st.milesPerKwh!.toStringAsFixed(1)} mi/kWh'),
+                ]),
                 if (st.insuranceChange != null)
                   FigureRow(
                     'Insurance against last time',

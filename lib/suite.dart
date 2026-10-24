@@ -9,6 +9,7 @@ import 'app/session.dart';
 import 'domain/car_owning.dart';
 import 'domain/pipeline.dart';
 import 'ui/hints.dart';
+import 'ui/look.dart';
 
 /// Vahana Anveshana as the Brahma suite app hosts it.
 final vahanaSuite = SuiteApp(
@@ -19,7 +20,8 @@ final vahanaSuite = SuiteApp(
   overrides: (s) => [sessionProvider.overrideWithValue(s as AppSession)],
   hints: vahanaHints,
   theme: (_, b) => vahanaTheme(b),
-  home: (onHome) => AppShell(destinations: allDestinations, onHome: onHome),
+  builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
+  home: (onHome) => AppShell(destinations: allDestinations, onHome: onHome, floating: true),
   summary: (_) => const _Summary(),
 );
 

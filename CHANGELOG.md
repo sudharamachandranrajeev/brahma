@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+
+A new look, after a dark instrument-panel reference: a charcoal canvas with faint contour lines,
+hairline cards, one lime accent for the best or chosen, big tabular figures under small spaced
+capitals, and a floating navigation bar. Light mode keeps the layout with ink actions. Inter is
+bundled.
+
+- Garage leads with the next date due, or the cheapest car in play, and counts.
+- Finance leads with the lowest real cost a month; plans are ranked rows that open for details.
+- The car page shows its dates as tiles, and the logbook totals as figures.
+
 ## 0.1.0
 
 First release: the car side of Anveshana (0.2.0) as its own app. Homes are now in Graha Anveshana.
