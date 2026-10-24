@@ -1,7 +1,8 @@
 // One-time (and re-runnable) deploy of Brahma Watch to Cloudflare:
 //   npx wrangler login     (once, opens the browser)
 //   npm run setup
-// Creates the KV namespace, generates the ntfy topic and API token (kept in
+// Creates the KV namespace, the D1 database (with migrations) and the R2 media
+// bucket, generates the ntfy topic, API token and TOKEN_KEY (kept in
 // ~/.config/brahma/watch.env, mode 600), deploys, stores the secrets, loads
 // the searches in ~/.config/brahma/watches.json if there are any (kept out of
 // the repository: they say where you live), runs once and sends a test push.
@@ -32,7 +33,32 @@ if (toml.includes("REPLACE_WITH_KV_ID")) {
   console.log(`KV namespace ${id}`);
 }
 
-// Secrets, generated once and kept locally for Anveshana.
+// D1 database for the social hub, then its tables.
+if (toml.includes("REPLACE_WITH_D1_ID")) {
+  const out = wrangler(["d1", "create", "brahma-watch"]);
+  const id = out.match(/database_id"?\s*[=:]\s*"([0-9a-f-]{36})"/)?.[1];
+  if (!id) throw new Error(`Could not read the database id from:\n${out}`);
+  toml = toml.replace("REPLACE_WITH_D1_ID", id);
+  writeFileSync(tomlPath, toml);
+  console.log(`D1 database ${id}`);
+}
+const migrated = spawnSync("npx", ["wrangler", "d1", "migrations", "apply", "brahma-watch", "--remote"], {
+  cwd: here,
+  stdio: "inherit",
+  env: { ...process.env, CI: "true" },
+});
+if (migrated.status !== 0) throw new Error("Applying the D1 migrations failed (see above).");
+
+// R2 bucket for media. R2 has to be enabled once in the dashboard (it asks
+// for a payment method even on the free tier).
+const bucket = spawnSync("npx", ["wrangler", "r2", "bucket", "create", "brahma-watch-media"], { cwd: here, encoding: "utf8" });
+if (bucket.status !== 0 && !/already exists|already own/i.test(bucket.stdout + bucket.stderr)) {
+  console.error(bucket.stdout + bucket.stderr);
+  console.error("Enable R2 in the Cloudflare dashboard (R2 Object Storage), then run setup again.");
+  process.exit(1);
+}
+
+// Secrets, generated once and kept locally for Anveshana and Vani.
 const dir = join(homedir(), ".config", "brahma");
 const envPath = join(dir, "watch.env");
 const env: Record<string, string> = {};
@@ -44,17 +70,21 @@ if (existsSync(envPath)) {
 }
 env.NTFY_TOPIC ??= `brahma-${randomBytes(12).toString("hex")}`;
 env.API_TOKEN ??= randomBytes(32).toString("hex");
+// Encrypts every stored platform token. Never regenerate it: the tokens
+// sealed under the old key would be unreadable.
+env.TOKEN_KEY ??= randomBytes(32).toString("base64");
 
 const deployed = wrangler(["deploy"]);
 const url = deployed.match(/https:\/\/[\w.-]+\.workers\.dev/)?.[0];
 if (!url) throw new Error(`Deployed, but no workers.dev URL in the output:\n${deployed}`);
 env.WATCH_URL = url;
+env.PUBLIC_URL = url;
 
 mkdirSync(dir, { recursive: true, mode: 0o700 });
 writeFileSync(envPath, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n", { mode: 0o600 });
 chmodSync(envPath, 0o600);
 
-for (const name of ["NTFY_TOPIC", "API_TOKEN"]) wrangler(["secret", "put", name], env[name]);
+for (const name of ["NTFY_TOPIC", "API_TOKEN", "TOKEN_KEY", "PUBLIC_URL"]) wrangler(["secret", "put", name], env[name]);
 
 const call = async (path: string, method = "POST", body?: string) => {
   const res = await fetch(url + path, {
@@ -80,5 +110,9 @@ Settings saved in ${envPath}
 
 On your phone: install "ntfy" (Play Store or F-Droid), tap +, and subscribe to
 topic ${env.NTFY_TOPIC}  (or open ${subscribe})
-Keep the topic private: anyone who knows it can read the alerts.`);
+Keep the topic private: anyone who knows it can read the alerts.
+
+Vani (the social app) connects with:
+  Hub URL    ${url}
+  API token  in ${envPath} (API_TOKEN)`);
 spawnSync("qrencode", ["-t", "ansiutf8", subscribe], { stdio: "inherit" });

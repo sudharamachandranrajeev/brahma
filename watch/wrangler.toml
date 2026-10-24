@@ -2,12 +2,31 @@ name = "brahma-watch"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 
-# Every 10 minutes. Rentals in a town like Enniskillen appear a few times a
-# week, so this is prompt without hammering the site.
+# Every minute: scheduled posts go out on time. Property watches, the social
+# inbox and discovery run on every tenth minute (rentals in a town like
+# Enniskillen appear a few times a week, so that is prompt without hammering
+# the site); account checks run daily at 03:05 UTC.
 [triggers]
-crons = ["*/10 * * * *"]
+crons = ["* * * * *"]
+
+# Outbound requests one run may make. The Workers free plan allows 50; on
+# Workers Paid ($5/month, recommended for the social hub) raise this to 900.
+[vars]
+SUBREQUEST_BUDGET = "45"
 
 # `npm run setup` creates the namespace and fills in this id.
 [[kv_namespaces]]
 binding = "KV"
 id = "REPLACE_WITH_KV_ID"
+
+# Social hub data (`npm run setup` creates the database and fills in this id).
+[[d1_databases]]
+binding = "DB"
+database_name = "brahma-watch"
+database_id = "REPLACE_WITH_D1_ID"
+migrations_dir = "migrations"
+
+# Media library for scheduled posts (R2 needs to be enabled on the account).
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "brahma-watch-media"

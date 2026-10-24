@@ -25,7 +25,7 @@ export interface Listing {
 }
 
 const origin = "https://www.propertypal.com";
-const userAgent = "Mozilla/5.0 (compatible; BrahmaWatch/0.1; personal saved-search alerts)";
+export const userAgent = "Mozilla/5.0 (compatible; BrahmaWatch/0.1; personal saved-search alerts)";
 
 /** Reads one results page. Throws when the page has no results data. */
 export function parseSearchPage(html: string): { listings: Listing[]; totalPages: number } {
