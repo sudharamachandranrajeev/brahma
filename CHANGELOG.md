@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 (2026-10-24)
+
+- Sync setup and pairing links (vidya://) now open and work in Vidya.
+
 ## 0.1.0 (2026-10-24)
 
 First release.
