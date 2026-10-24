@@ -1072,6 +1072,7 @@ IconData alertIcon(String kind) => switch (kind) {
   'inbox' => Icons.forum_rounded,
   'publish' => Icons.send_rounded,
   'account' => Icons.manage_accounts_rounded,
+  'summary' => Icons.insights_rounded,
   _ => Icons.info_rounded,
 };
 

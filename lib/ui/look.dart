@@ -808,6 +808,10 @@ class PlatformStyle {
       Color(0xFF6364FF),
       Color(0xFF563ACC),
     ], FontAwesomeIcons.mastodon),
+    Platform.telegram => const PlatformStyle([
+      Color(0xFF229ED9),
+      Color(0xFF2AABEE),
+    ], FontAwesomeIcons.telegram),
   };
 }
 

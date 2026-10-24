@@ -121,6 +121,74 @@ void main() {
     expect(meta.info(Platform.bluesky).maxText, 300);
   });
 
+  test('triage, translation, moderation, alt text, Telegram and the weekly summary', () async {
+    final fake = FakeHub();
+    final hub = HubClient(hubUrl, hubToken, client: fake.client);
+    final urgent = await hub.inbox(triage: 'urgent');
+    expect(fake.log.last, 'GET /social/inbox?triage=urgent');
+    expect(urgent.items.map((i) => i.id), ['i2']);
+    expect(urgent.items.single.triage?.priority, 'high');
+
+    fake.inbox[1]['triage'] = {'mood': 'question', 'priority': 'normal', 'lang': 'ml'};
+    final t = await hub.translateItem('i1');
+    expect(t.translation?.lang, 'ml');
+    expect(t.translation?.to, 'English');
+    expect(await hub.translate('Thanks!', 'Malayalam'), '[Malayalam] Thanks!');
+
+    final hidden = await hub.moderate('i0', 'hide');
+    expect(hidden.moderation, 'hidden');
+    expect(hidden.status, 'done');
+    expect((await hub.moderate('i0', 'unhide')).moderation, isNull);
+
+    fake.media.add({
+      'id': 'm1',
+      'filename': 'mug.jpg',
+      'contentType': 'image/jpeg',
+      'size': 10,
+      'status': 'ready',
+      'url': '',
+      'createdAt': FakeHub.iso(fake.now),
+    });
+    expect((await hub.describeMedia('m1', context: 'New mugs')).alt, startsWith('A speckled'));
+    expect(fake.bodies['POST /social/media/m1/alt'], {'context': 'New mugs'});
+    expect((await hub.setAlt('m1', '  ')).alt, isNull);
+
+    final tg = await hub.addTelegram(botToken: '123456:${'a' * 35}', chat: '@studio');
+    expect(tg.platform, Platform.telegram);
+    final meta = await hub.meta();
+    expect(meta.info(Platform.telegram).moderation, ['delete']);
+    expect(meta.info(Platform.instagram).moderation, ['hide', 'delete']);
+    expect((await hub.settings()).language, 'English');
+
+    final week = await hub.weeklySummary();
+    expect(week.kind, 'summary');
+    expect(fake.alerts.first['id'], week.id);
+  });
+
+  test('profiles: made and renamed hub-wide, every other call inside one', () async {
+    final fake = FakeHub();
+    final main = HubClient(hubUrl, hubToken, client: fake.client);
+    final shop = await main.addProfile('Shop');
+    expect((await main.profiles()).map((p) => p.name), ['Main', 'Shop']);
+    expect((await main.renameProfile(shop.id, 'Studio shop')).name, 'Studio shop');
+
+    final inShop = HubClient(hubUrl, hubToken, profile: shop.id, client: fake.client);
+    expect(await inShop.accounts(), isEmpty);
+    expect(await main.accounts(), hasLength(5));
+    await inShop.addBluesky(handle: 'shop.example.social', appPassword: 'abcd-efgh-ijkl-mnop');
+    expect(fake.profileHubs[shop.id]!.accounts, hasLength(1));
+    expect(fake.accounts, hasLength(5));
+
+    await expectLater(
+      main.deleteProfile(shop.id),
+      throwsA(isA<HubException>().having((e) => e.status, 'status', 409)),
+    );
+    await expectLater(
+      HubClient(hubUrl, hubToken, profile: 'gone', client: fake.client).accounts(),
+      throwsA(isA<HubException>().having((e) => e.status, 'status', 404)),
+    );
+  });
+
   test('checkUrl allows https and plain http only on local networks', () {
     expect(HubLink.checkUrl('https://watch.example.workers.dev'), isNull);
     expect(HubLink.checkUrl('http://192.168.1.20:8787'), isNull);

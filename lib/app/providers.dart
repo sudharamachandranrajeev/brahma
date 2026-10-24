@@ -51,11 +51,32 @@ final hubLinkProvider = FutureProvider<HubLink>((ref) {
   return ref.watch(sessionProvider).prefs.hub();
 });
 
-/// A client for the hub, or null until one is connected.
+/// The hub profile this device works in; device-only, so two people on two
+/// phones can each be in their own.
+class ProfileChoice extends AsyncNotifier<String> {
+  static const _key = 'vani.profile';
+
+  @override
+  Future<String> build() async {
+    final v = await ref.watch(sessionProvider).db.localSetting(_key);
+    return v == null || v.isEmpty ? Profile.main : v;
+  }
+
+  Future<void> set(String id) async {
+    state = AsyncData(id);
+    await ref.read(sessionProvider).db.setLocalSetting(_key, id);
+  }
+}
+
+final profileProvider = AsyncNotifierProvider<ProfileChoice, String>(ProfileChoice.new);
+
+/// A client for the hub in the current profile, or null until one is
+/// connected. Switching profiles makes a new client, so every hub screen reloads.
 final hubProvider = FutureProvider<HubClient?>((ref) async {
   final link = await ref.watch(hubLinkProvider.future);
   if (!link.ready) return null;
-  return HubClient(link.url, link.token, client: ref.watch(httpClientProvider));
+  final profile = await ref.watch(profileProvider.future);
+  return HubClient(link.url, link.token, profile: profile, client: ref.watch(httpClientProvider));
 });
 
 /// Bumped after every hub change and every minute, so hub screens reload.
@@ -85,6 +106,7 @@ FutureProvider<T> _fromHub<T>(Future<T> Function(HubClient hub) read) => FutureP
   return read(hub);
 });
 
+final profilesProvider = _fromHub((h) => h.profiles());
 final overviewProvider = _fromHub((h) => h.overview());
 final metaProvider = _fromHub((h) => h.meta());
 final accountsProvider = _fromHub((h) => h.accounts());
@@ -108,11 +130,17 @@ final postsProvider = FutureProvider.family<List<Post>, (String, String)>((ref, 
 });
 
 /// What the inbox shows: status (open, new, read, done), platform and kind.
-typedef InboxFilter = ({String status, Platform? platform, String? kind});
+/// [triage]: a mood, or urgent (high priority).
+typedef InboxFilter = ({String status, Platform? platform, String? kind, String? triage});
 
 class InboxFilterNotifier extends Notifier<InboxFilter> {
   @override
-  InboxFilter build() => (status: 'open', platform: null, kind: null);
+  InboxFilter build() {
+    // Each profile starts from the plain open inbox.
+    ref.watch(profileProvider);
+    return (status: 'open', platform: null, kind: null, triage: null);
+  }
+
   void set(InboxFilter f) => state = f;
 }
 
@@ -123,7 +151,7 @@ final inboxProvider = FutureProvider<InboxPage>((ref) async {
   final f = ref.watch(inboxFilterProvider);
   final hub = await ref.watch(hubProvider.future);
   if (hub == null) throw NoHubException();
-  return hub.inbox(status: f.status, platform: f.platform, kind: f.kind, limit: 100);
+  return hub.inbox(status: f.status, platform: f.platform, kind: f.kind, triage: f.triage, limit: 100);
 });
 
 /// The name the greeting uses (a synced pref).

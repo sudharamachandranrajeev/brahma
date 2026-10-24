@@ -55,6 +55,7 @@ class AccountsPage extends ConsumerWidget {
                   _ConnectCard(provider: OAuthProvider.threads),
                   _FormCard(platform: Platform.bluesky),
                   _FormCard(platform: Platform.mastodon),
+                  _FormCard(platform: Platform.telegram),
                 ],
               ),
               const SizedBox(height: 28),
@@ -279,9 +280,12 @@ class _FormCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
-    final bluesky = platform == Platform.bluesky;
     return Panel(
-      onTap: () => bluesky ? _addBluesky(context, ref) : _addMastodon(context, ref),
+      onTap: () => switch (platform) {
+        Platform.bluesky => _addBluesky(context, ref),
+        Platform.telegram => _addTelegram(context, ref),
+        _ => _addMastodon(context, ref),
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -295,10 +299,11 @@ class _FormCard extends ConsumerWidget {
           const SizedBox(height: 14),
           Text(platform.label, style: t.titleMedium),
           const SizedBox(height: 2),
-          Text(
-            bluesky ? 'With an app password' : 'With an access token from your server',
-            style: t.bodySmall,
-          ),
+          Text(switch (platform) {
+            Platform.bluesky => 'With an app password',
+            Platform.telegram => 'A channel or group, with your bot',
+            _ => 'With an access token from your server',
+          }, style: t.bodySmall),
         ],
       ),
     );
@@ -365,6 +370,34 @@ class _FormCard extends ConsumerWidget {
       },
     );
     if (ok && context.mounted) showMessage(context, 'Mastodon connected.');
+  }
+
+  Future<void> _addTelegram(BuildContext context, WidgetRef ref) async {
+    final token = TextEditingController();
+    final chat = TextEditingController();
+    final ok = await showFormDialog(
+      context,
+      title: 'Add Telegram',
+      action: 'Add',
+      fields: (_) => [
+        const Text(
+          'Make a bot with @BotFather and copy its token. Add the bot as an admin of your channel with '
+          '"Post messages", and as an admin of the channel\'s discussion group so comments reach the inbox. '
+          'Use one bot per channel.',
+        ),
+        const SizedBox(height: 16),
+        Field(token, 'Bot token', hint: '123456789:AA...', obscure: true),
+        Field(chat, 'Channel or group', hint: '@yourchannel, t.me/yourchannel or -100...'),
+      ],
+      onSave: () async {
+        if (token.text.trim().isEmpty || chat.text.trim().isEmpty) {
+          return 'Enter the bot token and the channel.';
+        }
+        await ref.hub((h) => h.addTelegram(botToken: token.text.trim(), chat: chat.text.trim()));
+        return null;
+      },
+    );
+    if (ok && context.mounted) showMessage(context, 'Telegram connected.');
   }
 }
 
