@@ -52,9 +52,11 @@ packages:
   brahma_core:
     dependency: "direct main"
     description:
-      path: "../brahma/core"
-      relative: true
-    source: path
+      path: core
+      ref: HEAD
+      resolved-ref: "6df379b1033e66ae1c10dbe55668e0b0cb0e4018"
+      url: "https://github.com/sudharamachandranrajeev/brahma.git"
+    source: git
     version: "0.1.0"
   build:
     dependency: transitive
