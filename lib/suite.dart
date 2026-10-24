@@ -9,7 +9,7 @@ import 'app/session.dart';
 import 'domain/pipeline.dart';
 import 'ui/hints.dart';
 
-/// Anveshana as the Brahma suite app hosts it.
+/// Graha Anveshana as the Brahma suite app hosts it.
 final anveshanaSuite = SuiteApp(
   identity: anveshanaIdentity,
   tagline: 'Property: renting, buying and lettings',

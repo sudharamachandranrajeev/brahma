@@ -19,8 +19,6 @@ part 'database.g.dart';
     RentPayments,
     ComplianceItems,
     Areas,
-    Vehicles,
-    CarLogs,
     Prefs,
     Outbox,
     SyncCursors,
@@ -45,8 +43,6 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     'rent_payments',
     'compliance_items',
     'areas',
-    'vehicles',
-    'car_logs',
     'prefs',
   ];
 
@@ -61,27 +57,9 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
         await customStatement(sql);
       }
     },
-    onUpgrade: (m, from, to) async {
-      if (from < 2) await m.createTable(vehicles);
-      if (from == 2) {
-        for (final c in [
-          vehicles.firstRegistered,
-          vehicles.motDue,
-          vehicles.taxDue,
-          vehicles.insuranceDue,
-          vehicles.serviceDue,
-          vehicles.boughtOn,
-          vehicles.soldOn,
-          vehicles.soldPrice,
-        ]) {
-          await m.addColumn(vehicles, c);
-        }
-      }
-      if (from < 3) {
-        await m.createTable(carLogs);
-        await customStatement(_carLogsIndex);
-      }
-    },
+    // 2 and 3 added the car tables, which moved to Vahana Anveshana. Databases
+    // already at those versions keep the tables, unused; nothing is dropped.
+    onUpgrade: (m, from, to) async {},
   );
 
   static const _indexes = [
@@ -89,8 +67,5 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     'CREATE INDEX interactions_property ON interactions (property_id)',
     'CREATE INDEX viewings_property ON viewings (property_id)',
     'CREATE INDEX rent_payments_tenancy ON rent_payments (tenancy_id)',
-    _carLogsIndex,
   ];
-
-  static const _carLogsIndex = 'CREATE INDEX car_logs_vehicle ON car_logs (vehicle_id, date)';
 }

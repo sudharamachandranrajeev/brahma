@@ -1,4 +1,4 @@
-/// Anveshana's hints, by id, on top of the shared ones (coreHints). Tooltips
+/// Graha Anveshana's hints, by id, on top of the shared ones (coreHints). Tooltips
 /// use the short ones; page banners (ids starting `page.`) explain a whole
 /// screen once.
 const anveshanaHints = <String, String>{
@@ -9,9 +9,8 @@ const anveshanaHints = <String, String>{
   'nav.invest': 'Buy-to-let, buying a home and development appraisals.',
   'nav.lettings': 'Tenancies, rent and landlord safety checks.',
   'nav.research': 'Area reports for any UK postcode, purchase tax and where to look further.',
-  'nav.cars': 'Buy a car, new or used: where to look, what you found, how to pay and what to check.',
   'nav.settings': 'Your details for enquiries, your home point, Brahma Watch, sync and security.',
-  'nav.more': 'The rest of Anveshana.',
+  'nav.more': 'The rest of Graha Anveshana.',
   // Hunt
   'hunt.add': 'Paste a PropertyPal link, or type a property in.',
   'hunt.watch': 'Bring in what Brahma Watch found since the last check.',
@@ -21,7 +20,7 @@ const anveshanaHints = <String, String>{
   'hunt.gone': 'The advert says it is let or sold.',
   // Searches
   'searches.send': 'Replace the searches Brahma Watch runs with these.',
-  'searches.fetch': 'Copy the searches Brahma Watch runs into Anveshana.',
+  'searches.fetch': 'Copy the searches Brahma Watch runs into Graha Anveshana.',
   'searches.run': 'Ask Brahma Watch to check every search now.',
   'searches.test': 'Send a test alert to your phone.',
   'searches.path':
@@ -36,40 +35,10 @@ const anveshanaHints = <String, String>{
   // Research
   'research.save': 'Keep this report to compare areas later.',
   'research.tax': 'Stamp Duty (England, NI), LBTT (Scotland) or LTT (Wales) for a price.',
-  // Cars
-  'cars.add': 'Paste an advert link from any site, or type a car in.',
-  'cars.custom': 'Your own dealers and sites. Use {make}, {model}, {postcode} or {maxPrice} in the link.',
-  'cars.compare':
-      'Real cost is everything you pay less what the car is worth at the end. It is the fair way to compare '
-      'cash, a loan, HP, PCP and a lease.',
-  'cars.dates':
-      'MOT, tax, insurance and service dates. They count down here and on the Garage list. The calendar '
-      'button adds a reminder to your own calendar.',
-  'cars.flags': 'Things that buyers report most: prices that are too good, odd mileage, and missing details.',
-  'cars.logbook': 'Fuel, services, repairs, MOT and insurance. Totals build up, and logging an MOT or service moves its date on.',
   // Settings
   'settings.applicant': 'Goes into enquiries you send. Stays on your devices.',
   'settings.home': 'Where distances are measured from, e.g. home or work.',
   'settings.watch':
       'Your own Brahma Watch Worker on Cloudflare, which checks searches and alerts your phone.',
   // Page banners
-  'page.cars':
-      'Search the main car sites for your area from one place, save the cars you find, compare ways to pay '
-      'and work through the checks before you buy.',
-  'page.hunt':
-      'Every property you are considering, by stage. Add one from a PropertyPal link, or let Brahma '
-      'Watch bring in new listings. Hover or long-press anything for a tip.',
-  'page.contacts': 'Call, text, WhatsApp or e-mail from here. Each contact is logged against the property.',
-  'page.searches':
-      'Brahma Watch runs these searches in the cloud every 10 minutes and alerts your phone when '
-      'something new, cheaper or let appears.',
-  'page.invest':
-      'Rough appraisals with current UK tax rules. They are a starting point for your own checks, '
-      'not financial advice.',
-  'page.lettings':
-      'For homes you let out, or rent yourself: rent due and paid, deposits and the safety checks '
-      'each nation requires.',
-  'page.research':
-      'Postcode reports from open data: house prices (UK HPI), recorded crime (police.uk) and sold '
-      'prices (England and Wales). Links cover flood risk, planning, EPCs and more.',
 };

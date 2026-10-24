@@ -1,4 +1,4 @@
-# Builds Anveshana for Android, Windows and Linux and checks each one starts. A v*
+# Builds Graha Anveshana for Android, Windows and Linux and checks each one starts. A v*
 # tag publishes a GitHub release (a pre-release for v0.* and tags with a
 # suffix such as -beta.1); running it by hand only builds and tests.
 
@@ -35,7 +35,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "name=${version%%-*}" >> "$GITHUB_OUTPUT"
           echo "build=$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "Anveshana $version (build $GITHUB_RUN_NUMBER)"
+          echo "Graha Anveshana $version (build $GITHUB_RUN_NUMBER)"
 
   test:
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
           flutter build apk --release \
             --build-name=${{ needs.version.outputs.name }} --build-number=${{ needs.version.outputs.build }}
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk dist/Anveshana-${{ needs.version.outputs.version }}-android.apk
+          cp build/app/outputs/flutter-apk/app-release.apk dist/Graha-Anveshana-${{ needs.version.outputs.version }}-android.apk
       - uses: actions/upload-artifact@v4
         with:
           name: android
@@ -122,7 +122,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force dist | Out-Null
           Compress-Archive -Path build\windows\x64\runner\Release\* `
-            -DestinationPath dist\Anveshana-${{ needs.version.outputs.version }}-windows-x64-portable.zip
+            -DestinationPath dist\Graha-Anveshana-${{ needs.version.outputs.version }}-windows-x64-portable.zip
       - name: Installer
         shell: pwsh
         run: |
@@ -136,7 +136,7 @@ jobs:
         shell: pwsh
         working-directory: dist
         run: |
-          $setup = (Get-Item Anveshana-*-setup.exe).FullName
+          $setup = (Get-Item Graha-Anveshana-*-setup.exe).FullName
           $log = Join-Path $env:RUNNER_TEMP 'setup.log'
           $p = Start-Process $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/LOG=$log" -Wait -PassThru
           if ($p.ExitCode -ne 0) { Get-Content $log; throw "setup exited with $($p.ExitCode)" }
@@ -144,10 +144,10 @@ jobs:
           Get-ChildItem $dir | Format-Table Name, Length
           $app = Start-Process (Join-Path $dir 'anveshana.exe') -PassThru
           Start-Sleep -Seconds 20
-          if ($app.HasExited) { throw "Anveshana exited with $($app.ExitCode) within 20 s" }
+          if ($app.HasExited) { throw "Graha Anveshana exited with $($app.ExitCode) within 20 s" }
           # The encrypted database exists once the key store and SQLite3MultipleCiphers worked.
           $db = Get-ChildItem $env:APPDATA -Recurse -Filter anveshana.sqlite -ErrorAction SilentlyContinue | Select-Object -First 1
-          if (-not $db) { throw "Anveshana started but created no database" }
+          if (-not $db) { throw "Graha Anveshana started but created no database" }
           Write-Host "Database: $($db.FullName) ($($db.Length) bytes)"
           Stop-Process -Id $app.Id -Force
           Start-Sleep -Seconds 2
@@ -192,17 +192,17 @@ jobs:
           cp branding/anveshana-512.png "$dir/anveshana.png"
           cp scripts/install-linux.sh "$dir/install.sh"
           cat > "$dir/README.txt" <<'EOF'
-          Anveshana for Linux (x86-64). Needs GTK 3, libsecret and a running keyring
+          Graha Anveshana for Linux (x86-64). Needs GTK 3, libsecret and a running keyring
           (GNOME Keyring or KWallet), which hold the database key.
 
-            ./install.sh              adds Anveshana to your app menu (no root needed)
+            ./install.sh              adds Graha Anveshana to your app menu (no root needed)
             ./install.sh --uninstall  removes it; your data stays
             ./anveshana               runs it from this folder without installing
 
           Your data: ~/.local/share/dev.brahma.anveshana (encrypted).
           EOF
           sed -i 's/^          //' "$dir/README.txt"
-          tar czf "dist/Anveshana-$version-linux-x64.tar.gz" "$dir"
+          tar czf "dist/Graha-Anveshana-$version-linux-x64.tar.gz" "$dir"
       - uses: actions/upload-artifact@v4
         with:
           name: linux
@@ -285,14 +285,14 @@ jobs:
           code=$?
           set -e
           cat app.log
-          if [[ $code != 124 ]]; then echo "::error::Anveshana exited with $code"; exit 1; fi
+          if [[ $code != 124 ]]; then echo "::error::Graha Anveshana exited with $code"; exit 1; fi
           if grep -qE 'Unhandled Exception|Anveshana startup failed|error while loading shared libraries|symbol lookup error|undefined symbol|cannot open shared object' app.log; then
-            echo "::error::Anveshana failed to start"; exit 1
+            echo "::error::Graha Anveshana failed to start"; exit 1
           fi
           db=home/.local/share/dev.brahma.anveshana/anveshana.sqlite
           [[ -s $db ]] || { echo "::error::no database at $db"; ls -laR home/.local/share || true; exit 1; }
           if head -c 15 "$db" | grep -q 'SQLite format 3'; then echo "::error::the database is not encrypted"; exit 1; fi
-          echo "Anveshana ran for 20 s and created an encrypted database"
+          echo "Graha Anveshana ran for 20 s and created an encrypted database"
           # The install script, end to end.
           HOME="$PWD/home" "$app/install.sh"
           test -x home/.local/lib/anveshana/anveshana
@@ -331,7 +331,7 @@ jobs:
           version=${{ needs.version.outputs.version }}
           # The CHANGELOG section for this version.
           awk -v v="$version" '$0 ~ "^## " {p = index($0, v) > 0; next} p' CHANGELOG.md > notes.md
-          [[ -s notes.md ]] || echo "Anveshana $version" > notes.md
+          [[ -s notes.md ]] || echo "Graha Anveshana $version" > notes.md
           cat notes.md
       - name: Publish
         env:
@@ -343,5 +343,5 @@ jobs:
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/* --clobber
           else
-            gh release create "$tag" dist/* --title "Anveshana ${tag#v}" --notes-file notes.md "${flags[@]}"
+            gh release create "$tag" dist/* --title "Graha Anveshana ${tag#v}" --notes-file notes.md "${flags[@]}"
           fi

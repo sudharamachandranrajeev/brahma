@@ -14,7 +14,7 @@ class AnveshanaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-    title: 'Anveshana',
+    title: 'Graha Anveshana',
     debugShowCheckedModeBanner: false,
     theme: anveshanaTheme(Brightness.light),
     darkTheme: anveshanaTheme(Brightness.dark),

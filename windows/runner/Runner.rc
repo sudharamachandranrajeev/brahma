@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Anveshana" "\0"
-            VALUE "FileDescription", "Anveshana" "\0"
+            VALUE "CompanyName", "Graha Anveshana" "\0"
+            VALUE "FileDescription", "Graha Anveshana" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "anveshana" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Anveshana contributors" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Graha Anveshana contributors" "\0"
             VALUE "OriginalFilename", "anveshana.exe" "\0"
-            VALUE "ProductName", "Anveshana" "\0"
+            VALUE "ProductName", "Graha Anveshana" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

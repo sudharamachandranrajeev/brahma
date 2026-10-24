@@ -1,7 +1,6 @@
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 
-import '../ui/cars_page.dart';
 import '../ui/contacts_page.dart';
 import '../ui/hunt_page.dart';
 import '../ui/invest_page.dart';
@@ -63,21 +62,7 @@ final propertyModule = AppModule(
   ],
 );
 
-final carsModule = AppModule(
-  id: 'cars',
-  name: 'Cars',
-  destinations: [
-    Destination(
-      id: 'cars',
-      label: 'Cars',
-      icon: Icons.directions_car_outlined,
-      selectedIcon: Icons.directions_car,
-      page: (_) => const CarsPage(),
-    ),
-  ],
-);
-
-final modules = <AppModule>[propertyModule, carsModule];
+final modules = <AppModule>[propertyModule];
 
 /// Settings is app-wide, so it comes after every module's screens.
 final settingsDestination = Destination(
