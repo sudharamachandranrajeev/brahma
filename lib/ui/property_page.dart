@@ -8,6 +8,7 @@ import '../db/database.dart';
 import '../domain/contact_links.dart';
 import '../domain/pipeline.dart';
 import 'common.dart';
+import 'look.dart';
 import 'contacts_page.dart';
 import 'hunt_page.dart';
 import 'invest_page.dart';
@@ -93,19 +94,22 @@ class PropertyPage extends ConsumerWidget {
               ),
             ),
           ),
+        const SizedBox(height: 16),
+        Eyebrow('${kind.label} · ${Stage.of(p.stage).label(kind)}'),
+        const SizedBox(height: 4),
+        Text(p.address, style: t.headlineSmall),
         const SizedBox(height: 12),
-        Text(p.address, style: t.titleLarge),
-        const SizedBox(height: 4),
-        Text(
-          [priceLabel(p), propertyFacts(p)].where((s) => s.isNotEmpty).join(' · '),
-          style: t.titleMedium?.merge(tabular),
+        FigureCard(
+          eyebrow: kind == PropertyKind.rent ? 'Rent a month' : 'Price',
+          value: p.price == null ? '–' : gbp(p.price!),
+          caption: propertyFacts(p).isEmpty ? null : propertyFacts(p),
+          detail: dist == null ? null : '${km(dist)} from ${home!.label.isEmpty ? 'home' : home.label}',
+          accent: p.rating >= 4,
         ),
-        const SizedBox(height: 4),
         Wrap(
           spacing: 16,
           runSpacing: 4,
           children: [
-            if (dist != null) Text('${km(dist)} from ${home!.label.isEmpty ? 'home' : home.label}'),
             if (p.availableFrom != null) Text('Available ${niceDate(p.availableFrom!)}'),
             if (p.listingStatus.isNotEmpty)
               StatusLabel(
@@ -141,7 +145,7 @@ class PropertyPage extends ConsumerWidget {
                   for (var i = 1; i <= 5; i++)
                     IconButton(
                       tooltip: '$i of 5',
-                      icon: Icon(i <= p.rating ? Icons.star : Icons.star_border, color: amber),
+                      icon: Icon(i <= p.rating ? Icons.star : Icons.star_border, color: lime),
                       onPressed: () => ref.mutate(
                         (x) => x.book.save(x.db.properties, p.copyWith(rating: i == p.rating ? 0 : i), p.id),
                       ),

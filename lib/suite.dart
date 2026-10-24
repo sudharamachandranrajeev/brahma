@@ -8,6 +8,7 @@ import 'app/providers.dart';
 import 'app/session.dart';
 import 'domain/pipeline.dart';
 import 'ui/hints.dart';
+import 'ui/look.dart';
 
 /// Graha Anveshana as the Brahma suite app hosts it.
 final anveshanaSuite = SuiteApp(
@@ -18,7 +19,8 @@ final anveshanaSuite = SuiteApp(
   overrides: (s) => [sessionProvider.overrideWithValue(s as AppSession)],
   hints: anveshanaHints,
   theme: (_, b) => anveshanaTheme(b),
-  home: (onHome) => AppShell(destinations: allDestinations, onHome: onHome),
+  builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
+  home: (onHome) => AppShell(destinations: allDestinations, onHome: onHome, floating: true),
   onStart: fetchWatch,
   summary: (_) => const _Summary(),
 );

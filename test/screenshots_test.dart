@@ -1,0 +1,137 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:drift/drift.dart' show Value;
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:anveshana/app/app.dart';
+import 'package:anveshana/app/providers.dart';
+import 'package:anveshana/db/database.dart';
+import 'package:anveshana/domain/book.dart';
+
+import 'app_harness.dart';
+
+/// Renders the main screens with the real fonts to PNG files, for checking
+/// the look. Runs only when GRAHA_SHOTS names an output folder:
+/// `GRAHA_SHOTS=/tmp/shots flutter test test/screenshots_test.dart`.
+void main() {
+  final out = Platform.environment['GRAHA_SHOTS'];
+
+  Future<void> loadFonts() async {
+    Future<void> family(String name, List<String> files) async {
+      final loader = FontLoader(name);
+      for (final f in files) {
+        loader.addFont(Future.value(ByteData.sublistView(File(f).readAsBytesSync())));
+      }
+      await loader.load();
+    }
+
+    await family('Inter', [
+      for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf',
+    ]);
+    final flutterRoot = Platform.environment['FLUTTER_ROOT'] ?? '';
+    final icons = File('$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
+    if (icons.existsSync()) await family('MaterialIcons', [icons.path]);
+  }
+
+  // Made-up homes: nothing here is anyone's data.
+  Future<void> seed(PropertyBook book) async {
+    Future<void> home(String id, PropertiesCompanion c) =>
+        book.save(book.db.properties, c.copyWith(id: Value(id), added: const Value('2026-10-01')), id);
+    await home(
+      'a',
+      const PropertiesCompanion(
+        address: Value('12 Sample Street, Exampleton'),
+        kind: Value('rent'),
+        price: Value(650),
+        beds: Value(2),
+        stage: Value('shortlisted'),
+        rating: Value(4),
+      ),
+    );
+    await home(
+      'b',
+      const PropertiesCompanion(
+        address: Value('Flat 3, 8 Placeholder Row'),
+        kind: Value('rent'),
+        price: Value(595),
+        beds: Value(1),
+        rating: Value(2),
+      ),
+    );
+    await home(
+      'c',
+      const PropertiesCompanion(
+        address: Value('27 Fictional Gardens'),
+        kind: Value('rent'),
+        price: Value(720),
+        beds: Value(3),
+        stage: Value('viewing'),
+        rating: Value(5),
+      ),
+    );
+  }
+
+  testWidgets('screenshots', skip: out == null, (tester) async {
+    await tester.runAsync(loadFonts);
+    debugDisableShadows = false;
+    final key = GlobalKey();
+    var n = 0;
+
+    Future<void> shot(String name) async {
+      final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final bytes = await tester.runAsync(() async {
+        final image = await boundary.toImage(pixelRatio: tester.view.devicePixelRatio);
+        return image.toByteData(format: ui.ImageByteFormat.png);
+      });
+      File('$out/${(++n).toString().padLeft(2, '0')}-$name.png')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(bytes!.buffer.asUint8List());
+    }
+
+    for (final dark in [true, false]) {
+      tester.platformDispatcher.platformBrightnessTestValue = dark ? Brightness.dark : Brightness.light;
+      final app = AppHarness(tester);
+      tester.view.physicalSize = const Size(1170, 2532);
+      tester.view.devicePixelRatio = 3;
+      await app.open(seed: seed);
+      await tester.pumpWidget(
+        RepaintBoundary(
+          key: key,
+          child: ProviderScope(
+            overrides: anveshanaOverrides(app.session),
+            retry: (_, _) => null,
+            child: const AnveshanaApp(),
+          ),
+        ),
+      );
+      await app.settle();
+      final mode = dark ? 'dark' : 'light';
+      await shot('hunt-$mode');
+      Future<void> go(String page) => app.tap(
+        find.ancestor(
+          of: find.descendant(of: find.byType(NavigationBar), matching: find.text(page)),
+          matching: find.byType(NavigationDestination),
+        ),
+      );
+      for (final page in ['Invest', 'Lettings']) {
+        if (find.descendant(of: find.byType(NavigationBar), matching: find.text(page)).evaluate().isEmpty) {
+          await go('More');
+          await app.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text(page)));
+        } else {
+          await go(page);
+        }
+        await shot('${page.toLowerCase()}-$mode');
+      }
+      await go('Hunt');
+      await app.tap(find.text('27 Fictional Gardens').last);
+      await shot('home-$mode');
+      await app.close();
+    }
+    tester.view.reset();
+    debugDisableShadows = true;
+  });
+}

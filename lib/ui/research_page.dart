@@ -11,6 +11,7 @@ import '../domain/listing.dart';
 import '../domain/research.dart';
 import '../domain/tax.dart';
 import 'common.dart';
+import 'look.dart';
 import 'invest_page.dart';
 
 /// What to check before buying land or a building to develop, by topic.
@@ -303,8 +304,18 @@ class _ReportView extends StatelessWidget {
         children: [
           Text([p.ward, p.district, p.region, p.country].where((s) => s.isNotEmpty).toSet().join(', ')),
           if (p.constituency.isNotEmpty) Text('Constituency: ${p.constituency}', style: small),
-          const Divider(height: 24),
-          Text('House prices', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 12),
+          if (r.prices case final idx?)
+            FigureCard(
+              eyebrow: 'Average price · ${monthLabel(idx.month, year: true)}',
+              value: gbp(idx.average),
+              caption: idx.region,
+              detail: idx.annualChange == null
+                  ? null
+                  : '${idx.annualChange! >= 0 ? '+' : ''}${idx.annualChange!.toStringAsFixed(1)}% in a year',
+              accent: (idx.annualChange ?? 0) >= 0,
+            ),
+          const Eyebrow('House prices'),
           for (final idx in [r.prices, r.regionPrices].nonNulls) ...[
             FigureRow(
               '${idx.region}, ${monthLabel(idx.month, year: true)}',
@@ -314,7 +325,7 @@ class _ReportView extends StatelessWidget {
           ],
           if (r.sales.isNotEmpty) ...[
             const Divider(height: 24),
-            Text('Sold in this postcode', style: Theme.of(context).textTheme.titleSmall),
+            const Eyebrow('Sold in this postcode'),
             for (final s in r.sales.take(10))
               FigureRow('${niceDate(s.date)} · ${s.address}${s.newBuild ? ' (new)' : ''}', gbp(s.price)),
           ],
@@ -330,7 +341,7 @@ class _ReportView extends StatelessWidget {
           for (final n in r.notes)
             Padding(padding: const EdgeInsets.only(top: 8), child: StatusLabel(Status.info, n)),
           const Divider(height: 24),
-          Text('Look further', style: Theme.of(context).textTheme.titleSmall),
+          const Eyebrow('Look further'),
           Wrap(
             spacing: 8,
             children: [

@@ -7,10 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../db/database.dart';
 import '../domain/pipeline.dart';
 
-/// Anveshana's colours: deep lake blue with amber as the accent.
-const lakeBlue = Color(0xFF1D4E89);
-const amber = Color(0xFFE0A100);
-
 final _gbp = NumberFormat.currency(locale: 'en_GB', symbol: '£', decimalDigits: 0);
 
 /// Whole pounds, e.g. £1,250.

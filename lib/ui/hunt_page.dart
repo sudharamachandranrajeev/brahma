@@ -8,6 +8,7 @@ import '../db/database.dart';
 import '../domain/listing.dart';
 import '../domain/pipeline.dart';
 import 'common.dart';
+import 'look.dart';
 import 'property_page.dart';
 
 class HuntPage extends ConsumerStatefulWidget {
@@ -94,9 +95,26 @@ class _HuntPageState extends ConsumerState<HuntPage> {
               );
             }
             double? dist(Property p) => distanceFromHome(home, p.lat, p.lon);
+            final inPlay = mine.where((p) => Stage.of(p.stage).active).toList();
+            final top = ([
+              ...inPlay.where((p) => p.rating > 0),
+            ]..sort((a, b) => b.rating.compareTo(a.rating))).firstOrNull;
+            final dearest = mine.map((p) => p.price ?? 0).fold(0, (a, b) => a > b ? a : b);
+            final closest = inPlay
+                .map(dist)
+                .nonNulls
+                .fold<double?>(null, (a, b) => a == null || b < a ? b : a);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                FigureCard(
+                  eyebrow: kind == PropertyKind.rent ? 'To rent · in play' : 'To buy · in play',
+                  value: '${inPlay.length}',
+                  caption: top == null
+                      ? 'Rate the ones you like'
+                      : 'Top rated: ${top.address.split(',').first}',
+                  detail: closest == null ? null : 'Closest is ${km(closest)} from home',
+                ),
                 for (final stage in Stage.values)
                   if (stage.active || showDropped)
                     ...() {
@@ -104,14 +122,14 @@ class _HuntPageState extends ConsumerState<HuntPage> {
                         ..sort((a, b) => (dist(a) ?? 1e9).compareTo(dist(b) ?? 1e9));
                       if (rows.isEmpty) return const <Widget>[];
                       return [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-                          child: Text(
-                            '${stage.label(kind)} (${rows.length})',
-                            style: Theme.of(context).textTheme.titleMedium,
+                        _StageHeading('${stage.label(kind)} (${rows.length})'),
+                        for (final p in rows)
+                          PropertyCard(
+                            p,
+                            distance: dist(p),
+                            best: top != null && p.id == top.id,
+                            share: dearest > 0 && p.price != null ? p.price! / dearest : null,
                           ),
-                        ),
-                        for (final p in rows) PropertyCard(p, distance: dist(p)),
                       ];
                     }(),
               ],
@@ -262,80 +280,160 @@ Future<void> editProperty(
   );
 }
 
+/// A stage's heading in the spaced, quiet style of the look; it keeps its
+/// case so it reads as a label ("Viewing (1)").
+class _StageHeading extends StatelessWidget {
+  const _StageHeading(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.labelLarge
+          ?.copyWith(color: Tones.of(context).muted, letterSpacing: 1),
+    ),
+  );
+}
+
+/// A property as a row of the hunt: photo, address and facts, with the rent
+/// or price large on the right. [best] underlines the top-rated in lime;
+/// [share] draws its price against the dearest in the list.
 class PropertyCard extends StatelessWidget {
-  const PropertyCard(this.p, {super.key, this.distance});
+  const PropertyCard(this.p, {super.key, this.distance, this.best = false, this.share});
   final Property p;
   final double? distance;
+  final bool best;
+  final double? share;
 
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final gone = listingGone(p.listingStatus);
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Card(
         clipBehavior: Clip.antiAlias,
+        shape: best
+            ? RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: BorderSide(color: dark ? lime.withValues(alpha: 0.35) : Tones.of(context).hairline),
+              )
+            : null,
         child: InkWell(
           onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PropertyPage(p.id))),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    width: 96,
-                    height: 72,
-                    child: p.imageUrl == null
-                        ? ColoredBox(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                            child: const Icon(Icons.home_outlined),
-                          )
-                        : Image.network(
-                            p.imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const Icon(Icons.home_outlined),
-                          ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(p.address, style: t.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      const SizedBox(height: 4),
-                      Text(
-                        [priceLabel(p), propertyFacts(p)].where((s) => s.isNotEmpty).join(' · '),
-                        style: t.bodyMedium?.merge(tabular),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 96,
+                        height: 72,
+                        child: p.imageUrl == null
+                            ? ColoredBox(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                child: const Icon(Icons.home_outlined),
+                              )
+                            : Image.network(
+                                p.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => const Icon(Icons.home_outlined),
+                              ),
                       ),
-                      const SizedBox(height: 4),
-                      Wrap(
-                        spacing: 12,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (distance != null)
-                            Hint(
-                              'hunt.distance',
-                              child: Text(km(distance!), style: t.bodySmall?.copyWith(color: muted)),
+                          Text(p.address, style: t.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 4),
+                          if (propertyFacts(p).isNotEmpty) Text(propertyFacts(p), style: t.bodySmall),
+                          if (share != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6, right: 24),
+                              child: _PriceTrack(share!, best: best),
                             ),
-                          if (gone)
-                            Hint(
-                              'hunt.gone',
-                              child: StatusLabel(Status.warning, listingStatusLabel(p.listingStatus)),
-                            ),
-                          if (p.rating > 0) Text('★' * p.rating, style: t.bodySmall?.copyWith(color: amber)),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 12,
+                            children: [
+                              if (distance != null)
+                                Hint(
+                                  'hunt.distance',
+                                  child: Text(km(distance!), style: t.bodySmall?.copyWith(color: muted)),
+                                ),
+                              if (gone)
+                                Hint(
+                                  'hunt.gone',
+                                  child: StatusLabel(Status.warning, listingStatusLabel(p.listingStatus)),
+                                ),
+                              if (p.rating > 0)
+                                Text('★' * p.rating, style: t.bodySmall?.copyWith(color: lime)),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      priceLabel(p),
+                      textAlign: TextAlign.end,
+                      style:
+                          (p.price == null
+                                  ? t.bodySmall
+                                  : t.titleMedium?.copyWith(fontWeight: FontWeight.w800))
+                              ?.merge(tabular),
+                    ),
+                  ],
+                ),
+              ),
+              if (best)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                  child: Container(
+                    height: 3,
+                    decoration: BoxDecoration(color: lime, borderRadius: BorderRadius.circular(2)),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _PriceTrack extends StatelessWidget {
+  const _PriceTrack(this.share, {required this.best});
+  final double share;
+  final bool best;
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(3),
+    child: SizedBox(
+      height: 4,
+      child: Stack(
+        children: [
+          Positioned.fill(child: ColoredBox(color: Tones.of(context).track)),
+          FractionallySizedBox(
+            widthFactor: share.clamp(0, 1).toDouble(),
+            child: ColoredBox(
+              color: best ? lime : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

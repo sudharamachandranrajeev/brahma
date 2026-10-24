@@ -89,7 +89,8 @@ void main() {
     for (final label in pages) {
       final bar = find.descendant(of: find.byType(NavigationBar), matching: find.text(label));
       if (bar.evaluate().isNotEmpty) {
-        await app.tap(bar);
+        // The bar shows only the selected label; tap the destination itself.
+        await app.tap(find.ancestor(of: bar, matching: find.byType(NavigationDestination)));
       } else {
         await app.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('More')));
         await app.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text(label)));
