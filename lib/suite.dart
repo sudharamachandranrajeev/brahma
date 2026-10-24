@@ -17,7 +17,7 @@ final anveshanaSuite = SuiteApp(
   open: AppSession.open,
   overrides: (s) => [sessionProvider.overrideWithValue(s as AppSession)],
   hints: anveshanaHints,
-  theme: anveshanaTheme,
+  theme: (_, b) => anveshanaTheme(b),
   home: (onHome) => AppShell(destinations: allDestinations, onHome: onHome),
   onStart: fetchWatch,
   summary: (_) => const _Summary(),

@@ -23,9 +23,11 @@ void main() {
           ...anveshanaSuite.overrides(session),
         ],
         retry: (_, _) => null,
-        child: MaterialApp(
-          theme: anveshanaSuite.theme(Brightness.light),
-          home: Scaffold(body: Builder(builder: anveshanaSuite.summary)),
+        child: Consumer(
+          builder: (context, ref, _) => MaterialApp(
+            theme: anveshanaSuite.theme(ref, Brightness.light),
+            home: Scaffold(body: Builder(builder: anveshanaSuite.summary)),
+          ),
         ),
       ),
     );
