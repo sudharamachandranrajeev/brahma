@@ -23,9 +23,11 @@ void main() {
           ...vaniSuite.overrides(session),
         ],
         retry: (_, _) => null,
-        child: MaterialApp(
-          theme: vaniSuite.theme(Brightness.light),
-          home: Scaffold(body: Builder(builder: vaniSuite.summary)),
+        child: Consumer(
+          builder: (context, ref, _) => MaterialApp(
+            theme: vaniSuite.theme(ref, Brightness.light),
+            home: Scaffold(body: Builder(builder: vaniSuite.summary)),
+          ),
         ),
       ),
     );

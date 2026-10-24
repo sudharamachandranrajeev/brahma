@@ -17,7 +17,7 @@ final vaniSuite = SuiteApp(
   open: AppSession.open,
   overrides: (s) => [sessionProvider.overrideWithValue(s as AppSession)],
   hints: vaniHints,
-  theme: vaniTheme,
+  theme: (_, b) => vaniTheme(b),
   themeMode: (ref) => ref.watch(themeProvider).value,
   home: (onHome) => VaniShell(onHome: onHome),
   builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
