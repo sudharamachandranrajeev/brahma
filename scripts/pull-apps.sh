@@ -22,5 +22,7 @@ fi
 for name in "${names[@]}"; do
   echo "== $name"
   git subtree pull --prefix "apps/$name" "$owner/$name.git" main \
-    -m "Update apps/$name from $name main"
+    -m "Update apps/$name from $name main
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>"
 done

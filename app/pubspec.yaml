@@ -1,0 +1,51 @@
+name: brahma
+description: "Brahma - one app for every part of life the Brahma apps look after: money, property, career, social media and learning (Linux, Windows, Android)."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  brahma_core:
+    path: ../core
+  # The apps, as the subtrees in ../apps hold them (scripts/pull-apps.sh).
+  # Each exports its SuiteApp from lib/suite.dart.
+  artha:
+    path: ../apps/artha
+  anveshana:
+    path: ../apps/anveshana
+  udyoga:
+    path: ../apps/udyoga
+  vani:
+    path: ../apps/vani
+  vidya:
+    path: ../apps/vidya
+  drift: ^2.35.2
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+
+# The apps name brahma_core by its git URL; here everything builds against
+# the core in this repository.
+dependency_overrides:
+  brahma_core:
+    path: ../core
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.35.1
+  build_runner: ^2.16.2
+
+flutter:
+  uses-material-design: true
+
+# Bundle SQLite3MultipleCiphers instead of plain SQLite so the local
+# databases are encrypted at rest on every platform (see doc/hook.md in
+# package:sqlite3). Only the root package's setting counts.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc

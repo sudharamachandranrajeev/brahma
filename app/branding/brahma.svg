@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Brahma: a lotus of five petals, one for each part of life the suite
+       looks after, on a dawn gradient. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B2A6B"/>
+      <stop offset="1" stop-color="#7A3E9D"/>
+    </linearGradient>
+    <linearGradient id="petal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE6B0"/>
+      <stop offset="1" stop-color="#F5A35C"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g fill="url(#petal)" stroke="#2B2A6B" stroke-width="6" stroke-linejoin="round">
+    <path d="M256 360 C196 330 150 270 120 220 C190 228 236 280 256 360Z"/>
+    <path d="M256 360 C316 330 362 270 392 220 C322 228 276 280 256 360Z"/>
+    <path d="M256 360 C206 310 186 240 196 170 C238 210 260 280 256 360Z"/>
+    <path d="M256 360 C306 310 326 240 316 170 C274 210 252 280 256 360Z"/>
+    <path d="M256 360 C226 290 226 200 256 120 C286 200 286 290 256 360Z"/>
+  </g>
+  <path d="M150 380 Q256 410 362 380" fill="none" stroke="#FFE6B0" stroke-width="12" stroke-linecap="round"/>
+</svg>
