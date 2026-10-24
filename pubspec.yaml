@@ -1,7 +1,7 @@
 name: vani
 description: "Vani - social media manager: post, schedule and answer across Instagram, YouTube, Facebook, LinkedIn, Threads, Bluesky and Mastodon, with discovery alerts (Linux, Windows, Android). Part of Brahma."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.5

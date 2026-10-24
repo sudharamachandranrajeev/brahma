@@ -98,13 +98,14 @@ class _FeedState extends ConsumerState<_Feed> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    for (final k in [null, 'discovery', 'inbox', 'publish', 'account'])
+                    for (final k in [null, 'discovery', 'inbox', 'publish', 'account', 'summary'])
                       ChoiceChip(
                         label: Text(switch (k) {
                           null => 'All',
                           'discovery' => 'Discovery',
                           'inbox' => 'Inbox',
                           'publish' => 'Publishing',
+                          'summary' => 'Weekly',
                           _ => 'Accounts',
                         }),
                         selected: _kind == k,

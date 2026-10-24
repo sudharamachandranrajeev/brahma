@@ -6,6 +6,7 @@ import '../app/providers.dart';
 import '../domain/models.dart';
 import 'common.dart';
 import 'look.dart';
+import 'profiles.dart';
 
 export 'common.dart' show editHub;
 
@@ -24,8 +25,9 @@ const _zones = [
   'UTC',
 ];
 
-/// The hub link, the greeting name, the theme, the hub's own settings
-/// (time zone, posting queue, saved replies, AI model), then the shared
+/// The hub link, its profiles, the greeting name, the theme, the current
+/// profile's hub settings (time zone, posting queue, saved replies, AI
+/// model), then the shared
 /// hints, sync, security and about cards.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -91,6 +93,17 @@ class SettingsPage extends ConsumerWidget {
             ],
           ),
         ),
+        if (link?.ready ?? false)
+          _Card(
+            title: 'Profiles',
+            hint: 'settings.profiles',
+            trailing: TextButton.icon(
+              onPressed: () => editProfile(context, ref, null),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Add'),
+            ),
+            child: const ProfileList(),
+          ),
         _Card(
           title: 'You',
           child: _NameField(name: name, onSave: (v) => ref.mutate((s) => s.prefs.saveName(v))),
@@ -242,6 +255,30 @@ class _HubSettings extends ConsumerWidget {
                 value: s.model,
                 options: {...aiModels, if (!aiModels.containsKey(s.model)) s.model: s.model},
                 onChanged: (v) => _save(context, ref, s.copyWith(model: v)),
+              ),
+              Hint(
+                'settings.language',
+                child: Choice<String>(
+                  label: 'Translate the inbox into',
+                  value: s.language,
+                  options: {
+                    for (final l in {s.language, ...languageNames.values}) l: l,
+                  },
+                  onChanged: (v) => _save(context, ref, s.copyWith(language: v)),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Hint(
+                  'settings.weekly',
+                  child: AiButton(
+                    label: 'Send this week\'s summary now',
+                    onPressed: () => guarded(context, () async {
+                      final a = await ref.hub((h) => h.weeklySummary());
+                      if (context.mounted) showMessage(context, a.title);
+                    }),
+                  ),
+                ),
               ),
             ],
           ),

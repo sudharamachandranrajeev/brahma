@@ -40,7 +40,15 @@ class FakeHub {
       {'id': 'r1', 'title': 'Opening hours', 'text': 'Hi {name}! We are open 9 to 5, Monday to Saturday.'},
     ],
     'model': 'claude-opus-5-5',
+    'language': 'English',
   };
+
+  /// The hub's profiles; every other profile's data lives in its own
+  /// unseeded [FakeHub] in [profileHubs], picked by the x-vani-profile header.
+  final profiles = <Json>[
+    {'id': 'default', 'name': 'Main', 'createdAt': '2026-01-01T00:00:00.000Z'},
+  ];
+  final profileHubs = <String, FakeHub>{};
 
   /// Every request seen, as "METHOD /path?query".
   final log = <String>[];
@@ -60,9 +68,25 @@ class FakeHub {
 
   Future<http.Response> _handle(http.Request req) async {
     final path = req.url.path;
+    if (req.headers['authorization'] != 'Bearer $hubToken') {
+      log.add('${req.method} $path');
+      return _json({'error': 'Unauthorized'}, 401);
+    }
+    final profile = req.headers['x-vani-profile'];
+    if (profile != null && profile != 'default' && !path.startsWith('/social/profiles')) {
+      final other = profileHubs[profile];
+      if (other == null) return _json({'error': 'no such profile'}, 404);
+      other.ai = ai;
+      return other._serve(req);
+    }
+    return _serve(req);
+  }
+
+  /// Answers [req] from this profile's data, logging it here.
+  Future<http.Response> _serve(http.Request req) async {
+    final path = req.url.path;
     final key = '${req.method} $path${req.url.hasQuery ? '?${req.url.query}' : ''}';
     log.add(key);
-    if (req.headers['authorization'] != 'Bearer $hubToken') return _json({'error': 'Unauthorized'}, 401);
     Object? body;
     if (req.headers['content-type'] == 'application/json' && req.body.isNotEmpty) {
       body = jsonDecode(req.body);
@@ -78,6 +102,28 @@ class FakeHub {
         return _json(_overview());
       case ('GET', ['social', 'meta']):
         return _json(_meta());
+      case ('GET', ['social', 'profiles']):
+        return _json(profiles);
+      case ('POST', ['social', 'profiles']):
+        final name = '${b()['name']}'.trim();
+        if (profiles.any((p) => '${p['name']}'.toLowerCase() == name.toLowerCase())) {
+          return _json({'error': 'there is already a profile called $name'}, 409);
+        }
+        final p = {'id': _id('pr'), 'name': name, 'createdAt': iso(now)};
+        profiles.add(p);
+        profileHubs['${p['id']}'] = FakeHub(seeded: false, ai: ai);
+        return _json(p);
+      case ('PATCH', ['social', 'profiles', final id]):
+        final p = profiles.firstWhere((p) => p['id'] == id)..['name'] = '${b()['name']}'.trim();
+        return _json(p);
+      case ('DELETE', ['social', 'profiles', final id]):
+        if (id == 'default') return _json({'error': 'the main profile can\'t be deleted'}, 409);
+        if (profileHubs[id]!.accounts.isNotEmpty) {
+          return _json({'error': 'remove this profile\'s accounts first'}, 409);
+        }
+        profiles.removeWhere((p) => p['id'] == id);
+        profileHubs.remove(id);
+        return _json({'ok': true});
       case ('GET', ['social', 'credentials']):
         return _json([
           for (final p in ['meta', 'threads', 'google', 'linkedin', 'ebay', 'anthropic'])
@@ -104,6 +150,11 @@ class FakeHub {
         return _json(a);
       case ('POST', ['social', 'accounts', 'mastodon']):
         final a = _account(_id('a'), 'mastodon', 'Mastodon', '@studio@${b()['instance']}');
+        accounts.add(a);
+        return _json(a);
+      case ('POST', ['social', 'accounts', 'telegram']):
+        final chat = '${b()['chat']}';
+        final a = _account(_id('a'), 'telegram', 'Studio channel', chat.startsWith('@') ? chat : '@$chat');
         accounts.add(a);
         return _json(a);
       case ('POST', ['social', 'accounts', final id, 'check']):
@@ -134,6 +185,15 @@ class FakeHub {
       case ('POST', ['social', 'media', final id, 'complete']):
         final item = media.firstWhere((x) => x['id'] == id)..['status'] = 'ready';
         return _json(item);
+      case ('PATCH', ['social', 'media', final id]):
+        final alt = '${b()['alt'] ?? ''}'.trim();
+        final item = media.firstWhere((x) => x['id'] == id)..['alt'] = alt.isEmpty ? null : alt;
+        return _json(item);
+      case ('POST', ['social', 'media', final id, 'alt']):
+        if (!ai) return _json({'error': 'Add your Anthropic API key first.'}, 412);
+        final item = media.firstWhere((x) => x['id'] == id)
+          ..['alt'] = 'A speckled blue mug on a wooden shelf.';
+        return _json(item);
       case ('DELETE', ['social', 'media', final id]):
         media.removeWhere((x) => x['id'] == id);
         return _json({'ok': true});
@@ -163,7 +223,8 @@ class FakeHub {
           for (final i in inbox)
             if (_statusMatch(i, q['status'] ?? 'open') &&
                 (q['platform'] == null || i['platform'] == q['platform']) &&
-                (q['kind'] == null || i['kind'] == q['kind']))
+                (q['kind'] == null || i['kind'] == q['kind']) &&
+                _triageMatch(i, q['triage']))
               i,
         ];
         return _json({
@@ -187,6 +248,21 @@ class FakeHub {
         final i = inbox.firstWhere((i) => i['id'] == id)
           ..['status'] = 'done'
           ..['myReply'] = {'text': b()['text'], 'at': iso(now), 'private': b()['private'] == true};
+        return _json(i);
+      case ('POST', ['social', 'inbox', final id, 'moderate']):
+        final i = inbox.firstWhere((i) => i['id'] == id);
+        final action = b()['action'];
+        i['moderation'] = action == 'unhide' ? null : (action == 'hide' ? 'hidden' : 'deleted');
+        if (action != 'unhide') i['status'] = 'done';
+        return _json(i);
+      case ('POST', ['social', 'inbox', final id, 'translate']):
+        if (!ai) return _json({'error': 'Add your Anthropic API key first.'}, 412);
+        final i = inbox.firstWhere((i) => i['id'] == id);
+        i['translation'] = {
+          'lang': (i['triage'] as Map?)?['lang'] ?? 'es',
+          'to': settings['language'],
+          'text': 'Translated: ${i['text']}',
+        };
         return _json(i);
       case ('POST', ['social', 'inbox', _, 'suggest']):
         if (!ai) return _json({'error': 'Add your Anthropic API key first.'}, 412);
@@ -259,6 +335,27 @@ class FakeHub {
           'variants': {for (final p in b()['platforms'] as List) '$p': 'New glaze, new mugs. Out Friday.'},
           'hashtags': ['ceramics', 'handmade'],
         });
+      case ('POST', ['social', 'ai', 'translate']):
+        if (!ai) return _json({'error': 'Add your Anthropic API key first.'}, 412);
+        return _json({'lang': b()['to'], 'text': '[${b()['to']}] ${b()['text']}'});
+      case ('POST', ['social', 'ai', 'weekly']):
+        if (!ai) return _json({'error': 'Add your Anthropic API key first.'}, 412);
+        if (accounts.isEmpty) return _json({'error': 'connect an account first'}, 409);
+        final a = {
+          'id': _id('al'),
+          'kind': 'summary',
+          'title': 'Your week: 142 new followers',
+          'body': 'Instagram grew fastest. Two questions are still waiting for an answer.',
+          'url': null,
+          'image': null,
+          'ref': null,
+          'score': null,
+          'reason': null,
+          'at': iso(now),
+          'read': false,
+        };
+        alerts.insert(0, a);
+        return _json(a);
       case ('GET', ['social', 'ai', 'ideas']):
         return _json({'ideas': _ideas, 'generatedAt': iso(now)});
       case ('POST', ['test-notify']):
@@ -272,6 +369,12 @@ class FakeHub {
 
   bool _statusMatch(Json i, String status) =>
       status == 'open' ? i['status'] != 'done' : (status == 'all' || i['status'] == status);
+
+  bool _triageMatch(Json i, String? triage) {
+    if (triage == null) return true;
+    final t = i['triage'] as Map? ?? const {};
+    return triage == 'urgent' ? t['priority'] == 'high' : t['mood'] == triage;
+  }
 
   bool _inRange(Json p, String? from, String? to) {
     final at = p['scheduledAt'] as String?;
@@ -353,6 +456,7 @@ class FakeHub {
       'threads': _info('Threads', 500, ['post', 'carousel'], ['carousel']),
       'bluesky': _info('Bluesky', 300, ['post'], [], max: 4),
       'mastodon': _info('Mastodon', 500, ['post'], [], max: 4),
+      'telegram': _info('Telegram', 4096, ['post'], [], moderation: ['delete']),
     },
     'redirectUris': {
       for (final p in ['meta', 'threads', 'google', 'linkedin']) p: '$hubUrl/social/oauth/$p/callback',
@@ -363,12 +467,26 @@ class FakeHub {
     'ai': ai,
   };
 
-  Json _info(String name, int maxText, List<String> formats, List<String> mediaRequired, {int max = 10}) => {
+  Json _info(
+    String name,
+    int maxText,
+    List<String> formats,
+    List<String> mediaRequired, {
+    int max = 10,
+    List<String>? moderation,
+  }) => {
     'name': name,
     'maxText': maxText,
     'formats': formats,
     'mediaRequired': mediaRequired,
     'maxMedia': max,
+    'moderation':
+        moderation ??
+        switch (name) {
+          'Instagram' || 'Facebook' => ['hide', 'delete'],
+          'YouTube' => ['hide'],
+          _ => <String>[],
+        },
   };
 
   Json _stats() {
@@ -528,6 +646,11 @@ class FakeHub {
         'remoteId': 'ri$i',
         'status': i < 4 ? 'new' : 'read',
         'labels': [if (i == 0 || i == 5) 'question'],
+        'triage': {
+          'mood': ['question', 'question', 'question', 'positive', 'positive', 'question'][i],
+          'priority': i == 2 ? 'high' : 'normal',
+          'lang': 'en',
+        },
         'likes': i * 2,
       });
     }

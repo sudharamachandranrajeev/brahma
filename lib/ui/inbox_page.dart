@@ -51,6 +51,7 @@ class _InboxPageState extends ConsumerState<InboxPage> {
     }
 
     final counts = page.value?.counts;
+    final ai = ref.watch(metaProvider).value?.ai ?? false;
     return RefreshIndicator(
       color: signal,
       onRefresh: _refresh,
@@ -86,14 +87,19 @@ class _InboxPageState extends ConsumerState<InboxPage> {
                   ],
                   selected: {filter.status},
                   showSelectedIcon: false,
-                  onSelectionChanged: (s) =>
-                      set((status: s.first, platform: filter.platform, kind: filter.kind)),
+                  onSelectionChanged: (s) => set((
+                    status: s.first,
+                    platform: filter.platform,
+                    kind: filter.kind,
+                    triage: filter.triage,
+                  )),
                 ),
                 const SizedBox(width: 12),
                 PopupMenuButton<String?>(
                   tooltip: 'Kind',
                   initialValue: filter.kind,
-                  onSelected: (k) => set((status: filter.status, platform: filter.platform, kind: k)),
+                  onSelected: (k) =>
+                      set((status: filter.status, platform: filter.platform, kind: k, triage: filter.triage)),
                   itemBuilder: (_) => [
                     const PopupMenuItem(value: null, child: Text('Every kind')),
                     for (final k in ['comment', 'reply', 'message', 'mention', 'live_chat'])
@@ -104,6 +110,31 @@ class _InboxPageState extends ConsumerState<InboxPage> {
                     label: Text(filter.kind == null ? 'Every kind' : kindLabel(filter.kind!)),
                   ),
                 ),
+                if (ai) ...[
+                  const SizedBox(width: 8),
+                  Hint(
+                    'inbox.triage',
+                    child: PopupMenuButton<String?>(
+                      tooltip: 'Mood',
+                      initialValue: filter.triage,
+                      onSelected: (m) => set((
+                        status: filter.status,
+                        platform: filter.platform,
+                        kind: filter.kind,
+                        triage: m,
+                      )),
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(value: null, child: Text('Every mood')),
+                        const PopupMenuItem(value: 'urgent', child: Text('Urgent')),
+                        for (final m in moods) PopupMenuItem(value: m, child: Text(moodLabel(m))),
+                      ],
+                      child: Chip(
+                        avatar: const Icon(Icons.auto_awesome_rounded, size: 18, color: signal),
+                        label: Text(filter.triage == null ? 'Every mood' : moodLabel(filter.triage!)),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -121,8 +152,12 @@ class _InboxPageState extends ConsumerState<InboxPage> {
                       label: Text(p.label),
                       selected: filter.platform == p,
                       showCheckmark: false,
-                      onSelected: (on) =>
-                          set((status: filter.status, platform: on ? p : null, kind: filter.kind)),
+                      onSelected: (on) => set((
+                        status: filter.status,
+                        platform: on ? p : null,
+                        kind: filter.kind,
+                        triage: filter.triage,
+                      )),
                     ),
                 ],
               ),
@@ -227,6 +262,17 @@ class _InboxCardState extends ConsumerState<InboxCard> {
     super.dispose();
   }
 
+  /// The owner's language, which triage's language is compared with.
+  String get _mine => ref.read(hubSettingsProvider).value?.language ?? 'English';
+
+  /// The item's language when it isn't the owner's, so a reply can be translated into it.
+  String? get _theirs {
+    final lang = _item.triage?.lang ?? _item.translation?.lang ?? '';
+    if (lang.isEmpty) return null;
+    final name = languageName(lang);
+    return name.toLowerCase() == _mine.toLowerCase() ? null : name;
+  }
+
   bool get _canPrivate =>
       (widget.account?.can('private_reply') ?? false) && _item.kind == 'comment' && _item.myReply == null;
 
@@ -268,6 +314,49 @@ class _InboxCardState extends ConsumerState<InboxCard> {
     if (mounted) setState(() => _busy = false);
   }
 
+  Future<void> _translate() async {
+    setState(() => _busy = true);
+    await guarded(context, () async {
+      _item = await ref.hub((h) => h.translateItem(_item.id), refresh: false);
+    });
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _replyInTheirs(String language) async {
+    final text = _reply.text.trim();
+    if (text.isEmpty) return showMessage(context, 'Write the reply first, then translate it.');
+    setState(() => _busy = true);
+    await guarded(context, () async {
+      _reply.text = await ref.hub((h) => h.translate(text, language), refresh: false);
+    });
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _moderate(String action) async {
+    if (action == 'delete' &&
+        !await confirm(
+          context,
+          title: 'Delete this comment?',
+          message: 'It is removed from ${_item.platform.label} for everyone. This can\'t be undone.',
+          action: 'Delete',
+          destructive: true,
+        )) {
+      return;
+    }
+    if (!mounted) return;
+    final ok = await guarded(context, () async {
+      _item = await ref.hub((h) => h.moderate(_item.id, action));
+    });
+    if (ok && mounted) {
+      setState(() {});
+      showMessage(context, switch (action) {
+        'hide' => 'Hidden from the public.',
+        'unhide' => 'Visible again.',
+        _ => 'Deleted.',
+      });
+    }
+  }
+
   Future<void> _done() async {
     final next = _item.status == 'done' ? 'read' : 'done';
     await guarded(context, () => ref.hub((h) => h.setInboxStatus(_item.id, next)));
@@ -281,6 +370,10 @@ class _InboxCardState extends ConsumerState<InboxCard> {
     final tone = Tone.of(context);
     final i = _item;
     final saved = ref.watch(hubSettingsProvider).value?.savedReplies ?? const <SavedReply>[];
+    final meta = ref.watch(metaProvider).value ?? const HubMeta();
+    final allowed = meta.info(i.platform).moderation;
+    final canModerate = (i.kind == 'comment' || i.kind == 'reply') && i.moderation != 'deleted';
+    final theirs = _theirs;
     return Panel(
       padding: EdgeInsets.zero,
       color: widget.picked ? signal.withValues(alpha: 0.1) : null,
@@ -365,10 +458,35 @@ class _InboxCardState extends ConsumerState<InboxCard> {
                             for (final l in i.labels)
                               Tag(l, color: const Color(0xFFA855F7), icon: Icons.bolt_rounded),
                             if ((i.likes ?? 0) > 0) Tag('${i.likes}', icon: Icons.favorite_rounded),
+                            if (i.triage?.priority == 'high')
+                              const Tag('Urgent', color: signal, icon: Icons.priority_high_rounded),
+                            if (i.triage != null && i.triage!.mood != 'neutral')
+                              Tag(moodLabel(i.triage!.mood), color: _moodColor(i.triage!.mood)),
+                            if (theirs != null) Tag(theirs, icon: Icons.translate_rounded),
+                            if (i.moderation != null)
+                              Tag(
+                                i.moderation == 'hidden' ? 'Hidden' : 'Deleted',
+                                icon: i.moderation == 'hidden'
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.delete_outline_rounded,
+                              ),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(i.text, style: t.bodyLarge),
+                        Text(
+                          i.text,
+                          style: t.bodyLarge?.copyWith(
+                            decoration: i.moderation == 'deleted' ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                        if (i.translation != null && i.translation!.text != i.text)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              i.translation!.text,
+                              style: t.bodyMedium?.copyWith(color: tone.muted, fontStyle: FontStyle.italic),
+                            ),
+                          ),
                         if (i.myReply != null)
                           Container(
                             margin: const EdgeInsets.only(top: 10),
@@ -477,6 +595,13 @@ class _InboxCardState extends ConsumerState<InboxCard> {
                                   ),
                                 ),
                               ),
+                            if (theirs != null && i.translation?.to != _mine)
+                              AiButton(label: 'Translate', onPressed: _busy ? null : _translate),
+                            if (theirs != null)
+                              AiButton(
+                                label: 'Reply in $theirs',
+                                onPressed: _busy ? null : () => _replyInTheirs(theirs),
+                              ),
                             if (_canPrivate)
                               Hint(
                                 'inbox.private',
@@ -502,6 +627,23 @@ class _InboxCardState extends ConsumerState<InboxCard> {
                               ),
                               label: Text(i.status == 'done' ? 'Reopen' : 'Done'),
                             ),
+                            if (canModerate && allowed.isNotEmpty)
+                              PopupMenuButton<String>(
+                                tooltip: 'Moderate',
+                                icon: const Icon(Icons.shield_outlined),
+                                onSelected: _moderate,
+                                itemBuilder: (_) => [
+                                  if (allowed.contains('hide'))
+                                    i.moderation == 'hidden'
+                                        ? const PopupMenuItem(value: 'unhide', child: Text('Unhide'))
+                                        : const PopupMenuItem(
+                                            value: 'hide',
+                                            child: Text('Hide from the public'),
+                                          ),
+                                  if (allowed.contains('delete'))
+                                    const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                                ],
+                              ),
                           ],
                         ),
                       ],
@@ -512,6 +654,13 @@ class _InboxCardState extends ConsumerState<InboxCard> {
       ),
     );
   }
+
+  static Color _moodColor(String mood) => switch (mood) {
+    'question' => const Color(0xFF3B82F6),
+    'complaint' => const Color(0xFFF59E0B),
+    'positive' => growth,
+    _ => const Color(0xFF8A8A99),
+  };
 
   static Color _kindColor(String kind) => switch (kind) {
     'message' => const Color(0xFF3B82F6),

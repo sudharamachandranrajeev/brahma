@@ -9,7 +9,9 @@ import '../ui/calendar_page.dart';
 import '../ui/compose_page.dart';
 import '../ui/home_page.dart';
 import '../ui/inbox_page.dart';
+import '../domain/models.dart' show Profile;
 import '../ui/look.dart';
+import '../ui/profiles.dart';
 import '../ui/settings_page.dart';
 import 'providers.dart';
 
@@ -45,6 +47,16 @@ class _VaniShellState extends ConsumerState<VaniShell> {
 
   @override
   Widget build(BuildContext context) {
+    // A profile deleted on another device: go back to the main one.
+    ref.listen(profilesProvider, (_, next) {
+      // Only a fresh list: while one reloads it still holds the old one.
+      if (next.isLoading) return;
+      final list = next.value;
+      final current = ref.read(profileProvider).value;
+      if (list != null && current != null && current != Profile.main && !list.any((p) => p.id == current)) {
+        ref.read(profileProvider.notifier).set(Profile.main);
+      }
+    });
     final tab = ref.watch(tabProvider);
     final wide = MediaQuery.sizeOf(context).width >= 900;
     final reduced = Motion.reduced(context);
@@ -130,7 +142,9 @@ class _Rail extends ConsumerWidget {
                     const SizedBox(height: 10),
                   ],
                   const _Logo(),
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 14),
+                  const ProfileButton(),
+                  const SizedBox(height: 14),
                   for (final t in VaniTab.values)
                     if (t != VaniTab.settings) _RailButton(tab: t, selected: t == tab, badge: badges[t] ?? 0),
                   const SizedBox(height: 10),
@@ -376,7 +390,7 @@ class _PillBar extends ConsumerWidget {
 
   void _showMore(BuildContext context, WidgetRef ref) => showModalBottomSheet<void>(
     context: context,
-    builder: (context) => SafeArea(
+    builder: (sheet) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: Column(
@@ -387,8 +401,23 @@ class _PillBar extends ConsumerWidget {
                 leading: const Icon(Icons.apps_rounded),
                 title: const Text('All apps'),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheet);
                   onHome!();
+                },
+              ),
+            if (ref.read(hubLinkProvider).value?.ready ?? false)
+              Consumer(
+                builder: (_, r, _) {
+                  final p = currentProfile(r);
+                  return ListTile(
+                    leading: ProfileAvatar(p, current: true, size: 28),
+                    title: Text(p.name),
+                    subtitle: const Text('Switch profile'),
+                    onTap: () {
+                      Navigator.pop(sheet);
+                      showProfileSwitcher(context, ref);
+                    },
+                  );
                 },
               ),
             for (final t in _more)
@@ -397,7 +426,7 @@ class _PillBar extends ConsumerWidget {
                 title: Text(t.label),
                 selected: t == tab,
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(sheet);
                   ref.read(tabProvider.notifier).go(t);
                 },
               ),

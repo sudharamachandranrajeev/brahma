@@ -21,7 +21,8 @@ enum Platform {
   linkedin('LinkedIn'),
   threads('Threads'),
   bluesky('Bluesky'),
-  mastodon('Mastodon');
+  mastodon('Mastodon'),
+  telegram('Telegram');
 
   const Platform(this.label);
   final String label;
@@ -123,11 +124,15 @@ class MediaItem {
     this.size = 0,
     this.status = 'ready',
     this.createdAt = '',
+    this.alt,
     this.url = '',
   });
 
   final String id, filename, contentType, status, createdAt, url;
   final int size;
+
+  /// Alt text for screen readers; sent where the platform takes it.
+  final String? alt;
 
   bool get isVideo => contentType.startsWith('video/');
   bool get isImage => contentType.startsWith('image/');
@@ -139,6 +144,7 @@ class MediaItem {
     size: integer(j['size']),
     status: str(j['status'], 'ready'),
     createdAt: str(j['createdAt']),
+    alt: strOrNull(j['alt']),
     url: str(j['url']),
   );
 
@@ -149,6 +155,7 @@ class MediaItem {
     'size': size,
     'status': status,
     'createdAt': createdAt,
+    'alt': ?alt,
     'url': url,
   };
 }
@@ -368,6 +375,9 @@ class InboxItem {
     this.myReply,
     this.labels = const [],
     this.likes,
+    this.triage,
+    this.translation,
+    this.moderation,
   });
 
   final String id, accountId, text, at, remoteId;
@@ -385,6 +395,15 @@ class InboxItem {
   final List<String> labels;
   final int? likes;
 
+  /// Claude's read of it, when the hub has AI on.
+  final Triage? triage;
+
+  /// The text in the owner's language, once asked for.
+  final Translation? translation;
+
+  /// hidden | deleted, when the owner moderated it.
+  final String? moderation;
+
   factory InboxItem.fromJson(Json j) => InboxItem(
     id: str(j['id']),
     accountId: str(j['accountId']),
@@ -400,6 +419,9 @@ class InboxItem {
     myReply: j['myReply'] is Map ? MyReply.fromJson(obj(j['myReply'])) : null,
     labels: strs(j['labels']),
     likes: intOrNull(j['likes']),
+    triage: j['triage'] is Map ? Triage.fromJson(obj(j['triage'])) : null,
+    translation: j['translation'] is Map ? Translation.fromJson(obj(j['translation'])) : null,
+    moderation: strOrNull(j['moderation']),
   );
 
   InboxItem copyWith({String? status, MyReply? myReply}) => InboxItem(
@@ -417,6 +439,9 @@ class InboxItem {
     myReply: myReply ?? this.myReply,
     labels: labels,
     likes: likes,
+    triage: triage,
+    translation: translation,
+    moderation: moderation,
   );
 
   Json toJson() => {
@@ -434,8 +459,76 @@ class InboxItem {
     'myReply': ?myReply?.toJson(),
     'labels': labels,
     'likes': ?likes,
+    'triage': ?triage?.toJson(),
+    'translation': ?translation?.toJson(),
+    'moderation': ?moderation,
   };
 }
+
+/// Moods triage gives, in the order the inbox filter lists them.
+const moods = ['question', 'complaint', 'positive', 'neutral', 'spam'];
+
+String moodLabel(String mood) => switch (mood) {
+  'question' => 'Question',
+  'complaint' => 'Complaint',
+  'positive' => 'Positive',
+  'neutral' => 'Neutral',
+  'spam' => 'Spam',
+  'urgent' => 'Urgent',
+  _ => mood,
+};
+
+class Triage {
+  const Triage({required this.mood, this.priority = 'normal', this.lang = ''});
+
+  /// positive | neutral | question | complaint | spam
+  final String mood;
+
+  /// high | normal | low
+  final String priority;
+
+  /// ISO 639-1 code.
+  final String lang;
+
+  factory Triage.fromJson(Json j) =>
+      Triage(mood: str(j['mood'], 'neutral'), priority: str(j['priority'], 'normal'), lang: str(j['lang']));
+
+  Json toJson() => {'mood': mood, 'priority': priority, 'lang': lang};
+}
+
+class Translation {
+  const Translation({required this.lang, required this.to, required this.text});
+
+  /// [lang] is the original's ISO 639-1 code; [text] is in [to].
+  final String lang, to, text;
+
+  factory Translation.fromJson(Json j) =>
+      Translation(lang: str(j['lang']), to: str(j['to']), text: str(j['text']));
+
+  Json toJson() => {'lang': lang, 'to': to, 'text': text};
+}
+
+/// English names of the languages people most often write in, by ISO 639-1 code.
+const languageNames = {
+  'en': 'English',
+  'ml': 'Malayalam',
+  'ta': 'Tamil',
+  'hi': 'Hindi',
+  'te': 'Telugu',
+  'kn': 'Kannada',
+  'ga': 'Irish',
+  'es': 'Spanish',
+  'fr': 'French',
+  'de': 'German',
+  'pt': 'Portuguese',
+  'it': 'Italian',
+  'pl': 'Polish',
+  'ar': 'Arabic',
+  'zh': 'Chinese',
+  'ja': 'Japanese',
+};
+
+String languageName(String code) => languageNames[code] ?? code.toUpperCase();
 
 String kindLabel(String kind) => switch (kind) {
   'comment' => 'Comment',
@@ -745,6 +838,19 @@ class Find {
   );
 }
 
+/// A separate workspace on the hub (someone's own accounts, a business, a
+/// client): its own accounts, posts, inbox, rules and settings.
+class Profile {
+  const Profile({required this.id, required this.name, this.createdAt = ''});
+  final String id, name, createdAt;
+
+  /// The hub's first profile, which always exists.
+  static const main = 'default';
+
+  factory Profile.fromJson(Json j) =>
+      Profile(id: str(j['id']), name: str(j['name']), createdAt: str(j['createdAt']));
+}
+
 class Alert {
   const Alert({
     required this.id,
@@ -762,7 +868,7 @@ class Alert {
 
   final String id, at, title, body;
 
-  /// discovery | inbox | publish | account | system
+  /// discovery | inbox | publish | account | system | summary
   final String kind;
   final String? url, image, ref, reason;
   final double? score;
@@ -901,9 +1007,11 @@ class HubSettings {
     this.queue = const [],
     this.savedReplies = const [],
     this.model = 'claude-opus-5-5',
+    this.language = 'English',
   });
 
-  final String timezone, model;
+  /// [language]: what inbox items are translated into.
+  final String timezone, model, language;
   final List<QueueSlot> queue;
   final List<SavedReply> savedReplies;
 
@@ -915,6 +1023,7 @@ class HubSettings {
         SavedReply(id: str(r['id']), title: str(r['title']), text: str(r['text'])),
     ],
     model: str(j['model'], 'claude-opus-5-5'),
+    language: str(j['language'], 'English'),
   );
 
   HubSettings copyWith({
@@ -922,11 +1031,13 @@ class HubSettings {
     List<QueueSlot>? queue,
     List<SavedReply>? savedReplies,
     String? model,
+    String? language,
   }) => HubSettings(
     timezone: timezone ?? this.timezone,
     queue: queue ?? this.queue,
     savedReplies: savedReplies ?? this.savedReplies,
     model: model ?? this.model,
+    language: language ?? this.language,
   );
 
   Json toJson() => {
@@ -934,6 +1045,7 @@ class HubSettings {
     'queue': [for (final q in queue) q.toJson()],
     'savedReplies': [for (final r in savedReplies) r.toJson()],
     'model': model,
+    'language': language,
   };
 }
 
@@ -944,11 +1056,14 @@ class PlatformInfo {
     this.formats = const ['post'],
     this.mediaRequired = const [],
     this.maxMedia = 10,
+    this.moderation = const [],
   });
 
   final String name;
   final int maxText, maxMedia;
-  final List<String> formats, mediaRequired;
+
+  /// [moderation]: hide and/or delete, for other people's comments.
+  final List<String> formats, mediaRequired, moderation;
 
   factory PlatformInfo.fromJson(Json j) => PlatformInfo(
     name: str(j['name']),
@@ -956,6 +1071,7 @@ class PlatformInfo {
     formats: strs(j['formats']),
     mediaRequired: strs(j['mediaRequired']),
     maxMedia: integer(j['maxMedia'], 10),
+    moderation: strs(j['moderation']),
   );
 }
 
