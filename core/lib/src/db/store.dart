@@ -37,9 +37,15 @@ class Store {
   }
 
   /// Inserts or replaces [row] in [table] and records the change.
+  ///
+  /// A data class is written whole, nulls included, so `copyWith(x:
+  /// Value(null))` clears x (drift's insert would otherwise leave nulls
+  /// out and keep the old value). A companion writes only its present
+  /// fields, so absent ones keep what the row holds.
   Future<void> save<T extends Table, D>(TableInfo<T, D> table, Insertable<D> row, String id) =>
       db.transaction(() async {
-        await db.into(table).insertOnConflictUpdate(row);
+        final whole = row is DataClass ? RawValuesInsertable<D>(row.toColumns(false)) : row;
+        await db.into(table).insertOnConflictUpdate(whole);
         await touch(table, id);
       });
 
