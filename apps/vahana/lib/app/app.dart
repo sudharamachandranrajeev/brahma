@@ -2,10 +2,10 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../ui/common.dart';
+import '../ui/look.dart';
 import 'modules.dart';
 
-ThemeData vahanaTheme(Brightness b) => buildTheme(b, seed: roadTeal, accent: amber);
+ThemeData vahanaTheme(Brightness b) => instrumentTheme(b);
 
 class VahanaApp extends StatelessWidget {
   const VahanaApp({super.key, this.home = const _Root()});
@@ -17,6 +17,7 @@ class VahanaApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: vahanaTheme(Brightness.light),
     darkTheme: vahanaTheme(Brightness.dark),
+    builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
     home: home,
   );
 }
@@ -28,5 +29,5 @@ class _Root extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      LinkHandler(child: AppShell(destinations: allDestinations));
+      LinkHandler(child: AppShell(destinations: allDestinations, floating: true));
 }

@@ -1,7 +1,7 @@
 name: vahana
 description: "Vahana Anveshana - buying, owning and selling cars: search, finance, running costs and paperwork (Linux, Windows, Android). Part of Brahma."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.5
@@ -30,6 +30,16 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
 
 # Bundle SQLite3MultipleCiphers instead of plain SQLite so the local database
 # is encrypted at rest on every platform (see doc/hook.md in package:sqlite3).

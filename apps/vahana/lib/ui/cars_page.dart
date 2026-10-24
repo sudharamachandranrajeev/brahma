@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:brahma_core/brahma_core.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -16,6 +18,7 @@ import '../domain/pipeline.dart';
 import '../domain/vehicles.dart';
 import 'car_page.dart';
 import 'common.dart';
+import 'look.dart';
 
 enum CarsTab { search, garage, finance, guide }
 
@@ -159,6 +162,16 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        FigureCard(
+          eyebrow: [
+            s.condition == 'new' ? 'New' : 'Used',
+            if (s.inNorthernIreland) 'Northern Ireland' else if (s.postcode.isNotEmpty) s.postcode,
+            if (s.maxPrice != null) 'up to ${gbp(s.maxPrice!)}',
+          ].join(' · '),
+          value: '${sources.length + custom.length}',
+          caption: 'places to look',
+          detail: [s.make, s.model].where((x) => x.isNotEmpty).join(' ').ifEmpty('Any make and model'),
+        ),
         SectionCard(
           title: 'What you want',
           child: Column(
@@ -314,18 +327,13 @@ class _GarageTab extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _GarageSummary(all),
           for (final stage in Stage.values)
             ...() {
               final rows = all.where((v) => Stage.of(v.stage) == stage).toList();
               if (rows.isEmpty) return const <Widget>[];
               return [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
-                  child: Text(
-                    '${carStageLabel(stage)} (${rows.length})',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
+                RowsHeading('${carStageLabel(stage)} · ${rows.length}'),
                 for (final v in rows) _VehicleCard(v, onFinance: () => onFinance(v)),
               ];
             }(),
@@ -333,6 +341,61 @@ class _GarageTab extends ConsumerWidget {
       );
     },
   );
+}
+
+/// The garage at a glance: the next date that needs doing for a car you
+/// own, else the cheapest car you are still weighing up.
+class _GarageSummary extends ConsumerWidget {
+  const _GarageSummary(this.all);
+  final List<Vehicle> all;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nation = ref.watch(carSearchProvider).value?.nation;
+    final now = today();
+    final owned = all.where((v) => v.boughtOn != null && v.soldOn == null).toList();
+    final looking = all.where((v) => v.boughtOn == null && Stage.of(v.stage).active).toList();
+    final dates = [
+      for (final v in owned)
+        for (final d in deadlines(v, nation: nation, today: now)) (v, d),
+    ]..sort((a, b) => a.$2.days.compareTo(b.$2.days));
+    final priced = looking.where((v) => v.price != null).toList()
+      ..sort((a, b) => a.price!.compareTo(b.price!));
+    final soon = dates.where((e) => e.$2.soon).length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (dates.isNotEmpty)
+          () {
+            final (v, d) = dates.first;
+            return FigureCard(
+              eyebrow: 'Next date',
+              value: d.overdue
+                  ? '${-d.days}d late'
+                  : d.days == 0
+                  ? 'Today'
+                  : '${d.days}d',
+              caption: '${d.kind.label} · ${v.title}',
+              detail: niceDate(d.date),
+              accent: !d.soon,
+            );
+          }()
+        else if (priced.isNotEmpty)
+          FigureCard(
+            eyebrow: 'Lowest price in play',
+            value: gbp(priced.first.price!),
+            caption: priced.first.title,
+            detail: vehicleFacts(priced.first),
+            accent: true,
+          ),
+        StatStrip([
+          StatTile('Considering', '${looking.length}'),
+          StatTile('Owned', '${owned.length}'),
+          StatTile('Due in 30 days', '$soon', alert: soon > 0),
+        ]),
+      ],
+    );
+  }
 }
 
 String vehicleFacts(Vehicle v) => [
@@ -344,6 +407,10 @@ String vehicleFacts(Vehicle v) => [
 ].join(' · ');
 
 final _miles = NumberFormat.decimalPattern('en_GB');
+
+extension on String {
+  String ifEmpty(String other) => isEmpty ? other : this;
+}
 
 class _VehicleCard extends ConsumerWidget {
   const _VehicleCard(this.v, {required this.onFinance});
@@ -360,8 +427,9 @@ class _VehicleCard extends ConsumerWidget {
       today: today(),
     ).where((d) => d.soon).toList();
     return Card(
+      margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 4, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -390,13 +458,8 @@ class _VehicleCard extends ConsumerWidget {
                     children: [
                       Text(v.title, style: t.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 4),
-                      Text(
-                        [
-                          if (v.price != null) gbp(v.price!) else 'Price not shown',
-                          vehicleFacts(v),
-                        ].where((s) => s.isNotEmpty).join(' · '),
-                        style: t.bodyMedium?.merge(tabular),
-                      ),
+                      if (vehicleFacts(v).isNotEmpty)
+                        Text(vehicleFacts(v), style: t.bodyMedium?.merge(tabular)),
                       Text(
                         [
                           sellerTypes[v.sellerType] ?? '',
@@ -408,6 +471,11 @@ class _VehicleCard extends ConsumerWidget {
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  v.price != null ? gbp(v.price!) : '–',
+                  style: t.titleLarge?.merge(tabular).copyWith(fontWeight: FontWeight.w800),
                 ),
                 PopupMenuButton<String>(
                   onSelected: (a) async {
@@ -448,16 +516,27 @@ class _VehicleCard extends ConsumerWidget {
             ),
             Row(
               children: [
-                for (var i = 1; i <= 5; i++)
-                  IconButton(
-                    visualDensity: VisualDensity.compact,
-                    tooltip: '$i of 5',
-                    icon: Icon(i <= v.rating ? Icons.star : Icons.star_border, color: amber),
-                    onPressed: () => ref.mutate(
-                      (x) => x.book.save(x.db.vehicles, v.copyWith(rating: i == v.rating ? 0 : i), v.id),
-                    ),
+                Expanded(
+                  child: Wrap(
+                    children: [
+                      for (var i = 1; i <= 5; i++)
+                        IconButton(
+                          iconSize: 20,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints.tightFor(width: 32, height: 40),
+                          tooltip: '$i of 5',
+                          icon: Icon(
+                            i <= v.rating ? Icons.star : Icons.star_border,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          onPressed: () => ref.mutate(
+                            (x) =>
+                                x.book.save(x.db.vehicles, v.copyWith(rating: i == v.rating ? 0 : i), v.id),
+                          ),
+                        ),
+                    ],
                   ),
-                const Spacer(),
+                ),
                 TextButton(
                   onPressed: () =>
                       Navigator.of(context).push(MaterialPageRoute(builder: (_) => CarPage(v.id))),
@@ -722,20 +801,33 @@ class _FinanceTabState extends State<_FinanceTab> {
         ],
       ),
     );
-    final out = SectionCard(
-      title: 'The plans compared',
-      hint: 'cars.compare',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Lowest real cost over $months months: ${cheapest.plan.label}.',
-            style: Theme.of(context).textTheme.titleSmall,
+    final worst = results.where((r) => r.missing == null).map((r) => r.netCost).fold<double>(1, math.max);
+    final out = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FigureCard(
+          eyebrow: 'Lowest real cost · $months months',
+          value: gbp(cheapest.netPerMonth(months)),
+          caption: 'a month, ${cheapest.plan.label}',
+          detail: '${gbp(cheapest.netCost)} in all, paid less value',
+          accent: true,
+        ),
+        RowsHeading(
+          'The plans compared',
+          trailing: Hint(
+            'cars.compare',
+            child: Icon(Icons.info_outline, size: 18, color: Tones.of(context).muted),
           ),
-          const SizedBox(height: 8),
-          for (final r in results) _PlanTile(r, months, best: identical(r, cheapest)),
-        ],
-      ),
+        ),
+        for (final r in results)
+          _PlanTile(
+            r,
+            months,
+            best: identical(r, cheapest),
+            share: r.missing == null ? r.netCost / worst : null,
+          ),
+        const SizedBox(height: 8),
+      ],
     );
     final runningCard = SectionCard(
       title: 'Running costs',
@@ -769,30 +861,30 @@ class _FinanceTabState extends State<_FinanceTab> {
           ),
           _n('tax', 'Road tax (VED) a year', Unit.pounds, tax, (v) => tax = v),
           _n('servicing', 'Servicing and tyres a year', Unit.pounds, servicing, (v) => servicing = v),
-          const Divider(),
-          FigureRow('Energy a year', gbp(running.energyPerYear)),
-          FigureRow('Running costs a year', gbp(running.perYear)),
-          FigureRow('A month', gbp(running.perMonth), strong: true),
-          FigureRow('A mile', '${(running.perMile * 100).toStringAsFixed(1)}p'),
-          FigureRow(
-            'With the plan\'s net cost, a month',
-            gbp(running.perMonth + cheapest.netPerMonth(months)),
-            strong: true,
-          ),
         ],
       ),
     );
+    final runningFigures = StatStrip([
+      StatTile('Running a month', gbp(running.perMonth), detail: '${gbp(running.perYear)} a year'),
+      StatTile('A mile', '${(running.perMile * 100).toStringAsFixed(1)}p'),
+      StatTile('Energy a year', gbp(running.energyPerYear)),
+      StatTile(
+        'With the plan',
+        gbp(running.perMonth + cheapest.netPerMonth(months)),
+        detail: 'a month, all in',
+      ),
+    ]);
     return LayoutBuilder(
       builder: (context, c) {
         if (c.maxWidth < 800) {
-          return Column(children: [out, runningCard, form]);
+          return Column(children: [out, runningFigures, runningCard, form]);
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: form),
             const SizedBox(width: 12),
-            Expanded(child: Column(children: [out, runningCard])),
+            Expanded(child: Column(children: [out, runningFigures, runningCard])),
           ],
         );
       },
@@ -800,56 +892,64 @@ class _FinanceTabState extends State<_FinanceTab> {
   }
 }
 
-class _PlanTile extends StatelessWidget {
-  const _PlanTile(this.r, this.months, {required this.best});
+class _PlanTile extends StatefulWidget {
+  const _PlanTile(this.r, this.months, {required this.best, this.share});
   final PlanResult r;
   final int months;
   final bool best;
 
+  /// Real cost as a share of the dearest plan's.
+  final double? share;
+
+  @override
+  State<_PlanTile> createState() => _PlanTileState();
+}
+
+class _PlanTileState extends State<_PlanTile> {
+  var open = false;
+
   @override
   Widget build(BuildContext context) {
+    final r = widget.r;
     final t = Theme.of(context).textTheme;
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      title: Row(
-        children: [
-          Expanded(child: Text(r.plan.label)),
-          if (best)
-            const Padding(padding: EdgeInsets.only(right: 8), child: StatusLabel(Status.good, 'Lowest')),
-          Text(r.missing != null ? '–' : gbp(r.netCost), style: t.titleSmall?.merge(tabular)),
-        ],
-      ),
-      subtitle: Text(
-        r.missing ??
-            (r.monthly > 0
-                ? '${gbp(r.monthly)} × ${r.payments} months, ${gbp(r.upfront)} up front'
-                : '${gbp(r.upfront)} on the day'),
-      ),
-      childrenPadding: const EdgeInsets.only(bottom: 12),
-      children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Text(r.plan.about, style: t.bodySmall),
-        ),
-        const SizedBox(height: 8),
-        if (r.missing == null) ...[
-          FigureRow('Paid in total', gbp(r.totalPaid)),
-          FigureRow(r.plan == Plan.lease ? 'Fees' : 'Interest and fees', gbp(r.interest)),
-          if (r.finalPayment > 0) FigureRow('Final payment', gbp(r.finalPayment)),
-          FigureRow('Car worth at the end', r.ownedValue > 0 ? gbp(r.ownedValue) : 'Not yours'),
-          FigureRow('Real cost (paid less value)', gbp(r.netCost), strong: true),
-          FigureRow('Real cost a month', gbp(r.netPerMonth(months))),
-          if (r.handBackCost != null) FigureRow('Paid if you hand it back', gbp(r.handBackCost!)),
-          if (r.equity != null)
-            FigureRow(
-              'Value less final payment',
-              gbp(r.equity!),
-              status: r.equity! >= 0 ? Status.good : Status.warning,
+    return ScoreRow(
+      lead: r.plan.label,
+      leadWidth: 104,
+      detail:
+          r.missing ??
+          (r.monthly > 0
+              ? '${gbp(r.monthly)} × ${r.payments} months, ${gbp(r.upfront)} up front'
+              : '${gbp(r.upfront)} on the day'),
+      value: r.missing != null ? '–' : gbp(r.netCost),
+      best: widget.best,
+      bar: widget.share,
+      onTap: () => setState(() => open = !open),
+      below: !open
+          ? null
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(r.plan.about, style: t.bodySmall),
+                const SizedBox(height: 8),
+                if (r.missing == null) ...[
+                  FigureRow('Paid in total', gbp(r.totalPaid)),
+                  FigureRow(r.plan == Plan.lease ? 'Fees' : 'Interest and fees', gbp(r.interest)),
+                  if (r.finalPayment > 0) FigureRow('Final payment', gbp(r.finalPayment)),
+                  FigureRow('Car worth at the end', r.ownedValue > 0 ? gbp(r.ownedValue) : 'Not yours'),
+                  FigureRow('Real cost (paid less value)', gbp(r.netCost), strong: true),
+                  FigureRow('Real cost a month', gbp(r.netPerMonth(widget.months))),
+                  if (r.handBackCost != null) FigureRow('Paid if you hand it back', gbp(r.handBackCost!)),
+                  if (r.equity != null)
+                    FigureRow(
+                      'Value less final payment',
+                      gbp(r.equity!),
+                      status: r.equity! >= 0 ? Status.good : Status.warning,
+                    ),
+                  if (r.terminationMonth != null)
+                    FigureRow('Can hand back (half paid) after', 'payment ${r.terminationMonth}'),
+                ],
+              ],
             ),
-          if (r.terminationMonth != null)
-            FigureRow('Can hand back (half paid) after', 'payment ${r.terminationMonth}'),
-        ],
-      ],
     );
   }
 }

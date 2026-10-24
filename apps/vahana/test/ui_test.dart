@@ -29,7 +29,7 @@ void main() {
     for (final label in pages) {
       final bar = find.descendant(of: find.byType(NavigationBar), matching: find.text(label));
       if (bar.evaluate().isNotEmpty) {
-        await app.tap(bar);
+        await app.tap(find.ancestor(of: bar, matching: find.byType(NavigationDestination)));
       } else {
         await app.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('More')));
         await app.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text(label)));
@@ -51,10 +51,10 @@ void main() {
     await app.enter('Car', '2016 Ford Focus Zetec');
     await app.enter('Price', '4250');
     await app.tapText('Save');
-    expect(find.text('2016 Ford Focus Zetec'), findsOneWidget);
-    expect(find.text('Found (1)'), findsOneWidget);
+    expect(find.text('2016 Ford Focus Zetec'), findsWidgets);
+    expect(find.text('FOUND · 1'), findsOneWidget);
     await app.go('Finance');
-    expect(find.text('The plans compared'), findsOneWidget);
+    expect(find.text('THE PLANS COMPARED'), findsOneWidget);
     await app.go('Guide');
     expect(find.text('Your rights'), findsOneWidget);
     expect(tester.takeException(), isNull);
