@@ -19,6 +19,7 @@ part 'database.g.dart';
     RentPayments,
     ComplianceItems,
     Areas,
+    Vehicles,
     Prefs,
     Outbox,
     SyncCursors,
@@ -43,11 +44,12 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     'rent_payments',
     'compliance_items',
     'areas',
+    'vehicles',
     'prefs',
   ];
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -56,6 +58,9 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
       for (final sql in _indexes) {
         await customStatement(sql);
       }
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) await m.createTable(vehicles);
     },
   );
 

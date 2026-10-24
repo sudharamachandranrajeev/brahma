@@ -5660,6 +5660,1167 @@ class AreasCompanion extends UpdateCompanion<Area> {
   }
 }
 
+class $VehiclesTable extends Vehicles with TableInfo<$VehiclesTable, Vehicle> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $VehiclesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hlcMeta = const VerificationMeta('hlc');
+  @override
+  late final GeneratedColumn<String> hlc = GeneratedColumn<String>(
+    'hlc',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta('deleted');
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("deleted" IN (0, 1))'),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _makeMeta = const VerificationMeta('make');
+  @override
+  late final GeneratedColumn<String> make = GeneratedColumn<String>(
+    'make',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _yearMeta = const VerificationMeta('year');
+  @override
+  late final GeneratedColumn<int> year = GeneratedColumn<int>(
+    'year',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mileageMeta = const VerificationMeta('mileage');
+  @override
+  late final GeneratedColumn<int> mileage = GeneratedColumn<int>(
+    'mileage',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _priceMeta = const VerificationMeta('price');
+  @override
+  late final GeneratedColumn<int> price = GeneratedColumn<int>(
+    'price',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fuelMeta = const VerificationMeta('fuel');
+  @override
+  late final GeneratedColumn<String> fuel = GeneratedColumn<String>(
+    'fuel',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _transmissionMeta = const VerificationMeta('transmission');
+  @override
+  late final GeneratedColumn<String> transmission = GeneratedColumn<String>(
+    'transmission',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _registrationMeta = const VerificationMeta('registration');
+  @override
+  late final GeneratedColumn<String> registration = GeneratedColumn<String>(
+    'registration',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _conditionMeta = const VerificationMeta('condition');
+  @override
+  late final GeneratedColumn<String> condition = GeneratedColumn<String>(
+    'condition',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('used'),
+  );
+  static const VerificationMeta _sellerTypeMeta = const VerificationMeta('sellerType');
+  @override
+  late final GeneratedColumn<String> sellerType = GeneratedColumn<String>(
+    'seller_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('unknown'),
+  );
+  static const VerificationMeta _sellerMeta = const VerificationMeta('seller');
+  @override
+  late final GeneratedColumn<String> seller = GeneratedColumn<String>(
+    'seller',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sellerPhoneMeta = const VerificationMeta('sellerPhone');
+  @override
+  late final GeneratedColumn<String> sellerPhone = GeneratedColumn<String>(
+    'seller_phone',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _locationMeta = const VerificationMeta('location');
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+    'location',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('manual'),
+  );
+  static const VerificationMeta _urlMeta = const VerificationMeta('url');
+  @override
+  late final GeneratedColumn<String> url = GeneratedColumn<String>(
+    'url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _imageUrlMeta = const VerificationMeta('imageUrl');
+  @override
+  late final GeneratedColumn<String> imageUrl = GeneratedColumn<String>(
+    'image_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stageMeta = const VerificationMeta('stage');
+  @override
+  late final GeneratedColumn<String> stage = GeneratedColumn<String>(
+    'stage',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('new'),
+  );
+  static const VerificationMeta _ratingMeta = const VerificationMeta('rating');
+  @override
+  late final GeneratedColumn<int> rating = GeneratedColumn<int>(
+    'rating',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _addedMeta = const VerificationMeta('added');
+  @override
+  late final GeneratedColumn<String> added = GeneratedColumn<String>(
+    'added',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _metaMeta = const VerificationMeta('meta');
+  @override
+  late final GeneratedColumn<String> meta = GeneratedColumn<String>(
+    'meta',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    hlc,
+    deleted,
+    title,
+    make,
+    model,
+    year,
+    mileage,
+    price,
+    fuel,
+    transmission,
+    body,
+    registration,
+    condition,
+    sellerType,
+    seller,
+    sellerPhone,
+    location,
+    source,
+    url,
+    imageUrl,
+    stage,
+    rating,
+    notes,
+    added,
+    meta,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'vehicles';
+  @override
+  VerificationContext validateIntegrity(Insertable<Vehicle> instance, {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('hlc')) {
+      context.handle(_hlcMeta, hlc.isAcceptableOrUnknown(data['hlc']!, _hlcMeta));
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(_deletedMeta, deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta));
+    }
+    if (data.containsKey('title')) {
+      context.handle(_titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('make')) {
+      context.handle(_makeMeta, make.isAcceptableOrUnknown(data['make']!, _makeMeta));
+    }
+    if (data.containsKey('model')) {
+      context.handle(_modelMeta, model.isAcceptableOrUnknown(data['model']!, _modelMeta));
+    }
+    if (data.containsKey('year')) {
+      context.handle(_yearMeta, year.isAcceptableOrUnknown(data['year']!, _yearMeta));
+    }
+    if (data.containsKey('mileage')) {
+      context.handle(_mileageMeta, mileage.isAcceptableOrUnknown(data['mileage']!, _mileageMeta));
+    }
+    if (data.containsKey('price')) {
+      context.handle(_priceMeta, price.isAcceptableOrUnknown(data['price']!, _priceMeta));
+    }
+    if (data.containsKey('fuel')) {
+      context.handle(_fuelMeta, fuel.isAcceptableOrUnknown(data['fuel']!, _fuelMeta));
+    }
+    if (data.containsKey('transmission')) {
+      context.handle(
+        _transmissionMeta,
+        transmission.isAcceptableOrUnknown(data['transmission']!, _transmissionMeta),
+      );
+    }
+    if (data.containsKey('body')) {
+      context.handle(_bodyMeta, body.isAcceptableOrUnknown(data['body']!, _bodyMeta));
+    }
+    if (data.containsKey('registration')) {
+      context.handle(
+        _registrationMeta,
+        registration.isAcceptableOrUnknown(data['registration']!, _registrationMeta),
+      );
+    }
+    if (data.containsKey('condition')) {
+      context.handle(_conditionMeta, condition.isAcceptableOrUnknown(data['condition']!, _conditionMeta));
+    }
+    if (data.containsKey('seller_type')) {
+      context.handle(
+        _sellerTypeMeta,
+        sellerType.isAcceptableOrUnknown(data['seller_type']!, _sellerTypeMeta),
+      );
+    }
+    if (data.containsKey('seller')) {
+      context.handle(_sellerMeta, seller.isAcceptableOrUnknown(data['seller']!, _sellerMeta));
+    }
+    if (data.containsKey('seller_phone')) {
+      context.handle(
+        _sellerPhoneMeta,
+        sellerPhone.isAcceptableOrUnknown(data['seller_phone']!, _sellerPhoneMeta),
+      );
+    }
+    if (data.containsKey('location')) {
+      context.handle(_locationMeta, location.isAcceptableOrUnknown(data['location']!, _locationMeta));
+    }
+    if (data.containsKey('source')) {
+      context.handle(_sourceMeta, source.isAcceptableOrUnknown(data['source']!, _sourceMeta));
+    }
+    if (data.containsKey('url')) {
+      context.handle(_urlMeta, url.isAcceptableOrUnknown(data['url']!, _urlMeta));
+    }
+    if (data.containsKey('image_url')) {
+      context.handle(_imageUrlMeta, imageUrl.isAcceptableOrUnknown(data['image_url']!, _imageUrlMeta));
+    }
+    if (data.containsKey('stage')) {
+      context.handle(_stageMeta, stage.isAcceptableOrUnknown(data['stage']!, _stageMeta));
+    }
+    if (data.containsKey('rating')) {
+      context.handle(_ratingMeta, rating.isAcceptableOrUnknown(data['rating']!, _ratingMeta));
+    }
+    if (data.containsKey('notes')) {
+      context.handle(_notesMeta, notes.isAcceptableOrUnknown(data['notes']!, _notesMeta));
+    }
+    if (data.containsKey('added')) {
+      context.handle(_addedMeta, added.isAcceptableOrUnknown(data['added']!, _addedMeta));
+    } else if (isInserting) {
+      context.missing(_addedMeta);
+    }
+    if (data.containsKey('meta')) {
+      context.handle(_metaMeta, meta.isAcceptableOrUnknown(data['meta']!, _metaMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Vehicle map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Vehicle(
+      id: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      hlc: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}hlc'])!,
+      deleted: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}deleted'])!,
+      title: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      make: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}make'])!,
+      model: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}model'])!,
+      year: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}year']),
+      mileage: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}mileage']),
+      price: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}price']),
+      fuel: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}fuel'])!,
+      transmission: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transmission'],
+      )!,
+      body: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}body'])!,
+      registration: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}registration'],
+      )!,
+      condition: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}condition'])!,
+      sellerType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}seller_type'],
+      )!,
+      seller: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}seller'])!,
+      sellerPhone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}seller_phone'],
+      )!,
+      location: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}location'])!,
+      source: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}source'])!,
+      url: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}url'])!,
+      imageUrl: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}image_url']),
+      stage: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}stage'])!,
+      rating: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}rating'])!,
+      notes: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}notes'])!,
+      added: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}added'])!,
+      meta: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}meta'])!,
+    );
+  }
+
+  @override
+  $VehiclesTable createAlias(String alias) {
+    return $VehiclesTable(attachedDatabase, alias);
+  }
+}
+
+class Vehicle extends DataClass implements Insertable<Vehicle> {
+  final String id;
+  final String hlc;
+  final bool deleted;
+
+  /// What the advert calls it ("2019 Ford Focus 1.0 EcoBoost Titanium").
+  final String title;
+  final String make;
+  final String model;
+  final int? year;
+  final int? mileage;
+  final int? price;
+  final String fuel;
+  final String transmission;
+  final String body;
+  final String registration;
+
+  /// used | new
+  final String condition;
+
+  /// dealer | private | store (an online car shop) | unknown
+  final String sellerType;
+  final String seller;
+  final String sellerPhone;
+  final String location;
+
+  /// The site's id (autotrader, gumtree...) or its host; with the link.
+  final String source;
+  final String url;
+  final String? imageUrl;
+
+  /// Same steps as a property hunt (domain/pipeline.dart), read for cars.
+  final String stage;
+  final int rating;
+  final String notes;
+  final String added;
+
+  /// JSON extras: description, colour, the checks done.
+  final String meta;
+  const Vehicle({
+    required this.id,
+    required this.hlc,
+    required this.deleted,
+    required this.title,
+    required this.make,
+    required this.model,
+    this.year,
+    this.mileage,
+    this.price,
+    required this.fuel,
+    required this.transmission,
+    required this.body,
+    required this.registration,
+    required this.condition,
+    required this.sellerType,
+    required this.seller,
+    required this.sellerPhone,
+    required this.location,
+    required this.source,
+    required this.url,
+    this.imageUrl,
+    required this.stage,
+    required this.rating,
+    required this.notes,
+    required this.added,
+    required this.meta,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['hlc'] = Variable<String>(hlc);
+    map['deleted'] = Variable<bool>(deleted);
+    map['title'] = Variable<String>(title);
+    map['make'] = Variable<String>(make);
+    map['model'] = Variable<String>(model);
+    if (!nullToAbsent || year != null) {
+      map['year'] = Variable<int>(year);
+    }
+    if (!nullToAbsent || mileage != null) {
+      map['mileage'] = Variable<int>(mileage);
+    }
+    if (!nullToAbsent || price != null) {
+      map['price'] = Variable<int>(price);
+    }
+    map['fuel'] = Variable<String>(fuel);
+    map['transmission'] = Variable<String>(transmission);
+    map['body'] = Variable<String>(body);
+    map['registration'] = Variable<String>(registration);
+    map['condition'] = Variable<String>(condition);
+    map['seller_type'] = Variable<String>(sellerType);
+    map['seller'] = Variable<String>(seller);
+    map['seller_phone'] = Variable<String>(sellerPhone);
+    map['location'] = Variable<String>(location);
+    map['source'] = Variable<String>(source);
+    map['url'] = Variable<String>(url);
+    if (!nullToAbsent || imageUrl != null) {
+      map['image_url'] = Variable<String>(imageUrl);
+    }
+    map['stage'] = Variable<String>(stage);
+    map['rating'] = Variable<int>(rating);
+    map['notes'] = Variable<String>(notes);
+    map['added'] = Variable<String>(added);
+    map['meta'] = Variable<String>(meta);
+    return map;
+  }
+
+  VehiclesCompanion toCompanion(bool nullToAbsent) {
+    return VehiclesCompanion(
+      id: Value(id),
+      hlc: Value(hlc),
+      deleted: Value(deleted),
+      title: Value(title),
+      make: Value(make),
+      model: Value(model),
+      year: year == null && nullToAbsent ? const Value.absent() : Value(year),
+      mileage: mileage == null && nullToAbsent ? const Value.absent() : Value(mileage),
+      price: price == null && nullToAbsent ? const Value.absent() : Value(price),
+      fuel: Value(fuel),
+      transmission: Value(transmission),
+      body: Value(body),
+      registration: Value(registration),
+      condition: Value(condition),
+      sellerType: Value(sellerType),
+      seller: Value(seller),
+      sellerPhone: Value(sellerPhone),
+      location: Value(location),
+      source: Value(source),
+      url: Value(url),
+      imageUrl: imageUrl == null && nullToAbsent ? const Value.absent() : Value(imageUrl),
+      stage: Value(stage),
+      rating: Value(rating),
+      notes: Value(notes),
+      added: Value(added),
+      meta: Value(meta),
+    );
+  }
+
+  factory Vehicle.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Vehicle(
+      id: serializer.fromJson<String>(json['id']),
+      hlc: serializer.fromJson<String>(json['hlc']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      title: serializer.fromJson<String>(json['title']),
+      make: serializer.fromJson<String>(json['make']),
+      model: serializer.fromJson<String>(json['model']),
+      year: serializer.fromJson<int?>(json['year']),
+      mileage: serializer.fromJson<int?>(json['mileage']),
+      price: serializer.fromJson<int?>(json['price']),
+      fuel: serializer.fromJson<String>(json['fuel']),
+      transmission: serializer.fromJson<String>(json['transmission']),
+      body: serializer.fromJson<String>(json['body']),
+      registration: serializer.fromJson<String>(json['registration']),
+      condition: serializer.fromJson<String>(json['condition']),
+      sellerType: serializer.fromJson<String>(json['sellerType']),
+      seller: serializer.fromJson<String>(json['seller']),
+      sellerPhone: serializer.fromJson<String>(json['sellerPhone']),
+      location: serializer.fromJson<String>(json['location']),
+      source: serializer.fromJson<String>(json['source']),
+      url: serializer.fromJson<String>(json['url']),
+      imageUrl: serializer.fromJson<String?>(json['imageUrl']),
+      stage: serializer.fromJson<String>(json['stage']),
+      rating: serializer.fromJson<int>(json['rating']),
+      notes: serializer.fromJson<String>(json['notes']),
+      added: serializer.fromJson<String>(json['added']),
+      meta: serializer.fromJson<String>(json['meta']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'hlc': serializer.toJson<String>(hlc),
+      'deleted': serializer.toJson<bool>(deleted),
+      'title': serializer.toJson<String>(title),
+      'make': serializer.toJson<String>(make),
+      'model': serializer.toJson<String>(model),
+      'year': serializer.toJson<int?>(year),
+      'mileage': serializer.toJson<int?>(mileage),
+      'price': serializer.toJson<int?>(price),
+      'fuel': serializer.toJson<String>(fuel),
+      'transmission': serializer.toJson<String>(transmission),
+      'body': serializer.toJson<String>(body),
+      'registration': serializer.toJson<String>(registration),
+      'condition': serializer.toJson<String>(condition),
+      'sellerType': serializer.toJson<String>(sellerType),
+      'seller': serializer.toJson<String>(seller),
+      'sellerPhone': serializer.toJson<String>(sellerPhone),
+      'location': serializer.toJson<String>(location),
+      'source': serializer.toJson<String>(source),
+      'url': serializer.toJson<String>(url),
+      'imageUrl': serializer.toJson<String?>(imageUrl),
+      'stage': serializer.toJson<String>(stage),
+      'rating': serializer.toJson<int>(rating),
+      'notes': serializer.toJson<String>(notes),
+      'added': serializer.toJson<String>(added),
+      'meta': serializer.toJson<String>(meta),
+    };
+  }
+
+  Vehicle copyWith({
+    String? id,
+    String? hlc,
+    bool? deleted,
+    String? title,
+    String? make,
+    String? model,
+    Value<int?> year = const Value.absent(),
+    Value<int?> mileage = const Value.absent(),
+    Value<int?> price = const Value.absent(),
+    String? fuel,
+    String? transmission,
+    String? body,
+    String? registration,
+    String? condition,
+    String? sellerType,
+    String? seller,
+    String? sellerPhone,
+    String? location,
+    String? source,
+    String? url,
+    Value<String?> imageUrl = const Value.absent(),
+    String? stage,
+    int? rating,
+    String? notes,
+    String? added,
+    String? meta,
+  }) => Vehicle(
+    id: id ?? this.id,
+    hlc: hlc ?? this.hlc,
+    deleted: deleted ?? this.deleted,
+    title: title ?? this.title,
+    make: make ?? this.make,
+    model: model ?? this.model,
+    year: year.present ? year.value : this.year,
+    mileage: mileage.present ? mileage.value : this.mileage,
+    price: price.present ? price.value : this.price,
+    fuel: fuel ?? this.fuel,
+    transmission: transmission ?? this.transmission,
+    body: body ?? this.body,
+    registration: registration ?? this.registration,
+    condition: condition ?? this.condition,
+    sellerType: sellerType ?? this.sellerType,
+    seller: seller ?? this.seller,
+    sellerPhone: sellerPhone ?? this.sellerPhone,
+    location: location ?? this.location,
+    source: source ?? this.source,
+    url: url ?? this.url,
+    imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
+    stage: stage ?? this.stage,
+    rating: rating ?? this.rating,
+    notes: notes ?? this.notes,
+    added: added ?? this.added,
+    meta: meta ?? this.meta,
+  );
+  Vehicle copyWithCompanion(VehiclesCompanion data) {
+    return Vehicle(
+      id: data.id.present ? data.id.value : this.id,
+      hlc: data.hlc.present ? data.hlc.value : this.hlc,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      title: data.title.present ? data.title.value : this.title,
+      make: data.make.present ? data.make.value : this.make,
+      model: data.model.present ? data.model.value : this.model,
+      year: data.year.present ? data.year.value : this.year,
+      mileage: data.mileage.present ? data.mileage.value : this.mileage,
+      price: data.price.present ? data.price.value : this.price,
+      fuel: data.fuel.present ? data.fuel.value : this.fuel,
+      transmission: data.transmission.present ? data.transmission.value : this.transmission,
+      body: data.body.present ? data.body.value : this.body,
+      registration: data.registration.present ? data.registration.value : this.registration,
+      condition: data.condition.present ? data.condition.value : this.condition,
+      sellerType: data.sellerType.present ? data.sellerType.value : this.sellerType,
+      seller: data.seller.present ? data.seller.value : this.seller,
+      sellerPhone: data.sellerPhone.present ? data.sellerPhone.value : this.sellerPhone,
+      location: data.location.present ? data.location.value : this.location,
+      source: data.source.present ? data.source.value : this.source,
+      url: data.url.present ? data.url.value : this.url,
+      imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
+      stage: data.stage.present ? data.stage.value : this.stage,
+      rating: data.rating.present ? data.rating.value : this.rating,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      added: data.added.present ? data.added.value : this.added,
+      meta: data.meta.present ? data.meta.value : this.meta,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Vehicle(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('title: $title, ')
+          ..write('make: $make, ')
+          ..write('model: $model, ')
+          ..write('year: $year, ')
+          ..write('mileage: $mileage, ')
+          ..write('price: $price, ')
+          ..write('fuel: $fuel, ')
+          ..write('transmission: $transmission, ')
+          ..write('body: $body, ')
+          ..write('registration: $registration, ')
+          ..write('condition: $condition, ')
+          ..write('sellerType: $sellerType, ')
+          ..write('seller: $seller, ')
+          ..write('sellerPhone: $sellerPhone, ')
+          ..write('location: $location, ')
+          ..write('source: $source, ')
+          ..write('url: $url, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('stage: $stage, ')
+          ..write('rating: $rating, ')
+          ..write('notes: $notes, ')
+          ..write('added: $added, ')
+          ..write('meta: $meta')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    hlc,
+    deleted,
+    title,
+    make,
+    model,
+    year,
+    mileage,
+    price,
+    fuel,
+    transmission,
+    body,
+    registration,
+    condition,
+    sellerType,
+    seller,
+    sellerPhone,
+    location,
+    source,
+    url,
+    imageUrl,
+    stage,
+    rating,
+    notes,
+    added,
+    meta,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Vehicle &&
+          other.id == this.id &&
+          other.hlc == this.hlc &&
+          other.deleted == this.deleted &&
+          other.title == this.title &&
+          other.make == this.make &&
+          other.model == this.model &&
+          other.year == this.year &&
+          other.mileage == this.mileage &&
+          other.price == this.price &&
+          other.fuel == this.fuel &&
+          other.transmission == this.transmission &&
+          other.body == this.body &&
+          other.registration == this.registration &&
+          other.condition == this.condition &&
+          other.sellerType == this.sellerType &&
+          other.seller == this.seller &&
+          other.sellerPhone == this.sellerPhone &&
+          other.location == this.location &&
+          other.source == this.source &&
+          other.url == this.url &&
+          other.imageUrl == this.imageUrl &&
+          other.stage == this.stage &&
+          other.rating == this.rating &&
+          other.notes == this.notes &&
+          other.added == this.added &&
+          other.meta == this.meta);
+}
+
+class VehiclesCompanion extends UpdateCompanion<Vehicle> {
+  final Value<String> id;
+  final Value<String> hlc;
+  final Value<bool> deleted;
+  final Value<String> title;
+  final Value<String> make;
+  final Value<String> model;
+  final Value<int?> year;
+  final Value<int?> mileage;
+  final Value<int?> price;
+  final Value<String> fuel;
+  final Value<String> transmission;
+  final Value<String> body;
+  final Value<String> registration;
+  final Value<String> condition;
+  final Value<String> sellerType;
+  final Value<String> seller;
+  final Value<String> sellerPhone;
+  final Value<String> location;
+  final Value<String> source;
+  final Value<String> url;
+  final Value<String?> imageUrl;
+  final Value<String> stage;
+  final Value<int> rating;
+  final Value<String> notes;
+  final Value<String> added;
+  final Value<String> meta;
+  final Value<int> rowid;
+  const VehiclesCompanion({
+    this.id = const Value.absent(),
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.title = const Value.absent(),
+    this.make = const Value.absent(),
+    this.model = const Value.absent(),
+    this.year = const Value.absent(),
+    this.mileage = const Value.absent(),
+    this.price = const Value.absent(),
+    this.fuel = const Value.absent(),
+    this.transmission = const Value.absent(),
+    this.body = const Value.absent(),
+    this.registration = const Value.absent(),
+    this.condition = const Value.absent(),
+    this.sellerType = const Value.absent(),
+    this.seller = const Value.absent(),
+    this.sellerPhone = const Value.absent(),
+    this.location = const Value.absent(),
+    this.source = const Value.absent(),
+    this.url = const Value.absent(),
+    this.imageUrl = const Value.absent(),
+    this.stage = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.added = const Value.absent(),
+    this.meta = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  VehiclesCompanion.insert({
+    required String id,
+    this.hlc = const Value.absent(),
+    this.deleted = const Value.absent(),
+    required String title,
+    this.make = const Value.absent(),
+    this.model = const Value.absent(),
+    this.year = const Value.absent(),
+    this.mileage = const Value.absent(),
+    this.price = const Value.absent(),
+    this.fuel = const Value.absent(),
+    this.transmission = const Value.absent(),
+    this.body = const Value.absent(),
+    this.registration = const Value.absent(),
+    this.condition = const Value.absent(),
+    this.sellerType = const Value.absent(),
+    this.seller = const Value.absent(),
+    this.sellerPhone = const Value.absent(),
+    this.location = const Value.absent(),
+    this.source = const Value.absent(),
+    this.url = const Value.absent(),
+    this.imageUrl = const Value.absent(),
+    this.stage = const Value.absent(),
+    this.rating = const Value.absent(),
+    this.notes = const Value.absent(),
+    required String added,
+    this.meta = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       added = Value(added);
+  static Insertable<Vehicle> custom({
+    Expression<String>? id,
+    Expression<String>? hlc,
+    Expression<bool>? deleted,
+    Expression<String>? title,
+    Expression<String>? make,
+    Expression<String>? model,
+    Expression<int>? year,
+    Expression<int>? mileage,
+    Expression<int>? price,
+    Expression<String>? fuel,
+    Expression<String>? transmission,
+    Expression<String>? body,
+    Expression<String>? registration,
+    Expression<String>? condition,
+    Expression<String>? sellerType,
+    Expression<String>? seller,
+    Expression<String>? sellerPhone,
+    Expression<String>? location,
+    Expression<String>? source,
+    Expression<String>? url,
+    Expression<String>? imageUrl,
+    Expression<String>? stage,
+    Expression<int>? rating,
+    Expression<String>? notes,
+    Expression<String>? added,
+    Expression<String>? meta,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (hlc != null) 'hlc': hlc,
+      if (deleted != null) 'deleted': deleted,
+      if (title != null) 'title': title,
+      if (make != null) 'make': make,
+      if (model != null) 'model': model,
+      if (year != null) 'year': year,
+      if (mileage != null) 'mileage': mileage,
+      if (price != null) 'price': price,
+      if (fuel != null) 'fuel': fuel,
+      if (transmission != null) 'transmission': transmission,
+      if (body != null) 'body': body,
+      if (registration != null) 'registration': registration,
+      if (condition != null) 'condition': condition,
+      if (sellerType != null) 'seller_type': sellerType,
+      if (seller != null) 'seller': seller,
+      if (sellerPhone != null) 'seller_phone': sellerPhone,
+      if (location != null) 'location': location,
+      if (source != null) 'source': source,
+      if (url != null) 'url': url,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (stage != null) 'stage': stage,
+      if (rating != null) 'rating': rating,
+      if (notes != null) 'notes': notes,
+      if (added != null) 'added': added,
+      if (meta != null) 'meta': meta,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  VehiclesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? hlc,
+    Value<bool>? deleted,
+    Value<String>? title,
+    Value<String>? make,
+    Value<String>? model,
+    Value<int?>? year,
+    Value<int?>? mileage,
+    Value<int?>? price,
+    Value<String>? fuel,
+    Value<String>? transmission,
+    Value<String>? body,
+    Value<String>? registration,
+    Value<String>? condition,
+    Value<String>? sellerType,
+    Value<String>? seller,
+    Value<String>? sellerPhone,
+    Value<String>? location,
+    Value<String>? source,
+    Value<String>? url,
+    Value<String?>? imageUrl,
+    Value<String>? stage,
+    Value<int>? rating,
+    Value<String>? notes,
+    Value<String>? added,
+    Value<String>? meta,
+    Value<int>? rowid,
+  }) {
+    return VehiclesCompanion(
+      id: id ?? this.id,
+      hlc: hlc ?? this.hlc,
+      deleted: deleted ?? this.deleted,
+      title: title ?? this.title,
+      make: make ?? this.make,
+      model: model ?? this.model,
+      year: year ?? this.year,
+      mileage: mileage ?? this.mileage,
+      price: price ?? this.price,
+      fuel: fuel ?? this.fuel,
+      transmission: transmission ?? this.transmission,
+      body: body ?? this.body,
+      registration: registration ?? this.registration,
+      condition: condition ?? this.condition,
+      sellerType: sellerType ?? this.sellerType,
+      seller: seller ?? this.seller,
+      sellerPhone: sellerPhone ?? this.sellerPhone,
+      location: location ?? this.location,
+      source: source ?? this.source,
+      url: url ?? this.url,
+      imageUrl: imageUrl ?? this.imageUrl,
+      stage: stage ?? this.stage,
+      rating: rating ?? this.rating,
+      notes: notes ?? this.notes,
+      added: added ?? this.added,
+      meta: meta ?? this.meta,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (hlc.present) {
+      map['hlc'] = Variable<String>(hlc.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (make.present) {
+      map['make'] = Variable<String>(make.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (year.present) {
+      map['year'] = Variable<int>(year.value);
+    }
+    if (mileage.present) {
+      map['mileage'] = Variable<int>(mileage.value);
+    }
+    if (price.present) {
+      map['price'] = Variable<int>(price.value);
+    }
+    if (fuel.present) {
+      map['fuel'] = Variable<String>(fuel.value);
+    }
+    if (transmission.present) {
+      map['transmission'] = Variable<String>(transmission.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (registration.present) {
+      map['registration'] = Variable<String>(registration.value);
+    }
+    if (condition.present) {
+      map['condition'] = Variable<String>(condition.value);
+    }
+    if (sellerType.present) {
+      map['seller_type'] = Variable<String>(sellerType.value);
+    }
+    if (seller.present) {
+      map['seller'] = Variable<String>(seller.value);
+    }
+    if (sellerPhone.present) {
+      map['seller_phone'] = Variable<String>(sellerPhone.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (url.present) {
+      map['url'] = Variable<String>(url.value);
+    }
+    if (imageUrl.present) {
+      map['image_url'] = Variable<String>(imageUrl.value);
+    }
+    if (stage.present) {
+      map['stage'] = Variable<String>(stage.value);
+    }
+    if (rating.present) {
+      map['rating'] = Variable<int>(rating.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (added.present) {
+      map['added'] = Variable<String>(added.value);
+    }
+    if (meta.present) {
+      map['meta'] = Variable<String>(meta.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('VehiclesCompanion(')
+          ..write('id: $id, ')
+          ..write('hlc: $hlc, ')
+          ..write('deleted: $deleted, ')
+          ..write('title: $title, ')
+          ..write('make: $make, ')
+          ..write('model: $model, ')
+          ..write('year: $year, ')
+          ..write('mileage: $mileage, ')
+          ..write('price: $price, ')
+          ..write('fuel: $fuel, ')
+          ..write('transmission: $transmission, ')
+          ..write('body: $body, ')
+          ..write('registration: $registration, ')
+          ..write('condition: $condition, ')
+          ..write('sellerType: $sellerType, ')
+          ..write('seller: $seller, ')
+          ..write('sellerPhone: $sellerPhone, ')
+          ..write('location: $location, ')
+          ..write('source: $source, ')
+          ..write('url: $url, ')
+          ..write('imageUrl: $imageUrl, ')
+          ..write('stage: $stage, ')
+          ..write('rating: $rating, ')
+          ..write('notes: $notes, ')
+          ..write('added: $added, ')
+          ..write('meta: $meta, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PrefsTable extends Prefs with TableInfo<$PrefsTable, Pref> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -6522,6 +7683,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RentPaymentsTable rentPayments = $RentPaymentsTable(this);
   late final $ComplianceItemsTable complianceItems = $ComplianceItemsTable(this);
   late final $AreasTable areas = $AreasTable(this);
+  late final $VehiclesTable vehicles = $VehiclesTable(this);
   late final $PrefsTable prefs = $PrefsTable(this);
   late final $OutboxTable outbox = $OutboxTable(this);
   late final $SyncCursorsTable syncCursors = $SyncCursorsTable(this);
@@ -6541,6 +7703,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     rentPayments,
     complianceItems,
     areas,
+    vehicles,
     prefs,
     outbox,
     syncCursors,
@@ -9137,6 +10300,476 @@ typedef $$AreasTableProcessedTableManager =
       Area,
       PrefetchHooks Function()
     >;
+typedef $$VehiclesTableCreateCompanionBuilder = VehiclesCompanion Function({
+  required String id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  required String title,
+  Value<String> make,
+  Value<String> model,
+  Value<int?> year,
+  Value<int?> mileage,
+  Value<int?> price,
+  Value<String> fuel,
+  Value<String> transmission,
+  Value<String> body,
+  Value<String> registration,
+  Value<String> condition,
+  Value<String> sellerType,
+  Value<String> seller,
+  Value<String> sellerPhone,
+  Value<String> location,
+  Value<String> source,
+  Value<String> url,
+  Value<String?> imageUrl,
+  Value<String> stage,
+  Value<int> rating,
+  Value<String> notes,
+  required String added,
+  Value<String> meta,
+  Value<int> rowid,
+});
+typedef $$VehiclesTableUpdateCompanionBuilder = VehiclesCompanion Function({
+  Value<String> id,
+  Value<String> hlc,
+  Value<bool> deleted,
+  Value<String> title,
+  Value<String> make,
+  Value<String> model,
+  Value<int?> year,
+  Value<int?> mileage,
+  Value<int?> price,
+  Value<String> fuel,
+  Value<String> transmission,
+  Value<String> body,
+  Value<String> registration,
+  Value<String> condition,
+  Value<String> sellerType,
+  Value<String> seller,
+  Value<String> sellerPhone,
+  Value<String> location,
+  Value<String> source,
+  Value<String> url,
+  Value<String?> imageUrl,
+  Value<String> stage,
+  Value<int> rating,
+  Value<String> notes,
+  Value<String> added,
+  Value<String> meta,
+  Value<int> rowid,
+});
+
+class $$VehiclesTableFilterComposer extends Composer<_$AppDatabase, $VehiclesTable> {
+  $$VehiclesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get make =>
+      $composableBuilder(column: $table.make, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get year =>
+      $composableBuilder(column: $table.year, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get mileage =>
+      $composableBuilder(column: $table.mileage, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get fuel =>
+      $composableBuilder(column: $table.fuel, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get transmission =>
+      $composableBuilder(column: $table.transmission, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get registration =>
+      $composableBuilder(column: $table.registration, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get condition =>
+      $composableBuilder(column: $table.condition, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sellerType =>
+      $composableBuilder(column: $table.sellerType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get seller =>
+      $composableBuilder(column: $table.seller, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sellerPhone =>
+      $composableBuilder(column: $table.sellerPhone, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get imageUrl =>
+      $composableBuilder(column: $table.imageUrl, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get stage =>
+      $composableBuilder(column: $table.stage, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get added =>
+      $composableBuilder(column: $table.added, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get meta =>
+      $composableBuilder(column: $table.meta, builder: (column) => ColumnFilters(column));
+}
+
+class $$VehiclesTableOrderingComposer extends Composer<_$AppDatabase, $VehiclesTable> {
+  $$VehiclesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get hlc =>
+      $composableBuilder(column: $table.hlc, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get make =>
+      $composableBuilder(column: $table.make, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get year =>
+      $composableBuilder(column: $table.year, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get mileage =>
+      $composableBuilder(column: $table.mileage, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get price =>
+      $composableBuilder(column: $table.price, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get fuel =>
+      $composableBuilder(column: $table.fuel, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get transmission =>
+      $composableBuilder(column: $table.transmission, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get registration =>
+      $composableBuilder(column: $table.registration, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get condition =>
+      $composableBuilder(column: $table.condition, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sellerType =>
+      $composableBuilder(column: $table.sellerType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get seller =>
+      $composableBuilder(column: $table.seller, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sellerPhone =>
+      $composableBuilder(column: $table.sellerPhone, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get url =>
+      $composableBuilder(column: $table.url, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get imageUrl =>
+      $composableBuilder(column: $table.imageUrl, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get stage =>
+      $composableBuilder(column: $table.stage, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get rating =>
+      $composableBuilder(column: $table.rating, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get added =>
+      $composableBuilder(column: $table.added, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get meta =>
+      $composableBuilder(column: $table.meta, builder: (column) => ColumnOrderings(column));
+}
+
+class $$VehiclesTableAnnotationComposer extends Composer<_$AppDatabase, $VehiclesTable> {
+  $$VehiclesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get hlc => $composableBuilder(column: $table.hlc, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<String> get title => $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get make => $composableBuilder(column: $table.make, builder: (column) => column);
+
+  GeneratedColumn<String> get model => $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<int> get year => $composableBuilder(column: $table.year, builder: (column) => column);
+
+  GeneratedColumn<int> get mileage => $composableBuilder(column: $table.mileage, builder: (column) => column);
+
+  GeneratedColumn<int> get price => $composableBuilder(column: $table.price, builder: (column) => column);
+
+  GeneratedColumn<String> get fuel => $composableBuilder(column: $table.fuel, builder: (column) => column);
+
+  GeneratedColumn<String> get transmission =>
+      $composableBuilder(column: $table.transmission, builder: (column) => column);
+
+  GeneratedColumn<String> get body => $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get registration =>
+      $composableBuilder(column: $table.registration, builder: (column) => column);
+
+  GeneratedColumn<String> get condition =>
+      $composableBuilder(column: $table.condition, builder: (column) => column);
+
+  GeneratedColumn<String> get sellerType =>
+      $composableBuilder(column: $table.sellerType, builder: (column) => column);
+
+  GeneratedColumn<String> get seller =>
+      $composableBuilder(column: $table.seller, builder: (column) => column);
+
+  GeneratedColumn<String> get sellerPhone =>
+      $composableBuilder(column: $table.sellerPhone, builder: (column) => column);
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<String> get url => $composableBuilder(column: $table.url, builder: (column) => column);
+
+  GeneratedColumn<String> get imageUrl =>
+      $composableBuilder(column: $table.imageUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get stage => $composableBuilder(column: $table.stage, builder: (column) => column);
+
+  GeneratedColumn<int> get rating => $composableBuilder(column: $table.rating, builder: (column) => column);
+
+  GeneratedColumn<String> get notes => $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get added => $composableBuilder(column: $table.added, builder: (column) => column);
+
+  GeneratedColumn<String> get meta => $composableBuilder(column: $table.meta, builder: (column) => column);
+}
+
+class $$VehiclesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $VehiclesTable,
+          Vehicle,
+          $$VehiclesTableFilterComposer,
+          $$VehiclesTableOrderingComposer,
+          $$VehiclesTableAnnotationComposer,
+          $$VehiclesTableCreateCompanionBuilder,
+          $$VehiclesTableUpdateCompanionBuilder,
+          (Vehicle, BaseReferences<_$AppDatabase, $VehiclesTable, Vehicle>),
+          Vehicle,
+          PrefetchHooks Function()
+        > {
+  $$VehiclesTableTableManager(_$AppDatabase db, $VehiclesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () => $$VehiclesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () => $$VehiclesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () => $$VehiclesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> make = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<int?> year = const Value.absent(),
+                Value<int?> mileage = const Value.absent(),
+                Value<int?> price = const Value.absent(),
+                Value<String> fuel = const Value.absent(),
+                Value<String> transmission = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String> registration = const Value.absent(),
+                Value<String> condition = const Value.absent(),
+                Value<String> sellerType = const Value.absent(),
+                Value<String> seller = const Value.absent(),
+                Value<String> sellerPhone = const Value.absent(),
+                Value<String> location = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
+                Value<String> stage = const Value.absent(),
+                Value<int> rating = const Value.absent(),
+                Value<String> notes = const Value.absent(),
+                Value<String> added = const Value.absent(),
+                Value<String> meta = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VehiclesCompanion(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                title: title,
+                make: make,
+                model: model,
+                year: year,
+                mileage: mileage,
+                price: price,
+                fuel: fuel,
+                transmission: transmission,
+                body: body,
+                registration: registration,
+                condition: condition,
+                sellerType: sellerType,
+                seller: seller,
+                sellerPhone: sellerPhone,
+                location: location,
+                source: source,
+                url: url,
+                imageUrl: imageUrl,
+                stage: stage,
+                rating: rating,
+                notes: notes,
+                added: added,
+                meta: meta,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> hlc = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                required String title,
+                Value<String> make = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<int?> year = const Value.absent(),
+                Value<int?> mileage = const Value.absent(),
+                Value<int?> price = const Value.absent(),
+                Value<String> fuel = const Value.absent(),
+                Value<String> transmission = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String> registration = const Value.absent(),
+                Value<String> condition = const Value.absent(),
+                Value<String> sellerType = const Value.absent(),
+                Value<String> seller = const Value.absent(),
+                Value<String> sellerPhone = const Value.absent(),
+                Value<String> location = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<String> url = const Value.absent(),
+                Value<String?> imageUrl = const Value.absent(),
+                Value<String> stage = const Value.absent(),
+                Value<int> rating = const Value.absent(),
+                Value<String> notes = const Value.absent(),
+                required String added,
+                Value<String> meta = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => VehiclesCompanion.insert(
+                id: id,
+                hlc: hlc,
+                deleted: deleted,
+                title: title,
+                make: make,
+                model: model,
+                year: year,
+                mileage: mileage,
+                price: price,
+                fuel: fuel,
+                transmission: transmission,
+                body: body,
+                registration: registration,
+                condition: condition,
+                sellerType: sellerType,
+                seller: seller,
+                sellerPhone: sellerPhone,
+                location: location,
+                source: source,
+                url: url,
+                imageUrl: imageUrl,
+                stage: stage,
+                rating: rating,
+                notes: notes,
+                added: added,
+                meta: meta,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$VehiclesTable, Vehicle>(table),
+                  BaseReferences<_$AppDatabase, $VehiclesTable, Vehicle>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$VehiclesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $VehiclesTable,
+      Vehicle,
+      $$VehiclesTableFilterComposer,
+      $$VehiclesTableOrderingComposer,
+      $$VehiclesTableAnnotationComposer,
+      $$VehiclesTableCreateCompanionBuilder,
+      $$VehiclesTableUpdateCompanionBuilder,
+      (Vehicle, BaseReferences<_$AppDatabase, $VehiclesTable, Vehicle>),
+      Vehicle,
+      PrefetchHooks Function()
+    >;
 typedef $$PrefsTableCreateCompanionBuilder = PrefsCompanion Function({
   required String id,
   Value<String> hlc,
@@ -9647,6 +11280,7 @@ class $AppDatabaseManager {
   $$ComplianceItemsTableTableManager get complianceItems =>
       $$ComplianceItemsTableTableManager(_db, _db.complianceItems);
   $$AreasTableTableManager get areas => $$AreasTableTableManager(_db, _db.areas);
+  $$VehiclesTableTableManager get vehicles => $$VehiclesTableTableManager(_db, _db.vehicles);
   $$PrefsTableTableManager get prefs => $$PrefsTableTableManager(_db, _db.prefs);
   $$OutboxTableTableManager get outbox => $$OutboxTableTableManager(_db, _db.outbox);
   $$SyncCursorsTableTableManager get syncCursors => $$SyncCursorsTableTableManager(_db, _db.syncCursors);

@@ -175,6 +175,46 @@ class Areas extends Table with SyncedRow {
   TextColumn get notes => text().withDefault(const Constant(''))();
 }
 
+/// A car (or van, motorbike) being looked at to buy, new or used. Prices
+/// are whole pounds.
+@DataClassName('Vehicle')
+class Vehicles extends Table with SyncedRow {
+  /// What the advert calls it ("2019 Ford Focus 1.0 EcoBoost Titanium").
+  TextColumn get title => text()();
+  TextColumn get make => text().withDefault(const Constant(''))();
+  TextColumn get model => text().withDefault(const Constant(''))();
+  IntColumn get year => integer().nullable()();
+  IntColumn get mileage => integer().nullable()();
+  IntColumn get price => integer().nullable()();
+  TextColumn get fuel => text().withDefault(const Constant(''))();
+  TextColumn get transmission => text().withDefault(const Constant(''))();
+  TextColumn get body => text().withDefault(const Constant(''))();
+  TextColumn get registration => text().withDefault(const Constant(''))();
+
+  /// used | new
+  TextColumn get condition => text().withDefault(const Constant('used'))();
+
+  /// dealer | private | store (an online car shop) | unknown
+  TextColumn get sellerType => text().withDefault(const Constant('unknown'))();
+  TextColumn get seller => text().withDefault(const Constant(''))();
+  TextColumn get sellerPhone => text().withDefault(const Constant(''))();
+  TextColumn get location => text().withDefault(const Constant(''))();
+
+  /// The site's id (autotrader, gumtree...) or its host; with the link.
+  TextColumn get source => text().withDefault(const Constant('manual'))();
+  TextColumn get url => text().withDefault(const Constant(''))();
+  TextColumn get imageUrl => text().nullable()();
+
+  /// Same steps as a property hunt (domain/pipeline.dart), read for cars.
+  TextColumn get stage => text().withDefault(const Constant('new'))();
+  IntColumn get rating => integer().withDefault(const Constant(0))();
+  TextColumn get notes => text().withDefault(const Constant(''))();
+  TextColumn get added => text()();
+
+  /// JSON extras: description, colour, the checks done.
+  TextColumn get meta => text().withDefault(const Constant('{}'))();
+}
+
 // The tables sync needs; their columns come from brahma_core.
 
 @DataClassName('Pref')

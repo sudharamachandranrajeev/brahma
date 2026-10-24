@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Cars: buy a car, new or used. Search links for AutoTrader, Gumtree, Facebook Marketplace, eBay,
+  UsedCarsNI, DoneDeal, PistonHeads, online stores, dealer groups and new-car deal sites, filled in
+  from your make, model, budget and postcode (Northern Ireland sites first for BT postcodes), plus
+  your own sites. A garage for cars you find (from an advert link or typed in) with stages, ratings
+  and a pre-purchase checklist. Cash, loan, HP, PCP and lease compared by real cost, running costs,
+  and a guide to rights, tax and the motor finance redress scheme. Database schema 2.
+
 ## 0.1.0
 
 First release, for Linux, Windows and Android.

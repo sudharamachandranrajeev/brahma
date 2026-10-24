@@ -9,6 +9,7 @@ const anveshanaHints = <String, String>{
   'nav.invest': 'Buy-to-let, buying a home and development appraisals.',
   'nav.lettings': 'Tenancies, rent and landlord safety checks.',
   'nav.research': 'Area reports for any UK postcode, purchase tax and where to look further.',
+  'nav.cars': 'Buy a car, new or used: where to look, what you found, how to pay and what to check.',
   'nav.settings': 'Your details for enquiries, your home point, Brahma Watch, sync and security.',
   'nav.more': 'The rest of Anveshana.',
   // Hunt
@@ -35,12 +36,21 @@ const anveshanaHints = <String, String>{
   // Research
   'research.save': 'Keep this report to compare areas later.',
   'research.tax': 'Stamp Duty (England, NI), LBTT (Scotland) or LTT (Wales) for a price.',
+  // Cars
+  'cars.add': 'Paste an advert link from any site, or type a car in.',
+  'cars.custom': 'Your own dealers and sites. Use {make}, {model}, {postcode} or {maxPrice} in the link.',
+  'cars.compare':
+      'Real cost is everything you pay less what the car is worth at the end. It is the fair way to compare '
+      'cash, a loan, HP, PCP and a lease.',
   // Settings
   'settings.applicant': 'Goes into enquiries you send. Stays on your devices.',
   'settings.home': 'Where distances are measured from, e.g. home or work.',
   'settings.watch':
       'Your own Brahma Watch Worker on Cloudflare, which checks searches and alerts your phone.',
   // Page banners
+  'page.cars':
+      'Search the main car sites for your area from one place, save the cars you find, compare ways to pay '
+      'and work through the checks before you buy.',
   'page.hunt':
       'Every property you are considering, by stage. Add one from a PropertyPal link, or let Brahma '
       'Watch bring in new listings. Hover or long-press anything for a tip.',

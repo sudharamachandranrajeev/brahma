@@ -64,7 +64,7 @@ void main() {
     );
   }
 
-  const pages = ['Searches', 'Invest', 'Research', 'Lettings', 'Contacts', 'Settings', 'Hunt'];
+  const pages = ['Searches', 'Invest', 'Research', 'Lettings', 'Contacts', 'Cars', 'Settings', 'Hunt'];
 
   testWidgets('every page builds on a desktop window, empty and with data', (tester) async {
     for (final seeded in [false, true]) {
@@ -99,6 +99,28 @@ void main() {
     // A property's page too.
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     expect(find.text('Write an enquiry'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
+
+  testWidgets('cars: add by hand, then every tab builds', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    await app.go('Cars');
+    expect(find.text('What you want'), findsOneWidget);
+    await app.tapText('Garage');
+    await app.tapText('Add');
+    await app.tapText('Type it in');
+    await app.enter('Car', '2016 Ford Focus Zetec');
+    await app.enter('Price', '4250');
+    await app.tapText('Save');
+    expect(find.text('2016 Ford Focus Zetec'), findsOneWidget);
+    expect(find.text('Found (1)'), findsOneWidget);
+    await app.tapText('Finance');
+    expect(find.text('The plans compared'), findsOneWidget);
+    await app.tapText('Guide');
+    expect(find.text('Your rights'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await app.close();
   });

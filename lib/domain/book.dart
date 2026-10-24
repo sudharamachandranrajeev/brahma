@@ -7,6 +7,7 @@ import '../db/database.dart';
 import 'contact_links.dart';
 import 'listing.dart';
 import 'pipeline.dart';
+import 'vehicles.dart';
 
 /// Pref keys. The prefs table is shared by every Brahma app, so Anveshana's
 /// keys carry its prefix.
@@ -15,6 +16,8 @@ abstract final class PrefKeys {
   static const home = 'anveshana.home';
   static const watchUrl = 'anveshana.watch.url';
   static const watchToken = 'anveshana.watch.token';
+  static const carSearch = 'anveshana.cars.search';
+  static const carSources = 'anveshana.cars.sources';
 }
 
 /// Where distances are measured from (the user's home or work).
@@ -212,4 +215,50 @@ class PropertyBook {
     }
     return id;
   }
+
+  /// Adds a car advert, or refreshes the one already saved from the same
+  /// link (price, mileage, photo), keeping the user's stage, rating, notes
+  /// and checks. Returns its id and whether it was new.
+  Future<({String id, bool added})> importCar(CarAdvert a, {String? today}) => db.transaction(() async {
+    final existing = a.url.isEmpty
+        ? null
+        : await (db.select(db.vehicles)
+                ..where((v) => v.url.equals(a.url) & v.deleted.not())
+                ..limit(1))
+              .getSingleOrNull();
+    final meta = <String, Object?>{
+      if (existing != null) ...(jsonDecode(existing.meta) as Map).cast<String, Object?>(),
+      if (a.description.isNotEmpty) 'description': a.description,
+      if (a.colour.isNotEmpty) 'colour': a.colour,
+    };
+    String keep(String fresh, String? old) => fresh.isNotEmpty ? fresh : old ?? '';
+    final id = existing?.id ?? newId();
+    await save(
+      db.vehicles,
+      VehiclesCompanion(
+        id: Value(id),
+        title: Value(a.title),
+        make: Value(keep(a.make, existing?.make)),
+        model: Value(keep(a.model, existing?.model)),
+        year: Value(a.year ?? existing?.year),
+        mileage: Value(a.mileage ?? existing?.mileage),
+        price: Value(a.price ?? existing?.price),
+        fuel: Value(keep(a.fuel, existing?.fuel)),
+        transmission: Value(keep(a.transmission, existing?.transmission)),
+        body: Value(keep(a.body, existing?.body)),
+        condition: Value(a.condition),
+        sellerType: Value(a.sellerType != 'unknown' ? a.sellerType : existing?.sellerType ?? 'unknown'),
+        seller: Value(keep(a.seller, existing?.seller)),
+        sellerPhone: Value(keep(a.sellerPhone, existing?.sellerPhone)),
+        location: Value(keep(a.location, existing?.location)),
+        source: Value(a.source),
+        url: Value(a.url),
+        imageUrl: Value(a.image ?? existing?.imageUrl),
+        added: Value(existing?.added ?? today ?? DateTime.now().toIso8601String().substring(0, 10)),
+        meta: Value(jsonEncode(meta)),
+      ),
+      id,
+    );
+    return (id: id, added: existing == null);
+  });
 }

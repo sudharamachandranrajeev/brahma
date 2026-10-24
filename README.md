@@ -30,6 +30,10 @@ encryption.
   area and the nation, street-level crime (police.uk; not Scotland) and sold prices (Price Paid;
   England and Wales). Links for flood risk, EPCs, planning, broadband and rents, per nation. A
   purchase tax calculator (SDLT, LBTT, LTT) and a development checklist.
+- **Cars.** Buying a car, new or used: search links for the main UK and Northern Ireland sites filled
+  in from your make, model, budget and postcode (and your own sites), a garage for the cars you
+  find with a checklist, cash, loan, HP, PCP and lease compared by real cost, and a guide to rights
+  and costs. Search pages open in your browser; only adverts you paste are read.
 - **Lettings.** Tenancies as landlord or tenant, rent due and received with arrears, deposits, and
   landlord checks (gas, EICR, EPC, alarms, registration...) that come round again when done.
 

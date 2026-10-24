@@ -51,8 +51,6 @@ Map<String, Object?> _set(Map<String, Object?> j, String path, Object? value) {
   return copy;
 }
 
-enum _Unit { pounds, percent, number }
-
 /// Appraisals: buy-to-let, buying a home, a development. Opened from a
 /// property with [start] to appraise that one.
 class InvestPage extends ConsumerStatefulWidget {
@@ -152,7 +150,7 @@ class _InvestPageState extends ConsumerState<InvestPage> {
     },
   );
 
-  Widget _num(String path, String label, _Unit unit, {String? helper}) => _NumberInput(
+  Widget _num(String path, String label, Unit unit, {String? helper}) => NumberInput(
     key: ValueKey('$kind/$generation/$path'),
     value: (_get(j, path) as num?)?.toDouble() ?? 0,
     label: label,
@@ -176,10 +174,10 @@ class _InvestPageState extends ConsumerState<InvestPage> {
   );
 
   List<Widget> _mortgage({bool interestOnlyChoice = true}) => [
-    _num('mortgage.depositPct', 'Deposit', _Unit.percent),
-    _num('mortgage.rate', 'Mortgage rate', _Unit.percent),
-    _num('mortgage.years', 'Term in years', _Unit.number),
-    _num('mortgage.fee', 'Arrangement fee', _Unit.pounds),
+    _num('mortgage.depositPct', 'Deposit', Unit.percent),
+    _num('mortgage.rate', 'Mortgage rate', Unit.percent),
+    _num('mortgage.years', 'Term in years', Unit.number),
+    _num('mortgage.fee', 'Arrangement fee', Unit.pounds),
     if (interestOnlyChoice)
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
@@ -190,7 +188,7 @@ class _InvestPageState extends ConsumerState<InvestPage> {
   ];
 
   List<Widget> _btlForm() => [
-    _num('price', 'Price', _Unit.pounds),
+    _num('price', 'Price', Unit.pounds),
     _nation(),
     _buyer(),
     SwitchListTile(
@@ -200,16 +198,16 @@ class _InvestPageState extends ConsumerState<InvestPage> {
       onChanged: (v) => put('nonResident', v),
     ),
     ..._mortgage(),
-    _num('legal', 'Legal fees', _Unit.pounds),
-    _num('survey', 'Survey', _Unit.pounds),
-    _num('refurb', 'Works before letting', _Unit.pounds),
-    _num('rent', 'Rent a month', _Unit.pounds),
-    _num('voidWeeks', 'Empty weeks a year', _Unit.number),
-    _num('agentPct', 'Agent fee', _Unit.percent, helper: 'Share of rent, with VAT'),
-    _num('maintenancePct', 'Repairs', _Unit.percent, helper: 'Share of rent'),
-    _num('insurance', 'Insurance a year', _Unit.pounds),
-    _num('serviceCharge', 'Service charge and ground rent a year', _Unit.pounds),
-    _num('otherCosts', 'Other costs a year', _Unit.pounds, helper: 'Certificates, registration, accountant'),
+    _num('legal', 'Legal fees', Unit.pounds),
+    _num('survey', 'Survey', Unit.pounds),
+    _num('refurb', 'Works before letting', Unit.pounds),
+    _num('rent', 'Rent a month', Unit.pounds),
+    _num('voidWeeks', 'Empty weeks a year', Unit.number),
+    _num('agentPct', 'Agent fee', Unit.percent, helper: 'Share of rent, with VAT'),
+    _num('maintenancePct', 'Repairs', Unit.percent, helper: 'Share of rent'),
+    _num('insurance', 'Insurance a year', Unit.pounds),
+    _num('serviceCharge', 'Service charge and ground rent a year', Unit.pounds),
+    _num('otherCosts', 'Other costs a year', Unit.pounds, helper: 'Certificates, registration, accountant'),
     Choice(
       label: 'Owned by',
       value: Ownership.values.byName(j['ownership'] as String),
@@ -225,33 +223,33 @@ class _InvestPageState extends ConsumerState<InvestPage> {
         options: {for (final e in propertyIncomeRates.entries) e.value: e.key},
         onChanged: (v) => put('taxRate', v),
       ),
-    _num('icr', 'Lender interest cover', _Unit.percent, helper: 'Often 125%; 145% for higher-rate taxpayers'),
-    _num('stressRate', 'Lender stress rate', _Unit.percent),
-    _num('growth', 'Price growth a year', _Unit.percent),
-    _num('years', 'Years to look ahead', _Unit.number),
+    _num('icr', 'Lender interest cover', Unit.percent, helper: 'Often 125%; 145% for higher-rate taxpayers'),
+    _num('stressRate', 'Lender stress rate', Unit.percent),
+    _num('growth', 'Price growth a year', Unit.percent),
+    _num('years', 'Years to look ahead', Unit.number),
   ];
 
   List<Widget> _homeForm() => [
-    _num('price', 'Price', _Unit.pounds),
+    _num('price', 'Price', Unit.pounds),
     _nation(),
     _buyer(),
     ..._mortgage(interestOnlyChoice: false),
-    _num('legal', 'Legal fees', _Unit.pounds),
-    _num('survey', 'Survey', _Unit.pounds),
-    _num('income', 'Household income a year', _Unit.pounds),
-    _num('multiple', 'Lender income multiple', _Unit.number, helper: 'Usually 4 to 4.5 times'),
-    _num('currentRent', 'Rent you pay now', _Unit.pounds),
-    _num('upkeep', 'Upkeep a year', _Unit.pounds),
-    _num('insurance', 'Buildings insurance a year', _Unit.pounds),
-    _num('letRent', 'Rent if you let it later', _Unit.pounds, helper: '0 if not planned'),
+    _num('legal', 'Legal fees', Unit.pounds),
+    _num('survey', 'Survey', Unit.pounds),
+    _num('income', 'Household income a year', Unit.pounds),
+    _num('multiple', 'Lender income multiple', Unit.number, helper: 'Usually 4 to 4.5 times'),
+    _num('currentRent', 'Rent you pay now', Unit.pounds),
+    _num('upkeep', 'Upkeep a year', Unit.pounds),
+    _num('insurance', 'Buildings insurance a year', Unit.pounds),
+    _num('letRent', 'Rent if you let it later', Unit.pounds, helper: '0 if not planned'),
   ];
 
   List<Widget> _devForm() {
     final units = (j['units'] as List).cast<Map>();
     return [
       _nation(),
-      _num('land', 'Land price', _Unit.pounds),
-      _num('planning', 'Planning, surveys and contributions', _Unit.pounds),
+      _num('land', 'Land price', Unit.pounds),
+      _num('planning', 'Planning, surveys and contributions', Unit.pounds),
       Text('Homes', style: Theme.of(context).textTheme.titleSmall),
       const SizedBox(height: 8),
       for (var i = 0; i < units.length; i++)
@@ -289,11 +287,11 @@ class _InvestPageState extends ConsumerState<InvestPage> {
                 ),
                 Row(
                   children: [
-                    Expanded(child: _num('units.$i.count', 'How many', _Unit.number)),
+                    Expanded(child: _num('units.$i.count', 'How many', Unit.number)),
                     const SizedBox(width: 8),
-                    Expanded(child: _num('units.$i.sizeM2', 'm² each', _Unit.number)),
+                    Expanded(child: _num('units.$i.sizeM2', 'm² each', Unit.number)),
                     const SizedBox(width: 8),
-                    Expanded(child: _num('units.$i.price', 'Sells for', _Unit.pounds)),
+                    Expanded(child: _num('units.$i.price', 'Sells for', Unit.pounds)),
                     const SizedBox(width: 8),
                   ],
                 ),
@@ -313,15 +311,15 @@ class _InvestPageState extends ConsumerState<InvestPage> {
         ),
       ),
       const SizedBox(height: 12),
-      _num('buildCostM2', 'Build cost per m²', _Unit.pounds, helper: 'From BCIS or a local builder'),
-      _num('externalsPct', 'Roads, drainage, gardens', _Unit.percent, helper: 'Share of build cost'),
-      _num('feesPct', 'Professional fees', _Unit.percent, helper: 'Architect, engineer, warranty'),
-      _num('contingencyPct', 'Contingency', _Unit.percent),
-      _num('financeRate', 'Finance rate', _Unit.percent),
-      _num('buildMonths', 'Months to build', _Unit.number),
-      _num('saleMonths', 'Months to sell', _Unit.number),
-      _num('salesPct', 'Sales costs', _Unit.percent, helper: 'Agents and legal'),
-      _num('targetMargin', 'Target profit on sales', _Unit.percent, helper: 'Lenders look for 15–20%'),
+      _num('buildCostM2', 'Build cost per m²', Unit.pounds, helper: 'From BCIS or a local builder'),
+      _num('externalsPct', 'Roads, drainage, gardens', Unit.percent, helper: 'Share of build cost'),
+      _num('feesPct', 'Professional fees', Unit.percent, helper: 'Architect, engineer, warranty'),
+      _num('contingencyPct', 'Contingency', Unit.percent),
+      _num('financeRate', 'Finance rate', Unit.percent),
+      _num('buildMonths', 'Months to build', Unit.number),
+      _num('saleMonths', 'Months to sell', Unit.number),
+      _num('salesPct', 'Sales costs', Unit.percent, helper: 'Agents and legal'),
+      _num('targetMargin', 'Target profit on sales', Unit.percent, helper: 'Lenders look for 15–20%'),
     ];
   }
 
@@ -548,60 +546,6 @@ class PurchaseTaxView extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A number field that keeps its own text while typing.
-class _NumberInput extends StatefulWidget {
-  const _NumberInput({
-    super.key,
-    required this.value,
-    required this.label,
-    required this.unit,
-    required this.onChanged,
-    this.helper,
-  });
-  final double value;
-  final String label;
-  final _Unit unit;
-  final String? helper;
-  final ValueChanged<double> onChanged;
-
-  @override
-  State<_NumberInput> createState() => _NumberInputState();
-}
-
-class _NumberInputState extends State<_NumberInput> {
-  late final c = TextEditingController(text: _show(widget.value));
-
-  String _show(double v) {
-    final x = widget.unit == _Unit.percent ? v * 100 : v;
-    return x == x.roundToDouble() ? x.round().toString() : double.parse(x.toStringAsFixed(4)).toString();
-  }
-
-  @override
-  void dispose() {
-    c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: TextField(
-      controller: c,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: InputDecoration(
-        labelText: widget.label,
-        helperText: widget.helper,
-        prefixText: widget.unit == _Unit.pounds ? '£' : null,
-        suffixText: widget.unit == _Unit.percent ? '%' : null,
-      ),
-      onChanged: (_) {
-        final v = numberIn(c)?.toDouble();
-        if (v != null) widget.onChanged(widget.unit == _Unit.percent ? v / 100 : v);
-      },
-    ),
-  );
 }
 
 class _TextInput extends StatefulWidget {

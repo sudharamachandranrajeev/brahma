@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 
 import '../db/database.dart';
 import '../domain/book.dart';
+import '../domain/car_sources.dart';
 import '../domain/contact_links.dart';
 import '../domain/listing.dart';
 import '../domain/watch_client.dart';
@@ -97,6 +98,28 @@ final viewingsProvider = _rows<$ViewingsTable, Viewing>(
   (db) => db.viewings,
   orderBy: [(v) => OrderingTerm(expression: v.at)],
 );
+
+final vehiclesProvider = _rows<$VehiclesTable, Vehicle>(
+  (db) => db.vehicles,
+  orderBy: [
+    (v) => OrderingTerm.desc(v.added),
+    (v) => OrderingTerm(expression: v.title),
+  ],
+);
+
+/// What the user is shopping for, kept across starts (and devices, with sync).
+final carSearchProvider = FutureProvider<CarSearch>((ref) async {
+  ref.watch(revisionProvider);
+  final j = await ref.watch(sessionProvider).book.pref<Map<String, Object?>>(PrefKeys.carSearch, const {});
+  return CarSearch.fromJson(j);
+});
+
+/// Sites the user added.
+final customSourcesProvider = FutureProvider<List<CustomSource>>((ref) async {
+  ref.watch(revisionProvider);
+  final l = await ref.watch(sessionProvider).book.pref<List<dynamic>>(PrefKeys.carSources, const []);
+  return [for (final e in l) CustomSource.fromJson((e as Map).cast())];
+});
 
 final homeProvider = FutureProvider<HomePoint?>((ref) {
   ref.watch(revisionProvider);
