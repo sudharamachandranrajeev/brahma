@@ -44,7 +44,9 @@ class SuiteApp {
 
   /// The app's hint texts by id, without [coreHints].
   final Map<String, String> hints;
-  final ThemeData Function(Brightness) theme;
+
+  /// The app's theme; [ref] reads the app's own appearance settings, if any.
+  final ThemeData Function(WidgetRef ref, Brightness brightness) theme;
 
   /// The app's own light or dark choice, when it has one; otherwise the
   /// suite's.
