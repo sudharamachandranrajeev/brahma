@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Udyoga ("work, career"): an azure-to-violet tile, a white briefcase
+       and a mint arrow climbing out of it. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2F6BFF"/>
+      <stop offset="1" stop-color="#7A5CFF"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="992" height="992" rx="232" fill="url(#bg)"/>
+  <path d="M396 352 V300 Q396 260 436 260 H588 Q628 260 628 300 V352" fill="none" stroke="#ffffff"
+        stroke-width="56" stroke-linejoin="round"/>
+  <rect x="216" y="352" width="592" height="400" rx="72" fill="none" stroke="#ffffff" stroke-width="64"/>
+  <path d="M216 500 H808" stroke="#ffffff" stroke-width="40" stroke-opacity=".55"/>
+  <path d="M330 680 L470 560 L560 630 L742 452" fill="none" stroke="#12B886" stroke-width="64"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M640 446 H748 V554" fill="none" stroke="#12B886" stroke-width="64" stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>
