@@ -8,6 +8,7 @@ export 'src/app/providers.dart';
 export 'src/app/root.dart';
 export 'src/app/session.dart';
 export 'src/app/settings_cards.dart';
+export 'src/app/suite.dart';
 export 'src/app/sync_dialogs.dart';
 export 'src/dates.dart';
 export 'src/db/store.dart';

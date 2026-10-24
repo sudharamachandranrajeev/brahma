@@ -9,8 +9,12 @@ import 'theme.dart';
 /// Navigation around every module's screens: a rail on wide windows, a bottom
 /// bar with "More" on phones. Pages are built on first visit and then kept.
 class AppShell extends ConsumerStatefulWidget {
-  const AppShell({super.key, required this.destinations, this.onStart, this.floating = false});
+  const AppShell({super.key, required this.destinations, this.onStart, this.floating = false, this.onHome});
   final List<Destination> destinations;
+
+  /// Leaves the app for the place that opened it (the suite's home screen):
+  /// a button above the rail, the first entry under "More" on phones.
+  final VoidCallback? onHome;
 
   /// The phone bar floats over the page as a rounded, shadowed pill (styled
   /// by the theme's NavigationBarTheme), and the rail has no divider.
@@ -84,7 +88,16 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
               selectedIndex: _index,
               onDestinationSelected: _select,
               labelType: width >= 1280 ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-              leading: const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: _Logo()),
+              leading: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
+                    if (widget.onHome != null)
+                      IconButton(onPressed: widget.onHome, tooltip: 'All apps', icon: const Icon(Icons.apps)),
+                    const _Logo(),
+                  ],
+                ),
+              ),
               destinations: [
                 for (final d in _destinations)
                   NavigationRailDestination(
@@ -123,6 +136,12 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
             child: ListView(
               shrinkWrap: true,
               children: [
+                if (widget.onHome != null)
+                  ListTile(
+                    leading: const Icon(Icons.apps),
+                    title: const Text('All apps'),
+                    onTap: () => Navigator.pop(context, -1),
+                  ),
                 for (final j in more)
                   ListTile(
                     leading: Icon(_destinations[j].icon),
@@ -135,6 +154,7 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
             ),
           ),
         );
+        if (picked == -1) return widget.onHome!();
         if (picked != null) _select(picked);
       },
       destinations: [

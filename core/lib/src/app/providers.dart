@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../dates.dart';
+import '../db/store.dart';
 import '../identity.dart';
 import '../security/crypto.dart';
 import '../sync/sync_engine.dart';
@@ -17,6 +18,10 @@ final appIdentityProvider = Provider<AppIdentity>((ref) => throw StateError('No 
 /// The open session; main() overrides this before the first frame. Apps keep
 /// their own typed session provider next to it.
 final coreSessionProvider = Provider<CoreSession>((ref) => throw StateError('No session'));
+
+/// Every database sync keeps in step, all under the core session's account.
+/// An app has one; the suite app adds each hosted app's database.
+final syncStoresProvider = Provider<List<Store>>((ref) => [ref.watch(coreSessionProvider).store]);
 
 /// Every hint text by id: the app's own plus [coreHints].
 final hintTextsProvider = Provider<Map<String, String>>((ref) => coreHints);
@@ -161,16 +166,19 @@ class SyncController extends Notifier<SyncState> {
     final last = await s.db.localSetting('sync.last');
     state = SyncState(SyncPhase.running, lastSync: last, email: email, server: server);
     try {
-      final engine = await s.account.engine(s.store);
-      if (engine == null) {
-        state = const SyncState(SyncPhase.signedOut);
-        return;
+      var pulled = 0;
+      for (final store in ref.read(syncStoresProvider)) {
+        final engine = await s.account.engine(store);
+        if (engine == null) {
+          state = const SyncState(SyncPhase.signedOut);
+          return;
+        }
+        pulled += (await engine.run()).pulled;
       }
-      final result = await engine.run();
       final now = DateTime.now().toUtc().toIso8601String();
       await s.db.setLocalSetting('sync.last', now);
       state = SyncState(SyncPhase.idle, lastSync: now, email: email, server: server);
-      if (result.pulled > 0) ref.read(revisionProvider.notifier).bump();
+      if (pulled > 0) ref.read(revisionProvider.notifier).bump();
     } catch (e) {
       state = SyncState(
         SyncPhase.failed,
