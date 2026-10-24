@@ -103,6 +103,7 @@ class PageScaffold extends StatelessWidget {
     this.children,
     this.body,
     this.fab,
+    this.fabLocation,
     this.bottom,
   }) : assert((children == null) != (body == null));
 
@@ -112,6 +113,7 @@ class PageScaffold extends StatelessWidget {
   final List<Widget>? children;
   final Widget? body;
   final Widget? fab;
+  final FloatingActionButtonLocation? fabLocation;
   final PreferredSizeWidget? bottom;
 
   @override
@@ -122,10 +124,13 @@ class PageScaffold extends StatelessWidget {
       bottom: bottom,
     ),
     floatingActionButton: fab,
+    floatingActionButtonLocation: fabLocation,
     body:
         body ??
         ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+          // Room for the FAB, plus whatever floats over the bottom (a
+          // floating nav bar, the system bar).
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 96 + MediaQuery.paddingOf(context).bottom),
           children: [
             Center(
               child: ConstrainedBox(

@@ -6,6 +6,8 @@ and one end-to-end encrypted sync account:
 - [Artha](https://github.com/sudharamachandranrajeev/artha): finance, accounting and investments
 - [Anveshana](https://github.com/sudharamachandranrajeev/anveshana): property research, renting, buying,
   investment, development and management
+- [Udyoga](https://github.com/sudharamachandranrajeev/udyoga): career and job search: matched openings,
+  tailored CVs, applications, contacts, career paths, learning and interview practice
 
 This repository holds what they share:
 

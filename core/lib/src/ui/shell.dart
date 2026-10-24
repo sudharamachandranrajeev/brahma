@@ -9,8 +9,12 @@ import 'theme.dart';
 /// Navigation around every module's screens: a rail on wide windows, a bottom
 /// bar with "More" on phones. Pages are built on first visit and then kept.
 class AppShell extends ConsumerStatefulWidget {
-  const AppShell({super.key, required this.destinations, this.onStart});
+  const AppShell({super.key, required this.destinations, this.onStart, this.floating = false});
   final List<Destination> destinations;
+
+  /// The phone bar floats over the page as a rounded, shadowed pill (styled
+  /// by the theme's NavigationBarTheme), and the rail has no divider.
+  final bool floating;
 
   /// Background work to start with the app (e.g. a daily data refresh).
   final void Function(WidgetRef ref)? onStart;
@@ -90,7 +94,7 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
                   ),
               ],
             ),
-            const VerticalDivider(width: 1),
+            if (!widget.floating) const VerticalDivider(width: 1),
             Expanded(child: stack),
           ],
         ),
@@ -106,45 +110,74 @@ class _AppShellState extends ConsumerState<AppShell> with SingleTickerProviderSt
         if (!_destinations[i].primary) i,
     ];
     final barIndex = primary.contains(_index) ? primary.indexOf(_index) : primary.length;
-    return Scaffold(
-      body: stack,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: barIndex,
-        onDestinationSelected: (i) async {
-          if (i < primary.length) return _select(primary[i]);
-          final picked = await showModalBottomSheet<int>(
-            context: context,
-            showDragHandle: true,
-            builder: (context) => SafeArea(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final j in more)
-                    ListTile(
-                      leading: Icon(_destinations[j].icon),
-                      title: Text(_destinations[j].label),
-                      subtitle: Text(ref.read(hintTextsProvider)[_destinations[j].hint] ?? ''),
-                      selected: j == _index,
-                      onTap: () => Navigator.pop(context, j),
-                    ),
-                ],
-              ),
+    final bar = NavigationBar(
+      selectedIndex: barIndex,
+      onDestinationSelected: (i) async {
+        if (i < primary.length) return _select(primary[i]);
+        final picked = await showModalBottomSheet<int>(
+          context: context,
+          showDragHandle: true,
+          builder: (context) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final j in more)
+                  ListTile(
+                    leading: Icon(_destinations[j].icon),
+                    title: Text(_destinations[j].label),
+                    subtitle: Text(ref.read(hintTextsProvider)[_destinations[j].hint] ?? ''),
+                    selected: j == _index,
+                    onTap: () => Navigator.pop(context, j),
+                  ),
+              ],
             ),
-          );
-          if (picked != null) _select(picked);
-        },
-        destinations: [
-          for (final i in primary)
-            NavigationDestination(
-              icon: Hint(_destinations[i].hint, child: Icon(_destinations[i].icon)),
-              selectedIcon: Icon(_destinations[i].selectedIcon),
-              label: _destinations[i].label,
-            ),
-          NavigationDestination(
-            icon: Hint('nav.more', child: const Icon(Icons.more_horiz)),
-            label: 'More',
           ),
-        ],
+        );
+        if (picked != null) _select(picked);
+      },
+      destinations: [
+        for (final i in primary)
+          NavigationDestination(
+            icon: Hint(_destinations[i].hint, child: Icon(_destinations[i].icon)),
+            selectedIcon: Icon(_destinations[i].selectedIcon),
+            label: _destinations[i].label,
+          ),
+        NavigationDestination(
+          icon: Hint('nav.more', child: const Icon(Icons.more_horiz)),
+          label: 'More',
+        ),
+      ],
+    );
+    if (!widget.floating) return Scaffold(body: stack, bottomNavigationBar: bar);
+    return Scaffold(
+      extendBody: true,
+      // The body runs under the bar, whose height arrives as bottom
+      // padding. Pages' FABs place themselves by view padding, so pass it
+      // on there too, or they sit behind the bar.
+      body: Builder(
+        builder: (context) {
+          final mq = MediaQuery.of(context);
+          final bottom = mq.padding.bottom > mq.viewPadding.bottom
+              ? mq.padding.bottom
+              : mq.viewPadding.bottom;
+          return MediaQuery(
+            data: mq.copyWith(viewPadding: mq.viewPadding.copyWith(bottom: bottom)),
+            child: stack,
+          );
+        },
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.only(bottom: 12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(40),
+              boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 24, offset: Offset(0, 10))],
+            ),
+            child: ClipRRect(borderRadius: BorderRadius.circular(40), child: bar),
+          ),
+        ),
       ),
     );
   }

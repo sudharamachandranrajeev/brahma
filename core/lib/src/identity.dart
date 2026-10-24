@@ -22,4 +22,4 @@ class AppIdentity {
 
 /// Link schemes of every Brahma app. Setup and pairing links are about the
 /// shared account, so each app accepts all of them.
-const brahmaLinkSchemes = {'artha', 'anveshana'};
+const brahmaLinkSchemes = {'artha', 'anveshana', 'udyoga'};
