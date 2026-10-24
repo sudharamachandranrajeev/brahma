@@ -23,9 +23,11 @@ void main() {
           ...vidyaSuite.overrides(session),
         ],
         retry: (_, _) => null,
-        child: MaterialApp(
-          theme: vidyaSuite.theme(Brightness.light),
-          home: Scaffold(body: Builder(builder: vidyaSuite.summary)),
+        child: Consumer(
+          builder: (context, ref, _) => MaterialApp(
+            theme: vidyaSuite.theme(ref, Brightness.light),
+            home: Scaffold(body: Builder(builder: vidyaSuite.summary)),
+          ),
         ),
       ),
     );

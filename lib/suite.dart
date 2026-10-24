@@ -16,7 +16,7 @@ final vidyaSuite = SuiteApp(
   open: AppSession.open,
   overrides: (s) => [sessionProvider.overrideWithValue(s as AppSession)],
   hints: vidyaHints,
-  theme: vidyaTheme,
+  theme: (_, b) => vidyaTheme(b),
   home: (onHome) => VidyaHome(onHome: onHome),
   builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
   summary: (_) => const _Summary(),
