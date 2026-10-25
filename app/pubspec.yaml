@@ -25,6 +25,10 @@ dependencies:
     path: ../apps/vidya
   bhojana:
     path: ../apps/bhojana
+  # Bhojana's stand-in for flutter_inappwebview on Linux (whose own Linux
+  # plugin needs WPE WebKit). Only a direct dependency of the app counts.
+  bhojana_no_linux_webview:
+    path: ../apps/bhojana/packages/no_linux_webview
   drift: ^2.35.2
   flutter:
     sdk: flutter
