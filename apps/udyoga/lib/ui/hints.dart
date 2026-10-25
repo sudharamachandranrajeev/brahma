@@ -11,22 +11,21 @@ const udyogaHints = <String, String>{
   'nav.contacts': 'Recruiters, hiring managers and referrers to follow up.',
   'nav.growth': 'Certifications, courses and skills to build.',
   'nav.profile': 'Your CV, experience and what you are looking for.',
-  'nav.settings': 'Claude API key, job sites, the AI routine, sync and security.',
-  'nav.more': 'The rest of Udyoga.',
+  'nav.settings': 'AI keys, job sites, the AI routine, sync and security.',
   // Jobs
   'jobs.refresh': 'Check the job sites now.',
-  'jobs.ai': 'Ask Claude to search LinkedIn, Indeed, national and public-sector boards for you.',
+  'jobs.ai': 'Ask the AI to search LinkedIn, Indeed, national and public-sector boards for you.',
   'jobs.add': 'Paste a job link or the advert text.',
   'jobs.portals': 'Open searches for your roles on the main job sites, in your browser.',
   'jobs.fit': 'How well the job fits you, 0 to 100. A star means the AI assessed it.',
   'job.n8n': 'Sends this job (not your name or contact details) to your n8n workflow and adds the contacts it finds.',
-  'job.assess': 'Claude reads the advert, researches the employer and scores your fit honestly.',
+  'job.assess': 'The AI reads the advert, researches the employer and scores your fit honestly.',
   'job.tailor': 'A CV and cover letter for this job, from your real experience only.',
   'job.leads': 'Find the recruiter, hiring manager and agencies for this job.',
   // Applications
   'apps.followup': 'When to chase this up. Add it to your calendar so it reminds you.',
   'apps.calendar': 'Download every follow-up as a calendar file with 9 am alerts.',
-  'apps.chase': 'Claude drafts a short, polite message asking for an update or feedback.',
+  'apps.chase': 'The AI drafts a short, polite message asking for an update or feedback.',
   // Interview
   'interview.mode': 'The kind of interview to practise.',
   'interview.metrics': 'Measured on this device: length, speaking time, fillers, "I" against "we" and STAR.',
@@ -36,7 +35,8 @@ const udyogaHints = <String, String>{
   'career.assess': 'A candid assessment of where you stand in today\'s market.',
   // Settings
   'settings.n8n': 'A webhook in your own n8n that takes a job and answers with contacts. See docs/n8n in the Udyoga repository.',
-  'settings.ai': 'Your own Claude API key. Requests go straight from this device to Anthropic.',
+  'settings.ai':
+      'Your own Gemini or Claude key. Requests go straight from this device to Google or Anthropic.',
   'settings.routine':
       'Let the AI search for jobs and refresh your career map on its own. Each run costs a little.',
   'settings.feeds': 'Free keys for Adzuna (many countries) and Reed (UK) add their jobs to each refresh.',
@@ -57,10 +57,10 @@ const udyogaHints = <String, String>{
       'Where you can go from here: up, sideways, specialist, management or a change of field, judged for '
       'realism and AI exposure. Pick a path to turn it into goals.',
   'page.contacts':
-      'People to reach: recruiters, hiring managers, referrers. Claude finds public professional contacts; '
+      'People to reach: recruiters, hiring managers, referrers. The AI finds public professional contacts; '
       'LinkedIn searches open in your browser.',
   'page.growth':
       'What to learn next and how far you have got. Suggestions come from your assessment and career map.',
   'page.profile':
-      'Import your CV and Claude fills this in. Everything Udyoga does starts from it, so keep it accurate.',
+      'Import your CV and the AI fills this in. Everything Udyoga does starts from it, so keep it accurate.',
 };

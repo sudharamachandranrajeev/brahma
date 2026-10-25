@@ -39,7 +39,7 @@ class ProfilePage extends ConsumerWidget {
                   children: [
                     Text(
                       p.isEmpty
-                          ? 'Start here. Import your CV (PDF or Word) or paste it, and Claude fills in your profile. '
+                          ? 'Start here. Import your CV (PDF or Word) or paste it, and the AI fills in your profile. '
                                 'Nothing is added that your CV does not say.'
                           : 'Import an updated CV at any time; your targets are kept.',
                     ),
@@ -283,7 +283,7 @@ class ProfilePage extends ConsumerWidget {
           context,
           title: 'Replace your profile?',
           message:
-              'Claude read ${read.experience.length} jobs and ${read.skills.length} skills. Your details are '
+              'The AI read ${read.experience.length} jobs and ${read.skills.length} skills. Your details are '
               'replaced with the CV\'s; what you are looking for is kept.',
           action: 'Replace',
         )) {

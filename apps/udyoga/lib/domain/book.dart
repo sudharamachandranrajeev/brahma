@@ -4,7 +4,7 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:drift/drift.dart';
 
 import '../db/database.dart';
-import 'claude.dart';
+import 'ai.dart';
 import 'feeds.dart';
 import 'insights.dart';
 import 'json.dart';
@@ -18,7 +18,10 @@ import 'resume.dart';
 /// keys carry its prefix.
 abstract final class PrefKeys {
   static const profile = 'udyoga.profile';
+
+  /// The Claude API key (named before Gemini joined).
   static const aiKey = 'udyoga.ai.key';
+  static const geminiKey = 'udyoga.ai.gemini';
   static const aiModel = 'udyoga.ai.model';
 
   /// How often the AI looks for jobs and refreshes the career map on its own:
@@ -66,6 +69,12 @@ class CareerBook {
 
   Future<FeedKeys> feedKeys() async =>
       FeedKeys.fromJson(await pref<Map<String, Object?>>(PrefKeys.feedKeys, const {}));
+
+  /// The user's key for each AI service, '' where there is none.
+  Future<Map<AiProvider, String>> aiKeys() async => {
+    AiProvider.claude: await pref<String>(PrefKeys.aiKey, ''),
+    AiProvider.gemini: await pref<String>(PrefKeys.geminiKey, ''),
+  };
 
   Future<N8nLink> n8nLink() async =>
       N8nLink.fromJson(await pref<Map<String, Object?>>(PrefKeys.n8n, const {}));

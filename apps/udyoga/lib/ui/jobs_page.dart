@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../db/database.dart';
+import '../domain/ai.dart';
 import '../domain/countries.dart';
 import '../domain/feeds.dart';
 import '../domain/json.dart';
@@ -147,7 +148,7 @@ class _JobsPageState extends ConsumerState<JobsPage> {
 
   Future<void> _run({bool ai = false, bool hasAi = true}) async {
     if (ai && !hasAi) {
-      return showMessage(context, 'Add your Claude API key in Settings to use the AI search.');
+      return showMessage(context, needsAiKey);
     }
     try {
       final r = await ref.read(refreshProvider.notifier).run(force: true, ai: ai);
@@ -382,7 +383,7 @@ Future<void> addJob(BuildContext context, WidgetRef ref) async {
         'Advert text',
         lines: 4,
         helper: hasAi
-            ? 'Paste the advert, or leave it empty and Claude reads the link.'
+            ? 'Paste the advert, or leave it empty and the AI reads the link.'
             : 'Paste the job description, responsibilities and person specification.',
       ),
       if (!hasAi) ...[Field(title, 'Job title'), Field(company, 'Employer'), Field(location, 'Location')],
@@ -412,7 +413,7 @@ Future<void> addJob(BuildContext context, WidgetRef ref) async {
           posted: str(a['posted']).length == 10 ? str(a['posted']) : null,
           closing: str(a['closing']).length == 10 ? str(a['closing']) : null,
         );
-        if (posting.title.isEmpty) return 'Claude could not read a job advert there. Paste the text instead.';
+        if (posting.title.isEmpty) return 'The AI could not read a job advert there. Paste the text instead.';
       } else {
         if (title.text.trim().isEmpty) return 'Enter the job title.';
         posting = Posting(
