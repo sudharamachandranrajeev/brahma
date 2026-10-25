@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 (2026-10-25)
+
+- LinkedIn: the week plan and repurpose tools now pick from the hook formulas too (only the post
+  writer had them).
+
 ## 0.4.0 (2026-10-25)
 
 - LinkedIn studio: profile score and rewrite, post writer, comment writer, connection notes and
