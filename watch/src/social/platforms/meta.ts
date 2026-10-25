@@ -5,6 +5,7 @@
 import { call, form, PlatformError, wait } from "../http.ts";
 import type { Account, Content, ContextType, InboxItem } from "../types.ts";
 import {
+  bytesOf,
   clip,
   contentId,
   inboxItem,
@@ -164,7 +165,7 @@ async function waitForContainer(ctx: Ctx, id: string, token: string, maxSeconds 
 const alt = (m: MediaFile) => (m.alt ? { alt_text: m.alt } : {});
 const fbAlt = (m: MediaFile) => (m.alt ? { alt_text_custom: m.alt } : {});
 
-const igPublish: Adapter["publish"] = async (ctx, account, { target, text, media }, progress) => {
+const igPublish: Adapter["publish"] = async (ctx, account, { target, text, media, cover }, progress) => {
   const { pageToken: token } = await ctx.store.secretOf<MetaSecret>(account.id);
   const ig = account.remoteId;
   let creation = target.containerId;
@@ -185,7 +186,7 @@ const igPublish: Adapter["publish"] = async (ctx, account, { target, text, media
     } else if (target.format === "story") {
       body = isVideo(one) ? { media_type: "STORIES", video_url: one.url } : { media_type: "STORIES", image_url: one.url };
     } else if (target.format === "reel" || isVideo(one)) {
-      body = { media_type: "REELS", video_url: one.url, caption: text, share_to_feed: true };
+      body = { media_type: "REELS", video_url: one.url, caption: text, share_to_feed: true, ...(cover ? { cover_url: cover.url } : {}) };
     } else {
       body = { image_url: one.url, caption: text, ...alt(one) };
     }
@@ -204,15 +205,27 @@ const igPublish: Adapter["publish"] = async (ctx, account, { target, text, media
   return { remoteId: published.id, permalink };
 };
 
-const fbPublish: Adapter["publish"] = async (ctx, account, { target, text, media }, progress) => {
+const fbPublish: Adapter["publish"] = async (ctx, account, { target, text, media, cover }, progress) => {
   const { pageToken: token } = await ctx.store.secretOf<MetaSecret>(account.id);
   const page = account.remoteId;
   let id: string;
+  let note: string | undefined;
   const video = media.find(isVideo);
   if (target.format === "video" || video) {
     if (!video) throw new PlatformError("A Facebook video post needs a video", 400, false, false);
     progress.commit();
     id = (await gPost(ctx, `/${page}/videos`, token, { file_url: video.url, description: text, title: target.title }, graphVideo)).id;
+    if (cover) {
+      try {
+        const fd = new FormData();
+        fd.set("source", new File([await bytesOf(ctx, cover)], cover.filename, { type: cover.contentType }));
+        fd.set("is_preferred", "true");
+        fd.set("access_token", token);
+        await call(`${graph}/${id}/thumbnails`, { method: "POST", budget: ctx.budget, label: "Meta", body: fd });
+      } catch (err) {
+        note = `Posted, but the cover didn't take: ${err instanceof Error ? err.message : err}`;
+      }
+    }
   } else if (media.length === 1) {
     progress.commit();
     const r = await gPost(ctx, `/${page}/photos`, token, { url: media[0].url, caption: text, ...fbAlt(media[0]) });
@@ -232,7 +245,7 @@ const fbPublish: Adapter["publish"] = async (ctx, account, { target, text, media
   } catch {
     // Video ids have no permalink_url until processed.
   }
-  return { remoteId: id, permalink };
+  return { remoteId: id, permalink, note };
 };
 
 // ---- inbox ----

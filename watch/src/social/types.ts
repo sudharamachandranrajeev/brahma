@@ -53,6 +53,8 @@ export interface Target {
   title?: string;
   /** Posted as the first comment right after publishing (hashtags, links). */
   firstComment?: string;
+  /** More posts after the first, each a reply to the one before (Threads, Bluesky, Mastodon). */
+  thread?: string[];
   status: TargetStatus;
   remoteId?: string;
   permalink?: string;
@@ -65,6 +67,8 @@ export interface Target {
   attempts: number;
   /** Instagram/Threads container made in an earlier attempt, reused on retry. */
   containerId?: string;
+  /** Remote ids of the thread's later posts that are up, so a retry carries on after them. */
+  threadIds?: string[];
   publishedAt?: string;
 }
 
@@ -79,9 +83,22 @@ export interface Post {
   status: TargetStatus;
   /** Re-queued this many days after it is published (evergreen content). */
   recycleDays?: number;
+  /** Goes out again on a fixed schedule: the next copy is made once this one is done. */
+  repeat?: Repeat;
+  /** The next copy in the series, once made. */
+  repeatedAs?: string;
+  /** Media id of an image used as the cover of video formats (reels, YouTube, Facebook and LinkedIn videos). */
+  cover?: string;
   tags: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+/** Every [every] days, weeks or months, at the same local time (Settings.timezone), until [until]. */
+export interface Repeat {
+  unit: "day" | "week" | "month";
+  every: number;
+  until?: string;
 }
 
 export type InboxKind = "comment" | "reply" | "message" | "mention" | "live_chat";
@@ -112,7 +129,6 @@ export interface InboxItem {
   likes?: number;
   /** Claude's read of a new item (when AI is on). */
   triage?: Triage;
-  /** The text in the owner's language (Settings.language), made on request. */
   /** The text in `to` (the owner's language when it was asked); `lang` is the original's ISO 639-1 code. */
   translation?: { lang: string; to: string; text: string };
   /** What the owner did to it on the platform. */
@@ -276,6 +292,10 @@ export interface PlatformInfo {
   maxMedia: number;
   /** What the owner can do to other people's comments there ("unhide" comes with "hide"). */
   moderation: ("hide" | "delete")[];
+  /** Takes a thread: several posts, each replying to the one before. */
+  threads: boolean;
+  /** Takes a cover image on these video formats. */
+  cover: Format[];
 }
 
 /** Which provider credentials are stored (never the secrets themselves). */

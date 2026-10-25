@@ -92,7 +92,7 @@ export const mastodon: Adapter = {
   },
 
   async comment(ctx, account, remoteId, text) {
-    await status(ctx, account, { status: text, in_reply_to_id: remoteId, visibility: "public" }, `vani-comment-${remoteId}`);
+    return (await status(ctx, account, { status: text, in_reply_to_id: remoteId, visibility: "public" }, `vani-comment-${remoteId}`)).id as string;
   },
 
   async poll(ctx, account) {

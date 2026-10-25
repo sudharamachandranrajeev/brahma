@@ -126,7 +126,7 @@ export const threads: Adapter = {
 
   async comment(ctx, account, remoteId, text) {
     const s = await ctx.store.secretOf<ThreadsSecret>(account.id);
-    await createAndPublish(ctx, s, { media_type: "TEXT", text, reply_to_id: remoteId }, undefined, async () => {}, () => {});
+    return createAndPublish(ctx, s, { media_type: "TEXT", text, reply_to_id: remoteId }, undefined, async () => {}, () => {});
   },
 
   async poll(ctx, account) {

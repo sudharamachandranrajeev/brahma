@@ -4,7 +4,7 @@
 
 import { call, form, OutOfBudget, PlatformError, spend } from "../http.ts";
 import type { Account, Content, InboxItem } from "../types.ts";
-import { clip, contentId, inboxItem, iso, itemId, type Adapter, type Ctx, type OAuthFlow } from "./adapter.ts";
+import { bytesOf, clip, contentId, inboxItem, iso, itemId, type Adapter, type Ctx, type OAuthFlow } from "./adapter.ts";
 
 const api = "https://www.googleapis.com/youtube/v3";
 
@@ -132,7 +132,7 @@ async function sessionStatus(ctx: Ctx, uploadUrl: string, token: string, size: n
 }
 
 export const youtube: Adapter = {
-  async publish(ctx, account, { target, text, media, post }, progress) {
+  async publish(ctx, account, { target, text, media, post, cover }, progress) {
     const video = media.find((m) => m.contentType.startsWith("video/"));
     if (!video) throw new PlatformError("YouTube needs a video", 400, false, false);
     const token = await accessToken(ctx, account);
@@ -183,7 +183,22 @@ export const youtube: Adapter = {
       throw new PlatformError(`YouTube upload: ${body.slice(0, 300) || res.status}`, res.status, res.status >= 500 || res.status === 308 || res.status === 429, res.status === 401, res.status === 403);
     }
     const v = (await res.json()) as any;
-    return { remoteId: v.id, permalink: `https://www.youtube.com/watch?v=${v.id}` };
+    let note: string | undefined;
+    if (cover && target.format === "video") {
+      try {
+        await call(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${v.id}`, {
+          method: "POST",
+          budget: ctx.budget,
+          label: "YouTube",
+          headers: { authorization: `Bearer ${token}`, "content-type": cover.contentType },
+          body: await bytesOf(ctx, cover),
+        });
+      } catch (err) {
+        // Custom thumbnails need a verified channel.
+        note = `Posted, but the cover didn't take: ${err instanceof Error ? err.message : err}`;
+      }
+    }
+    return { remoteId: v.id, permalink: `https://www.youtube.com/watch?v=${v.id}`, note };
   },
 
   async comment(ctx, account, remoteId, text) {

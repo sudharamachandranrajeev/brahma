@@ -137,7 +137,7 @@ export const bluesky: Adapter = {
   },
 
   async comment(ctx, account, remoteId, text) {
-    await replyTo(ctx, account, remoteId, text);
+    return replyTo(ctx, account, remoteId, text);
   },
 
   async poll(ctx, account) {

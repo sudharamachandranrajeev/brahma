@@ -96,18 +96,19 @@ async function uploadImage(ctx: Ctx, s: LinkedInSecret, m: MediaFile): Promise<s
   return init.value.image;
 }
 
-async function uploadVideo(ctx: Ctx, s: LinkedInSecret, m: MediaFile): Promise<string> {
+async function uploadVideo(ctx: Ctx, s: LinkedInSecret, m: MediaFile, cover: MediaFile | null): Promise<string> {
   const init = await call(`${rest}/videos?action=initializeUpload`, {
     method: "POST",
     budget: ctx.budget,
     label: "LinkedIn",
     headers: headers(s.token),
-    body: JSON.stringify({ initializeUploadRequest: { owner: s.urn, fileSizeBytes: m.size, uploadCaptions: false, uploadThumbnail: false } }),
+    body: JSON.stringify({ initializeUploadRequest: { owner: s.urn, fileSizeBytes: m.size, uploadCaptions: false, uploadThumbnail: !!cover } }),
   });
   const etags: string[] = [];
   for (const part of init.value.uploadInstructions) {
     etags.push(await putBytes(ctx, part.uploadUrl, s.token, m, { first: part.firstByte, last: part.lastByte }));
   }
+  if (cover && init.value.thumbnailUploadUrl) await putBytes(ctx, init.value.thumbnailUploadUrl, s.token, cover);
   await call(`${rest}/videos?action=finalizeUpload`, {
     method: "POST",
     budget: ctx.budget,
@@ -119,11 +120,11 @@ async function uploadVideo(ctx: Ctx, s: LinkedInSecret, m: MediaFile): Promise<s
 }
 
 export const linkedin: Adapter = {
-  async publish(ctx, account, { text, media }, progress) {
+  async publish(ctx, account, { text, media, cover }, progress) {
     const s = await ctx.store.secretOf<LinkedInSecret>(account.id);
     let content: object | undefined;
     const video = media.find(isVideo);
-    if (video) content = { media: { id: await uploadVideo(ctx, s, video) } };
+    if (video) content = { media: { id: await uploadVideo(ctx, s, video, cover) } };
     else if (media.length === 1) content = { media: { id: await uploadImage(ctx, s, media[0]), ...(media[0].alt ? { altText: media[0].alt } : {}) } };
     else if (media.length > 1) {
       const images = [];

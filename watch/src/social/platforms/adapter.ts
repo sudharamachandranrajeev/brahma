@@ -1,5 +1,5 @@
 import { hashId } from "../crypto.ts";
-import type { Budget } from "../http.ts";
+import { PlatformError, type Budget } from "../http.ts";
 import type { SocialEnv, Store } from "../store.ts";
 import type { Account, Content, InboxItem, ModerateAction, Platform, PlatformInfo, Post, Provider, Target } from "../types.ts";
 
@@ -30,6 +30,15 @@ export interface PublishInput {
   target: Target;
   text: string;
   media: MediaFile[];
+  /** The post's cover image, for adapters that put one on videos. */
+  cover: MediaFile | null;
+}
+
+/** A media file's bytes from R2 (covers and other small files). */
+export async function bytesOf(ctx: Ctx, m: MediaFile): Promise<ArrayBuffer> {
+  const obj = await ctx.env.MEDIA.get(m.key);
+  if (!obj) throw new PlatformError("The media file is gone from storage", 400, false, false);
+  return obj.arrayBuffer();
 }
 
 /** Lets an adapter record progress, so a retry neither repeats nor double-posts. */
@@ -43,6 +52,8 @@ export interface PublishProgress {
 export interface PublishResult {
   remoteId: string;
   permalink: string | null;
+  /** Something that went wrong after the post went up (a cover that didn't take). */
+  note?: string;
 }
 
 export interface PollResult {
@@ -61,8 +72,11 @@ export interface Snapshot {
 
 export interface Adapter {
   publish(ctx: Ctx, account: Account, input: PublishInput, progress: PublishProgress): Promise<PublishResult>;
-  /** Adds a comment under a just-published post. */
-  comment?(ctx: Ctx, account: Account, remoteId: string, text: string): Promise<void>;
+  /**
+   * Adds a comment under a just-published post. Platforms that take threads
+   * return the reply's remote id: the thread's next post replies to it.
+   */
+  comment?(ctx: Ctx, account: Account, remoteId: string, text: string): Promise<string | void>;
   poll(ctx: Ctx, account: Account, state: any): Promise<PollResult>;
   /** Replies to an inbox item; returns the reply's remote id. */
   reply(ctx: Ctx, account: Account, item: InboxItem, text: string, privately: boolean): Promise<string>;
@@ -92,14 +106,14 @@ export interface OAuthFlow {
 }
 
 export const platformInfo: Record<Platform, PlatformInfo> = {
-  instagram: { name: "Instagram", maxText: 2200, formats: ["post", "carousel", "reel", "story"], mediaRequired: ["post", "carousel", "reel", "story"], maxMedia: 10, moderation: ["hide", "delete"] },
-  facebook: { name: "Facebook Page", maxText: 63206, formats: ["post", "video"], mediaRequired: ["video"], maxMedia: 10, moderation: ["hide", "delete"] },
-  youtube: { name: "YouTube", maxText: 5000, formats: ["video", "short"], mediaRequired: ["video", "short"], maxMedia: 1, moderation: ["hide"] },
-  linkedin: { name: "LinkedIn", maxText: 3000, formats: ["post", "video"], mediaRequired: ["video"], maxMedia: 9, moderation: [] },
-  threads: { name: "Threads", maxText: 500, formats: ["post", "carousel"], mediaRequired: ["carousel"], maxMedia: 10, moderation: [] },
-  bluesky: { name: "Bluesky", maxText: 300, formats: ["post"], mediaRequired: [], maxMedia: 4, moderation: [] },
-  mastodon: { name: "Mastodon", maxText: 500, formats: ["post"], mediaRequired: [], maxMedia: 4, moderation: [] },
-  telegram: { name: "Telegram", maxText: 4096, formats: ["post"], mediaRequired: [], maxMedia: 10, moderation: ["delete"] },
+  instagram: { name: "Instagram", maxText: 2200, formats: ["post", "carousel", "reel", "story"], mediaRequired: ["post", "carousel", "reel", "story"], maxMedia: 10, moderation: ["hide", "delete"], threads: false, cover: ["reel"] },
+  facebook: { name: "Facebook Page", maxText: 63206, formats: ["post", "video"], mediaRequired: ["video"], maxMedia: 10, moderation: ["hide", "delete"], threads: false, cover: ["video"] },
+  youtube: { name: "YouTube", maxText: 5000, formats: ["video", "short"], mediaRequired: ["video", "short"], maxMedia: 1, moderation: ["hide"], threads: false, cover: ["video"] },
+  linkedin: { name: "LinkedIn", maxText: 3000, formats: ["post", "video"], mediaRequired: ["video"], maxMedia: 9, moderation: [], threads: false, cover: ["video"] },
+  threads: { name: "Threads", maxText: 500, formats: ["post", "carousel"], mediaRequired: ["carousel"], maxMedia: 10, moderation: [], threads: true, cover: [] },
+  bluesky: { name: "Bluesky", maxText: 300, formats: ["post"], mediaRequired: [], maxMedia: 4, moderation: [], threads: true, cover: [] },
+  mastodon: { name: "Mastodon", maxText: 500, formats: ["post"], mediaRequired: [], maxMedia: 4, moderation: [], threads: true, cover: [] },
+  telegram: { name: "Telegram", maxText: 4096, formats: ["post"], mediaRequired: [], maxMedia: 10, moderation: ["delete"], threads: false, cover: [] },
 };
 
 export const providerPlatforms: Record<Provider, Platform[]> = {
