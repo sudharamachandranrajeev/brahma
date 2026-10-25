@@ -26,14 +26,9 @@ void main() {
     final app = AppHarness(tester);
     await app.open();
     await app.run();
-    for (final label in pages) {
-      final bar = find.descendant(of: find.byType(NavigationBar), matching: find.text(label));
-      if (bar.evaluate().isNotEmpty) {
-        await app.tap(find.ancestor(of: bar, matching: find.byType(NavigationDestination)));
-      } else {
-        await app.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('More')));
-        await app.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text(label)));
-      }
+    // Half through the dock, half through the side panel.
+    for (final (i, label) in pages.indexed) {
+      await (i.isEven ? app.dock(label) : app.panel(label));
       expect(tester.takeException(), isNull, reason: label);
     }
     await app.close();

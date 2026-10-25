@@ -8,7 +8,6 @@ const vahanaHints = <String, String>{
   'nav.finance': 'Cash, loan, HP, PCP and lease compared by real cost, plus running costs.',
   'nav.guide': 'Your rights, tax, and the checks to do before paying.',
   'nav.settings': 'Sync, security and the hints.',
-  'nav.more': 'The rest of Vahana Anveshana.',
   // Cars
   'cars.add': 'Paste an advert link from any site, or type a car in.',
   'cars.custom': 'Your own dealers and sites. Use {make}, {model}, {postcode} or {maxPrice} in the link.',

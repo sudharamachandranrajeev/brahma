@@ -29,9 +29,13 @@ void main() {
       await loader.load();
     }
 
-    await family('Inter', [
+    final inter = [
       for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf',
-    ]);
+    ];
+    await family('Inter', inter);
+    // A few list-tile trailing texts ask for the platform's Roboto, which the
+    // test engine lacks (it draws boxes); stand Inter in for it.
+    await family('Roboto', inter);
     final flutterRoot = Platform.environment['FLUTTER_ROOT'] ?? '';
     final icons = File('$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
     if (icons.existsSync()) await family('MaterialIcons', [icons.path]);
@@ -39,6 +43,8 @@ void main() {
 
   // Made-up cars: nothing here is anyone's data.
   Future<void> seed(CarBook book) async {
+    // Page explanations ("Got it" banners) off, so the content shows.
+    await book.db.setLocalSetting('ui.hints', 'off');
     Future<void> car(String id, VehiclesCompanion c) =>
         book.save(book.db.vehicles, c.copyWith(id: Value(id), added: const Value('2026-10-01')), id);
     await car(
@@ -120,21 +126,41 @@ void main() {
       await app.settle();
       final mode = dark ? 'dark' : 'light';
       await shot('search-$mode');
-      Future<void> go(String page) => app.tap(
-        find.ancestor(
-          of: find.descendant(of: find.byType(NavigationBar), matching: find.text(page)),
-          matching: find.byType(NavigationDestination),
-        ),
-      );
       for (final page in ['Garage', 'Finance']) {
-        await go(page);
+        await app.dock(page);
         await shot('${page.toLowerCase()}-$mode');
       }
-      await go('Garage');
+      await tester.flingFrom(const Offset(40, 400), const Offset(300, 0), 1000);
+      await app.settle();
+      await shot('panel-$mode');
+      await app.tap(find.text('Garage').last);
       await app.tap(find.text('Open').last);
       await shot('car-$mode');
       await app.close();
     }
+
+    // One desktop-width shot: the navigation rail layout.
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    final app = AppHarness(tester);
+    tester.view.physicalSize = const Size(2160, 1350);
+    tester.view.devicePixelRatio = 1.5;
+    await app.open(seed: seed);
+    await tester.pumpWidget(
+      RepaintBoundary(
+        key: key,
+        child: ProviderScope(
+          overrides: vahanaOverrides(app.session),
+          retry: (_, _) => null,
+          child: const VahanaApp(),
+        ),
+      ),
+    );
+    await app.settle();
+    await app.go('Garage');
+    await shot('garage-desktop-light');
+    await app.go('Finance');
+    await shot('finance-desktop-light');
+    await app.close();
     tester.view.reset();
     debugDisableShadows = true;
   });
