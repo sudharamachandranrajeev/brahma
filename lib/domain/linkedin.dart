@@ -489,6 +489,11 @@ Rules:
     return AiResult(cleanDeliverable(r.data), sources: r.sources, usage: r.usage);
   }
 
+  static final _hookList = jsonEncode([
+    for (final h in hooks)
+      {'id': h.id, 'name': h.name, 'pattern': h.pattern, 'use': h.use, 'pitfall': h.pitfall},
+  ]);
+
   String _task(LinkedInTool tool) => switch (tool) {
     LinkedInTool.profile =>
       '''
@@ -500,9 +505,7 @@ Sections: "Score" with one block per item (label "Item: got/points", text = why,
     LinkedInTool.post =>
       '''
 Write a LinkedIn post from <input>. If the idea is too thin for one specific true post, say so in the headline and ask in "next" for the missing detail instead of padding.
-Hooks: ${jsonEncode([
-        for (final h in hooks) {'id': h.id, 'name': h.name, 'pattern': h.pattern, 'use': h.use, 'pitfall': h.pitfall},
-      ])}
+Hooks: $_hookList
 Section "Hooks": the three formulas that fit best (different ones), each as one block labelled "#id Name" with the opening line, copy false, and a note; say which you would use. Section "Post": the full post on the best hook (copy true, limit ${LinkedInLimits.post}, 900 to 1,300 characters): the hook alone on line 1, line 2 pays it off, short paragraphs with blank lines, one line that reframes, then one specific question or one instruction. One idea only. Label the post with the hook used, e.g. "Post: #5 The mistake". Put the best day and time to post in its note.''',
     LinkedInTool.comment =>
       '''
@@ -523,7 +526,7 @@ Headline: the counts. Sections in that order; each comment a block labelled with
     LinkedInTool.plan =>
       '''
 Plan the candidate's LinkedIn week from <input>, their profile and <past_posts> (do not repeat a theme from the last two weeks). Four posts beat seven. Types: ${jsonEncode(postTypes)}; never two of one type in a row.
-Research briefly what is current in their field this week if it helps an angle. Section "Posts": one block per day Monday to Sunday labelled like "Tue 08:15 Proof" (engage-only days say so). Each post block's text is the specific angle drawn from what happened this week, with the hook number from the hook list that fits; write true, copy false. Times suit the people they want to reach, in their timezone: weekday mornings at a desk are the default; say plainly that the first line matters far more than the hour. Section "Engage": ten people or kinds of people from <input> and their targets (five with the audience they want, three peers, two who hire), 20 minutes a day before posting, commenting early.''',
+Research briefly what is current in their field this week if it helps an angle. Section "Posts": one block per day Monday to Sunday labelled like "Tue 08:15 Proof" (engage-only days say so). Each post block's text is the specific angle drawn from what happened this week, with the number and name of the hook that fits from: $_hookList; write true, copy false. Times suit the people they want to reach, in their timezone: weekday mornings at a desk are the default; say plainly that the first line matters far more than the hour. Section "Engage": ten people or kinds of people from <input> and their targets (five with the audience they want, three peers, two who hire), 20 minutes a day before posting, commenting early.''',
     LinkedInTool.audit =>
       '''
 Audit the candidate's posts from the numbers in <input> and <past_posts>. Compute for each post engagement rate ((reactions + comments + reposts) / impressions), comment ratio (comments / reactions) and, with a follower count, reach multiple (impressions / followers). Rank by engagement rate and reach multiple, not impressions; show the working.
@@ -535,7 +538,7 @@ slides: 8 to 12: the cover (6 words at most plus a one-line promise in body), wh
     LinkedInTool.repurpose =>
       '''
 Turn the long piece in <input> into LinkedIn posts. Do not summarise: pull out what stands alone: claims someone could argue with, numbers, stories with a person and a cost, explanations of how something works, mistakes, lines already quotable.
-Headline: counts of each. If fewer than four stand-alone items, say it is thin. Section "Found": the items (copy false). Section "This week": four to six posts, strongest claim first, the story midweek, how-it-works last, each a block labelled with the day and hook ("Tue: #4 Against the advice"), text = the opening line and the angle, write true. Each must stand alone for a reader who never saw the source; vary the hooks.''',
+Headline: counts of each. If fewer than four stand-alone items, say it is thin. Section "Found": the items (copy false). Section "This week": four to six posts, strongest claim first, the story midweek, how-it-works last, each a block labelled with the day and hook ("Tue: #4 Against the advice"), text = the opening line and the angle, write true. Each must stand alone for a reader who never saw the source; vary the hooks, from: $_hookList''',
     LinkedInTool.humanCheck => throw StateError('The human check runs on the device'),
   };
 }

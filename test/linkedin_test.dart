@@ -276,6 +276,20 @@ void main() {
       expect(seen!['text'], contains('I fixed the rota'));
     });
 
+    test('the plan and repurpose prompts carry the hook list', () async {
+      for (final tool in [LinkedInTool.plan, LinkedInTool.repurpose]) {
+        var sent = '';
+        await LinkedInCoach(
+          _Canned((system, content, schema) {
+            sent = jsonEncode(content);
+            return {'headline': '', 'score': -1, 'scoreAfter': -1, 'sections': <Object?>[], 'next': ''};
+          }),
+          today: '2026-10-25',
+        ).run(tool, const {}, sampleProfile);
+        expect(sent, contains(hooks.last.name), reason: tool.name);
+      }
+    });
+
     test('the carousel schema requires slides', () {
       final ok = {
         'headline': 'h',
