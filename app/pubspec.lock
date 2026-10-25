@@ -1115,7 +1115,7 @@ packages:
       path: "../apps/udyoga"
       relative: true
     source: path
-    version: "0.3.1+4"
+    version: "0.4.1+6"
   url_launcher:
     dependency: transitive
     description:
@@ -1201,7 +1201,7 @@ packages:
       path: "../apps/vani"
       relative: true
     source: path
-    version: "0.1.0+1"
+    version: "0.2.0+2"
   vector_math:
     dependency: transitive
     description:
