@@ -151,7 +151,7 @@ class _FindingCard extends ConsumerWidget {
                 if (f.fix case final fix?)
                   FilledButton.tonal(
                     // Checks watch what a fix changes, so they rerun by themselves.
-                    onPressed: () => guarded(context, () => fix.run(ref)),
+                    onPressed: () => guarded(context, () => fix.run(context, ref)),
                     child: Text(fix.label),
                   ),
               ],

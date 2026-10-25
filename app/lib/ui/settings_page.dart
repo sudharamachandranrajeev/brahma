@@ -10,6 +10,7 @@ class SettingsPage extends StatelessWidget {
     title: 'Settings',
     children: [
       SyncCard(),
+      AppLockCard(),
       HintsCard(),
       SecurityCard(
         network:

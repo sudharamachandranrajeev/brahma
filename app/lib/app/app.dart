@@ -18,6 +18,8 @@ class BrahmaApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: brahmaTheme(Brightness.light),
     darkTheme: brahmaTheme(Brightness.dark),
+    // Over every page, the hosted apps' too.
+    builder: (context, child) => AppLockGate(child: child!),
     home: const LinkHandler(child: HomePage()),
   );
 }

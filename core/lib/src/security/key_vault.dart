@@ -45,6 +45,7 @@ class KeyVault {
   String get _dbKey => '${app.id}.db.key';
   String get _dataKey => '${app.id}.sync.dek';
   String get _session => '${app.id}.sync.session';
+  String get _lock => '${app.id}.lock';
 
   /// The database encryption key for this device, created on first use. With
   /// [create] false (a database already exists) a missing key is an error:
@@ -81,6 +82,17 @@ class KeyVault {
   }
 
   Future<void> setSession(Map<String, Object?> s) => store.write(_session, jsonEncode(s));
+
+  /// The app lock's PIN hash, unlock choices and failed tries; null when the
+  /// app lock is off. In the keychain, so wiping the app's database does not
+  /// turn the lock off.
+  Future<Map<String, Object?>?> appLock() async {
+    final v = await store.read(_lock);
+    return v == null ? null : jsonDecode(v) as Map<String, Object?>;
+  }
+
+  Future<void> setAppLock(Map<String, Object?>? lock) =>
+      lock == null ? store.delete(_lock) : store.write(_lock, jsonEncode(lock));
 
   Future<void> signOut() async {
     await store.delete(_dataKey);

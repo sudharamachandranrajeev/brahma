@@ -5,12 +5,15 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../app/app_lock_ui.dart';
 import '../app/providers.dart';
+import '../security/app_lock.dart';
 import '../ui/widgets.dart' show Status;
 import 'releases.dart';
 import 'sentinel.dart';
 
-/// The checks every Brahma app runs.
+/// The checks every Brahma app runs. An app that puts its screens under an
+/// [AppLockGate] adds [lockCheck] as well.
 final coreChecks = [syncCheck, updateCheck];
 
 /// Days without a finished sync before Sentinel says so.
@@ -66,7 +69,7 @@ final syncCheck = SecurityCheck(
           why:
               'Changes made here are only on this device until sync runs, so losing it loses them.'
               '${s.error == null ? '' : ' Last error: ${s.error}'}',
-          fix: QuickFix('Sync now', (ref) => ref.read(syncProvider.notifier).run()),
+          fix: QuickFix('Sync now', (_, ref) => ref.read(syncProvider.notifier).run()),
         ),
     ];
   }),
@@ -112,7 +115,7 @@ final updateCheck = SecurityCheck(
         status: Status.warning,
         title: '${app.name} ${newest.version} is out',
         why: 'You have $current. New versions fix security problems as well as bugs.',
-        fix: QuickFix('Download', (_) async {
+        fix: QuickFix('Download', (_, _) async {
           if (!await launchUrl(newest.page, mode: LaunchMode.externalApplication)) {
             throw CheckFailed('Could not open ${newest.page}');
           }
@@ -121,4 +124,25 @@ final updateCheck = SecurityCheck(
     ];
     // Offline is no reason to ask GitHub again and again; "Check again" does.
   }, retry: (_, _) => null),
+);
+
+/// App lock: off, so anyone holding the unlocked device can open the app.
+final lockCheck = SecurityCheck(
+  id: 'lock',
+  title: 'App lock',
+  findings: FutureProvider((ref) async {
+    if ((await ref.watch(appLockProvider.future)).enabled) return const [];
+    final app = ref.watch(appIdentityProvider);
+    return [
+      Finding(
+        id: 'lock.off',
+        status: Status.warning,
+        title: 'App lock is off',
+        why:
+            'Anyone who picks up this device while it is unlocked can open ${app.name} and read '
+            'everything in it.',
+        fix: QuickFix('Turn on app lock', (context, ref) => showSetPin(context, ref)),
+      ),
+    ];
+  }),
 );

@@ -1,6 +1,7 @@
 /// Shared core of the Brahma apps.
 library;
 
+export 'src/app/app_lock_ui.dart';
 export 'src/app/links.dart';
 export 'src/app/modules.dart';
 export 'src/app/pairing_dialogs.dart';
@@ -17,6 +18,7 @@ export 'src/db/synced_database.dart';
 export 'src/identity.dart';
 export 'src/money/currencies.dart';
 export 'src/money/money.dart';
+export 'src/security/app_lock.dart';
 export 'src/security/crypto.dart';
 export 'src/security/key_vault.dart';
 export 'src/sentinel/core_checks.dart';

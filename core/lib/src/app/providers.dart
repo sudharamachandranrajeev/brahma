@@ -8,6 +8,7 @@ import '../dates.dart';
 import '../db/store.dart';
 import '../identity.dart';
 import '../security/crypto.dart';
+import '../security/key_vault.dart';
 import '../sync/sync_engine.dart';
 import '../ui/hints.dart';
 import 'session.dart';
@@ -18,6 +19,9 @@ final appIdentityProvider = Provider<AppIdentity>((ref) => throw StateError('No 
 /// The open session; main() overrides this before the first frame. Apps keep
 /// their own typed session provider next to it.
 final coreSessionProvider = Provider<CoreSession>((ref) => throw StateError('No session'));
+
+/// The session's keys; tests override it to run without a database.
+final keyVaultProvider = Provider<KeyVault>((ref) => ref.watch(coreSessionProvider).keys);
 
 /// Every database sync keeps in step, all under the core session's account.
 /// An app has one; the suite app adds each hosted app's database.

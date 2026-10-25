@@ -107,7 +107,7 @@ void main() {
     await stop(tester);
   });
 
-  testWidgets('Sentinel shows on the home panel, lists what it found and snoozes it', (tester) async {
+  testWidgets('Sentinel shows on the home panel, snoozes a finding and fixes another', (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -120,22 +120,72 @@ void main() {
       ),
     ];
     await start(tester);
-    // Every app's checks run next to core's.
+    // Every app's checks run next to core's, and the suite's lock check.
     final container = ProviderScope.containerOf(tester.element(find.byType(BrahmaApp)));
-    expect(container.read(sentinelChecksProvider), containsAll(coreChecks));
+    expect(container.read(sentinelChecksProvider), containsAll([...coreChecks, lockCheck]));
 
-    await tester.tap(find.text('Sentinel · 1 to look at'));
+    await tester.tap(find.text('Sentinel · 2 to look at'));
     await settle(tester);
     expect(find.text('Brahma 9.0.0 is out'), findsOneWidget);
-    await tester.tap(find.text('Snooze 30 days'));
+    expect(find.text('App lock is off'), findsOneWidget);
+    await tester.tap(find.text('Snooze 30 days').first);
     await settle(tester);
     expect(find.text('Brahma 9.0.0 is out'), findsNothing);
-    expect(find.text('All clear'), findsOneWidget);
     expect(find.text('1 hidden for now.'), findsOneWidget);
+
+    // The fix: a PIN, and the lock is on.
+    await tester.tap(find.text('Turn on app lock'));
+    await settle(tester);
+    await tester.enterText(find.widgetWithText(TextField, 'New PIN (at least 6 digits)'), '246810');
+    await tester.enterText(find.widgetWithText(TextField, 'Repeat PIN'), '246810');
+    await tester.tap(find.text('Turn on'));
+    await settle(tester);
+    expect(find.text('App lock is off'), findsNothing);
+    expect(find.text('All clear'), findsOneWidget);
 
     await tester.pageBack();
     await settle(tester);
     expect(find.text('Sentinel · All clear'), findsOneWidget);
+    await stop(tester);
+  });
+
+  testWidgets('the app lock covers every page until the PIN is given', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await start(tester);
+
+    await tester.tap(find.byTooltip('Settings'));
+    await settle(tester);
+    await tester.tap(find.text('Lock Brahma'));
+    await settle(tester);
+    await tester.enterText(find.widgetWithText(TextField, 'New PIN (at least 6 digits)'), '246810');
+    await tester.enterText(find.widgetWithText(TextField, 'Repeat PIN'), '135790');
+    await tester.tap(find.text('Turn on'));
+    await settle(tester);
+    expect(find.text('The PINs do not match'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Repeat PIN'), '246810');
+    await tester.tap(find.text('Turn on'));
+    await settle(tester);
+    expect(find.text('App lock is on.'), findsOneWidget);
+
+    await tester.tap(find.text('Lock'));
+    await settle(tester);
+    expect(find.text('Brahma is locked'), findsOneWidget);
+    // Settings is still there underneath, but hidden.
+    expect(find.text('App lock'), findsNothing);
+
+    await tester.enterText(find.widgetWithText(TextField, 'PIN'), '000000');
+    await tester.tap(find.text('Unlock'));
+    await settle(tester);
+    expect(find.text('Wrong PIN'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'PIN'), '246810');
+    await tester.tap(find.text('Unlock'));
+    await settle(tester);
+    expect(find.text('Brahma is locked'), findsNothing);
+    expect(find.text('App lock'), findsOneWidget);
+    // The keychain holds the lock next to the database key, as a hash.
+    expect(secrets.values.keys, containsAll(['brahma.db.key', 'brahma.lock']));
     await stop(tester);
   });
 }

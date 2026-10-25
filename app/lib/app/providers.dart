@@ -17,7 +17,11 @@ List<Override> suiteOverrides(SuiteSession s) => [
   // The suite's own database holds only device settings, so it stays out
   // of sync; each app's database syncs as its own device on the account.
   syncStoresProvider.overrideWithValue([for (final x in s.sessions) x.store]),
-  sentinelChecksProvider.overrideWithValue([...coreChecks, for (final a in s.apps) ...a.securityChecks]),
+  sentinelChecksProvider.overrideWithValue([
+    ...coreChecks,
+    lockCheck,
+    for (final a in s.apps) ...a.securityChecks,
+  ]),
   for (var i = 0; i < s.apps.length; i++) ...s.apps[i].overrides(s.sessions[i]),
 ];
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/widgets.dart' show BuildContext;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
@@ -18,7 +19,9 @@ class QuickFix {
 
   /// The button, e.g. "Sync now".
   final String label;
-  final Future<void> Function(WidgetRef ref) run;
+
+  /// Gets a context to ask with (a dialog) and the ref to change things.
+  final Future<void> Function(BuildContext context, WidgetRef ref) run;
 }
 
 /// One thing that needs attention.
