@@ -73,10 +73,13 @@ class AppHarness {
   Future<void> go(String page) async {
     final rail = find.descendant(of: find.byType(NavigationRail), matching: find.text(page));
     if (rail.evaluate().isNotEmpty) return tap(rail);
-    final bar = find.descendant(of: find.byType(NavigationBar), matching: find.byTooltip(page));
-    if (bar.evaluate().isNotEmpty) return tap(bar);
-    await tap(find.descendant(of: find.byType(NavigationBar), matching: find.byTooltip('More')));
-    await tap(find.descendant(of: find.byType(BottomSheet), matching: find.text(page)));
+    // Phones: the dock holds every screen and scrolls to the one asked for.
+    await tap(
+      find.descendant(
+        of: find.byWidgetPredicate((w) => '${w.runtimeType}' == '_Dock'),
+        matching: find.byTooltip(page),
+      ),
+    );
   }
 
   void desktop() => _size(const Size(1400, 900));

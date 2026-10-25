@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (2026-10-25)
+
+- Phones get new navigation: a floating dock that scrolls through every screen (the "More"
+  sheet is gone) and a side panel listing them all with what each is for. Swipe right on any
+  page, or tap the dock's menu button, to open it; Back closes it.
+
 ## 0.3.0 (2026-10-24)
 
 - In-app updates: Settings > Updates finds a newer release on GitHub, downloads it, checks it against

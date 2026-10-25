@@ -62,7 +62,7 @@ packages:
     description:
       path: core
       ref: HEAD
-      resolved-ref: "2782d1832f55a7540bb0f6a4d3d7a124b7f7f177"
+      resolved-ref: "4d782584c99adbaff60ccf962a9a9453f0541f68"
       url: "https://github.com/sudharamachandranrajeev/brahma.git"
     source: git
     version: "0.1.0"
