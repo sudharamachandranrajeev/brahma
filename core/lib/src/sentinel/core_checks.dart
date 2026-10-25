@@ -9,12 +9,13 @@ import '../app/app_lock_ui.dart';
 import '../app/providers.dart';
 import '../security/app_lock.dart';
 import '../ui/widgets.dart' show Status;
+import 'device_checks.dart';
 import 'releases.dart';
 import 'sentinel.dart';
 
 /// The checks every Brahma app runs. An app that puts its screens under an
 /// [AppLockGate] adds [lockCheck] as well.
-final coreChecks = [syncCheck, updateCheck];
+final coreChecks = [syncCheck, updateCheck, deviceCheck];
 
 /// Days without a finished sync before Sentinel says so.
 const staleSyncDays = 7;

@@ -22,6 +22,7 @@ export 'src/security/app_lock.dart';
 export 'src/security/crypto.dart';
 export 'src/security/key_vault.dart';
 export 'src/sentinel/core_checks.dart';
+export 'src/sentinel/device_checks.dart';
 export 'src/sentinel/sentinel.dart';
 export 'src/sync/account_service.dart';
 export 'src/sync/hlc.dart';

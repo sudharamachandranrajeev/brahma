@@ -44,7 +44,11 @@ void main() {
     });
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [...suiteOverrides(suite), updateCheck.findings.overrideWith((_) async => updates)],
+        overrides: [
+          ...suiteOverrides(suite),
+          updateCheck.findings.overrideWith((_) async => updates),
+          deviceFactsProvider.overrideWith((_) async => const DeviceFacts()),
+        ],
         retry: (_, _) => null,
         child: const BrahmaApp(),
       ),
