@@ -12,10 +12,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:udyoga/app/providers.dart' as udyoga;
+import 'package:vani/app/providers.dart' as vani;
+
+import '../../apps/vani/test/fake_hub.dart';
+import 'seed.dart';
 
 /// Renders the home screen and a few hosted apps with the real fonts to PNG
-/// files, for checking the look. Runs only when BRAHMA_SHOTS names an output
-/// folder: `BRAHMA_SHOTS=/tmp/shots flutter test test/screenshots_test.dart`.
+/// files, for checking the look and for the README. Every app is filled with
+/// made-up data first (test/seed.dart). Runs only when BRAHMA_SHOTS names an
+/// output folder: `BRAHMA_SHOTS=/tmp/shots flutter test test/screenshots_test.dart`.
 void main() {
   final out = Platform.environment['BRAHMA_SHOTS'];
 
@@ -70,6 +76,9 @@ void main() {
     final suite = (await tester.runAsync(
       () => SuiteSession.open(KeyVault(MemorySecretStore(), brahmaIdentity), suiteApps),
     ))!;
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    await tester.runAsync(() => seedSuite(suite, today));
+    final hub = FakeHub();
     for (final (size, ratio, form) in [
       (const Size(1170, 2532), 3.0, 'phone'),
       (const Size(1600, 1000), 1.0, 'desktop'),
@@ -84,7 +93,12 @@ void main() {
             child: ProviderScope(
               // A fresh tree per shot, so each starts at the top.
               key: ValueKey('$form-$dark'),
-              overrides: suiteOverrides(suite),
+              overrides: [
+                ...suiteOverrides(suite),
+                vani.httpClientProvider.overrideWithValue(hub.client),
+                // No start-up job refresh: it would show a spinner.
+                udyoga.refreshTickerProvider.overrideWithValue(null),
+              ],
               retry: (_, _) => null,
               child: const BrahmaApp(),
             ),
