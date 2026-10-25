@@ -1,32 +1,15 @@
 import { fetchSearch } from "./propertypal.ts";
 import { ntfyMessage, sendNtfy } from "./notify.ts";
 import { diff, type Seen, type Watch, type WatchEvent } from "./watch.ts";
-import { handleSocial } from "./social/api.ts";
-import { mediaSignatureOk } from "./social/crypto.ts";
-import { runDue } from "./social/discovery.ts";
-import { Budget } from "./social/http.ts";
-import { pollAll } from "./social/inbox.ts";
-import { serve } from "./social/media.ts";
-import { oauthCallback, webhook } from "./social/oauth.ts";
-import type { Ctx } from "./social/platforms/adapter.ts";
-import { eachProfile } from "./social/profiles.ts";
-import { publishDue } from "./social/publish.ts";
-import { daily } from "./social/stats.ts";
-import { Store, type SocialEnv } from "./social/store.ts";
 
-export interface Env extends SocialEnv {
+export interface Env {
   KV: KVNamespace;
   /** Secret ntfy topic name (long and random: anyone who knows it can read it). */
   NTFY_TOPIC: string;
   NTFY_SERVER?: string;
   NTFY_TOKEN?: string;
-  /** Bearer token for the HTTP API that Anveshana and Vani use. */
+  /** Bearer token for the HTTP API that Anveshana uses. */
   API_TOKEN: string;
-  /**
-   * Outbound requests one run may make: 50 on the Workers free plan (the
-   * default leaves headroom), 1000 on Workers Paid.
-   */
-  SUBREQUEST_BUDGET?: string;
 }
 
 interface WatchStatus {
@@ -133,33 +116,9 @@ async function authorised(req: Request, env: Env): Promise<boolean> {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body, null, 2), { status, headers: { "content-type": "application/json" } });
 
-const socialReady = (env: Env) => !!(env.DB && env.MEDIA && env.TOKEN_KEY && env.PUBLIC_URL);
-
-function socialCtx(env: Env, now = new Date()): Ctx {
-  return { env, store: new Store(env), budget: new Budget(Number(env.SUBREQUEST_BUDGET) || 45), now };
-}
-
-async function handle(req: Request, env: Env, waitUntil: (p: Promise<unknown>) => void): Promise<Response> {
-  const { pathname, searchParams } = new URL(req.url);
-  // Unauthenticated edges of the social hub; each checks a state or signature.
-  if (socialReady(env)) {
-    const oauth = pathname.match(/^\/oauth\/([a-z]+)\/callback$/);
-    if (oauth && req.method === "GET") return oauthCallback(socialCtx(env), oauth[1], new URL(req.url));
-    const hook = pathname.match(/^\/webhooks\/([a-z]+)$/);
-    if (hook) return webhook(socialCtx(env), hook[1], req, waitUntil);
-    const media = pathname.match(/^\/media\/([\w-]{1,64})$/);
-    if (media && (req.method === "GET" || req.method === "HEAD")) {
-      if (!(await mediaSignatureOk(env.TOKEN_KEY, media[1], searchParams.get("exp"), searchParams.get("sig")))) {
-        return new Response("forbidden", { status: 403 });
-      }
-      return serve(new Store(env), media[1], req);
-    }
-  }
+async function handle(req: Request, env: Env): Promise<Response> {
   if (!(await authorised(req, env))) return json({ error: "unauthorised" }, 401);
-  if (pathname.startsWith("/social/")) {
-    if (!socialReady(env)) return json({ error: "the social hub is not set up: run npm run setup" }, 503);
-    return handleSocial(socialCtx(env), req);
-  }
+  const { pathname, searchParams } = new URL(req.url);
   if (pathname === "/watches" && req.method === "GET") return json(await loadWatches(env));
   if (pathname === "/watches" && req.method === "PUT") {
     const body = await req.json().catch(() => null);
@@ -187,41 +146,9 @@ async function handle(req: Request, env: Env, waitUntil: (p: Promise<unknown>) =
   return json({ error: "not found" }, 404);
 }
 
-async function step(name: string, run: () => Promise<unknown>) {
-  try {
-    await run();
-  } catch (err) {
-    console.log(`${name}: ${err instanceof Error ? (err.stack ?? err.message) : err}`);
-  }
-}
-
-/**
- * The cron fires every minute. Publishing runs every time; property watches,
- * the inbox and discovery every 10 minutes (each social pass goes through
- * every profile on the one budget); account checks daily at 03:05 UTC
- * (its own run, so it gets a whole subrequest budget).
- */
-export async function runCron(env: Env, now: Date) {
-  const minute = now.getUTCMinutes();
-  const daySlot = now.getUTCHours() === 3 && minute === 5;
-  const ctx = socialCtx(env, now);
-  if (socialReady(env)) await step("publish", () => eachProfile(ctx, "publish", publishDue));
-  if (minute % 10 === 0) {
-    // Property watches fetch outside the budget; set aside what they use.
-    const watches = (await loadWatches(env)).filter((w) => !w.paused).length;
-    ctx.budget.take(Math.min(ctx.budget.left, watches * 3));
-    await step("property watches", () => runWatches(env, now.toISOString()));
-    if (socialReady(env)) {
-      await step("inbox", () => eachProfile(ctx, "inbox", (c) => pollAll(c)));
-      await step("discovery", () => eachProfile(ctx, "discovery", runDue));
-    }
-  }
-  if (daySlot && socialReady(env)) await step("daily", () => daily(ctx));
-}
-
 export default {
-  fetch: (req: Request, env: Env, ctx: ExecutionContext) => handle(req, env, (p) => ctx.waitUntil(p)),
-  scheduled: async (controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
-    ctx.waitUntil(runCron(env, new Date(controller.scheduledTime)));
+  fetch: (req: Request, env: Env) => handle(req, env),
+  scheduled: async (_controller: ScheduledController, env: Env, ctx: ExecutionContext) => {
+    ctx.waitUntil(runWatches(env));
   },
 } satisfies ExportedHandler<Env>;

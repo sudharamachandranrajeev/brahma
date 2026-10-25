@@ -9,8 +9,12 @@ import 'providers.dart';
 /// Wraps an app's home and opens the setup and pairing links the platform
 /// hands over (a scanned pairing code).
 class LinkHandler extends ConsumerStatefulWidget {
-  const LinkHandler({super.key, required this.child});
+  const LinkHandler({super.key, required this.child, this.onAppLink});
   final Widget child;
+
+  /// The app's own links (any it knows besides sync's): returns true when it
+  /// handled [link], false to leave it to the sync setup and pairing links.
+  final Future<bool> Function(BuildContext context, String link)? onAppLink;
 
   @override
   ConsumerState<LinkHandler> createState() => _LinkHandlerState();
@@ -34,7 +38,8 @@ class _LinkHandlerState extends ConsumerState<LinkHandler> {
     if (_opening || !mounted) return;
     _opening = true;
     try {
-      await openBrahmaLink(context, ref, link);
+      if (await widget.onAppLink?.call(context, link) ?? false) return;
+      if (mounted) await openBrahmaLink(context, ref, link);
     } finally {
       _opening = false;
     }
