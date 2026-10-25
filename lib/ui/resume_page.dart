@@ -10,6 +10,7 @@ import '../domain/insights.dart';
 import '../domain/json.dart';
 import '../domain/resume.dart';
 import 'common.dart';
+import 'linkedin_page.dart';
 
 const _docxMime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -109,15 +110,33 @@ class ResumePage extends ConsumerWidget {
           if (notes.coverLetter.isNotEmpty)
             SectionCard(
               title: 'Cover letter',
-              trailing: IconButton(
-                icon: const Icon(Icons.copy),
-                tooltip: 'Copy',
-                onPressed: () => copyText(context, notes.coverLetter, what: 'Cover letter copied.'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.fact_check_outlined),
+                    tooltip: 'Human check',
+                    onPressed: () => showHumanCheck(context, notes.coverLetter),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy),
+                    tooltip: 'Copy',
+                    onPressed: () => copyText(context, notes.coverLetter, what: 'Cover letter copied.'),
+                  ),
+                ],
               ),
               child: SelectableText(notes.coverLetter),
             ),
         ],
-        SectionCard(title: 'The CV', child: SelectableText(doc.toText())),
+        SectionCard(
+          title: 'The CV',
+          trailing: IconButton(
+            icon: const Icon(Icons.fact_check_outlined),
+            tooltip: 'Human check',
+            onPressed: () => showHumanCheck(context, doc.toText()),
+          ),
+          child: SelectableText(doc.toText()),
+        ),
       ],
     );
   }

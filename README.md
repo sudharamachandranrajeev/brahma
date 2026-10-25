@@ -57,8 +57,18 @@
   paths from your current role, each with steps, timeframes, pay, likelihood and AI exposure. Redone
   monthly when the AI routine is on.
 * **Growth** – certifications, courses and experience to get, with priority, cost, target date and progress.
-* **In-app updates** – Settings > Updates finds a newer GitHub release, checks it against
-  `SHA256SUMS.txt` and installs it (release builds only).
+* **LinkedIn studio** – eleven tools, all drafting for you to post or send by hand: a 100-point profile
+  score with rewrites, posts (18 hook formulas), comments, connection notes with follow-ups (also from
+  a contact), inbox triage, replies to comments on your posts, a week plan, a post audit, carousels
+  (saved as a PDF to upload) and repurposing a long piece. Every draft is written in your own voice
+  and cleaned on the device of dashes, invisible characters and stock phrases, with a five-check
+  score. The same check runs on a CV or cover letter. Nothing is posted or automated for you.
+* **Your Claude subscription** – on Linux and Windows, Settings > AI can use the Claude Code you
+  already have, signed in to your own Claude plan, instead of an API key. Udyoga never handles your
+  Claude login. Its permission lasts 24 hours; at the next start it asks you to renew.
+* **In-app updates** – at start (switch it off in Settings > Updates) and on demand, Udyoga finds a
+  newer GitHub release, asks, checks the download against `SHA256SUMS.txt` and installs it (release
+  builds only).
 * **Private by design** – encrypted local database, optional end-to-end encrypted sync through your
   own PocketBase server, one account across every Brahma app.
 * **Light and dark** – an azure canvas (deep navy at night), cards that tilt toward the pointer, a
@@ -73,6 +83,10 @@ key; Gemini 3.8 Flash or 3.5 Flash-Lite on the free tier) or a
 [Claude API key](https://console.anthropic.com/). With keys for both, choose the model in Settings.
 On Google's free tier, prompts may be used to improve Google's products except in the UK, EEA and
 Switzerland. Job-site keys for Adzuna and Reed are free and optional.
+
+On Linux and Windows you can use your Claude subscription instead: install
+[Claude Code](https://code.claude.com/docs/en/setup), then Settings > AI > Connect. Udyoga runs your
+own Claude Code, which keeps your sign-in to itself; Udyoga stores only the time you allowed it.
 
 Your data stays on the device, encrypted, until you turn on sync. An account made in any Brahma app
 works in all of them.

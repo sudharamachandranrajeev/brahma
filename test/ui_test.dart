@@ -77,4 +77,21 @@ void main() {
     expect(sent, findsWidgets);
     await app.close();
   });
+
+  testWidgets('the LinkedIn human check cleans a draft on the device', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(seed: seedBook);
+    await app.run();
+    await app.go('LinkedIn');
+    expect(find.text('Your voice'), findsOneWidget);
+    expect(find.textContaining('You post and send everything yourself'), findsWidgets);
+    await app.tapText('Human check');
+    await app.enter('Draft', 'We leverage it \u2014 daily.');
+    await app.tapText('Check');
+    await app.settle();
+    expect(find.text('Cleaned text'), findsOneWidget);
+    expect(find.textContaining('\u2014'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
 }
