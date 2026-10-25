@@ -13,11 +13,13 @@ void main() {
     'google-chrome',
   ].where((c) => Process.runSync('which', [c]).exitCode == 0).firstOrNull;
 
-  test('the reader finds products, prices, unit prices, offers and stock', () async {
-    final dir = await Directory.systemTemp.createTemp('bhojana_reader');
-    addTearDown(() => dir.delete(recursive: true));
-    final page = File('${dir.path}/page.html');
-    await page.writeAsString('''
+  test(
+    'the reader finds products, prices, unit prices, offers and stock',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('bhojana_reader');
+      addTearDown(() => dir.delete(recursive: true));
+      final page = File('${dir.path}/page.html');
+      await page.writeAsString('''
 <html><body>
 <script type="application/ld+json">
 {"@type":"ItemList","itemListElement":[{"@type":"Product","name":"Heinz Baked Beans 415g",
@@ -34,25 +36,37 @@ void main() {
 <pre id="out"></pre>
 <script>document.getElementById('out').textContent = $readerScript;</script>
 </body></html>''');
-    final r = await Process.run(chromium!, [
-      '--headless',
-      '--disable-gpu',
-      '--no-sandbox',
-      '--dump-dom',
-      page.uri.toString(),
-    ]);
-    final json = RegExp(r'<pre id="out">(.*?)</pre>', dotAll: true).firstMatch(r.stdout as String)?[1];
-    expect(json, isNotNull, reason: '${r.stderr}');
-    final offers = parseOffers('tesco', json!.replaceAll('&amp;', '&'));
-    final byTitle = {for (final o in offers) o.title: o};
-    expect(byTitle['Heinz Baked Beans 415g']?.pence, 140);
-    final milk = byTitle['Tesco Semi Skimmed Milk 2.272L, 4 Pints']!;
-    expect(milk.pence, 145);
-    expect(milk.unitPrice, '68p/litre');
-    expect(milk.offer, 'Clubcard Price');
-    expect(milk.url, endsWith('/p/1'));
-    expect(byTitle['Hovis Soft White Medium Bread 800g']?.inStock, isFalse);
-    expect(byTitle['Bananas Loose']?.pence, 18);
-    expect(byTitle.keys, isNot(contains('Help')));
-  }, skip: chromium == null ? 'Chromium is not installed' : null);
+      // A fresh profile and a virtual-time budget keep CI's Chrome from waiting
+      // on first-run work; the timeout stops a browser that hangs anyway.
+      final p = await Process.start(chromium!, [
+        '--headless',
+        '--disable-gpu',
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        '--no-first-run',
+        '--user-data-dir=${dir.path}/profile',
+        '--virtual-time-budget=5000',
+        '--dump-dom',
+        page.uri.toString(),
+      ]);
+      final stdout = p.stdout.transform(const SystemEncoding().decoder).join();
+      final stderr = p.stderr.transform(const SystemEncoding().decoder).join();
+      await p.exitCode.timeout(const Duration(seconds: 45), onTimeout: () => (p..kill()).pid);
+      final json = RegExp(r'<pre id="out">(.*?)</pre>', dotAll: true).firstMatch(await stdout)?[1];
+      expect(json, isNotNull, reason: await stderr);
+      final offers = parseOffers('tesco', json!.replaceAll('&amp;', '&'));
+      final byTitle = {for (final o in offers) o.title: o};
+      expect(byTitle['Heinz Baked Beans 415g']?.pence, 140);
+      final milk = byTitle['Tesco Semi Skimmed Milk 2.272L, 4 Pints']!;
+      expect(milk.pence, 145);
+      expect(milk.unitPrice, '68p/litre');
+      expect(milk.offer, 'Clubcard Price');
+      expect(milk.url, endsWith('/p/1'));
+      expect(byTitle['Hovis Soft White Medium Bread 800g']?.inStock, isFalse);
+      expect(byTitle['Bananas Loose']?.pence, 18);
+      expect(byTitle.keys, isNot(contains('Help')));
+    },
+    timeout: const Timeout(Duration(seconds: 90)),
+    skip: chromium == null ? 'Chromium is not installed' : null,
+  );
 }

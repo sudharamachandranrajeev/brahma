@@ -20,8 +20,13 @@ dependencies:
   intl: ^0.20.3
   url_launcher: ^6.3.2
   # The in-app browser for shop logins, live prices and baskets (Android and
-  # Windows; Linux has no embedded web view, so it opens the shop externally).
-  flutter_inappwebview: ^6.1.5
+  # Windows). 6.2 beta: 6.1's Android plugin fails under Android Gradle
+  # Plugin 9 (proguard-android.txt).
+  flutter_inappwebview: 6.2.0-beta.3
+  # Takes Linux off flutter_inappwebview, whose Linux plugin needs WPE WebKit
+  # to build and run; Bhojana opens shops in the system browser there.
+  bhojana_no_linux_webview:
+    path: packages/no_linux_webview
 
 dev_dependencies:
   flutter_test:
