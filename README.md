@@ -6,7 +6,7 @@
   <br>
 </h1>
 
-<h4 align="center">A private life-management suite: money, property, cars, career, social media and learning in one app, with one end-to-end encrypted sync account. Linux, Windows and Android.</h4>
+<h4 align="center">A private life-management suite: money, property, cars, career, social media, learning and shopping in one app, with one end-to-end encrypted sync account. Linux, Windows and Android.</h4>
 
 <p align="center">
   <a href="https://github.com/sudharamachandranrajeev/brahma/releases"><img src="https://img.shields.io/github/v/release/sudharamachandranrajeev/brahma?include_prereleases&color=8a5cf6" alt="Release"></a>
@@ -37,7 +37,7 @@ here as a git subtree.
 * **Life dashboard** – the home screen shows a live card per app with its key figures and the next
   thing to do; a card opens the app and "All apps" comes back.
 * **Every app, in its own look** – Artha (money), Graha Anveshana (property), Vahana Anveshana
-  (cars), Udyoga (career), Vidya (learning) and Vani (social media) each keep their own theme and
+  (cars), Udyoga (career), Vidya (learning), Bhojana (shopping) and Vani (social media) each keep their own theme and
   navigation inside Brahma.
 * **One sign-in, one key, one sync account** – a single keychain entry unlocks every app; each app
   keeps its own encrypted database.
@@ -178,6 +178,8 @@ This software uses the following open source packages and services:
   openings, tailored CVs, applications, contacts, career paths, learning and interview practice
 * [Vidya](https://github.com/sudharamachandranrajeev/vidya) – learning and knowledge: programs,
   courses, flashcards, skills, portfolio and progress
+* [Bhojana](https://github.com/sudharamachandranrajeev/bhojana) – UK grocery and shopping: lists,
+  price comparison across shops, live prices through your own shop logins and basket filling
 * Vani ([`apps/vani`](apps/vani)) – social media: scheduled posts, one inbox, discovery alerts and
   analytics
 

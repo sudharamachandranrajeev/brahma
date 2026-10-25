@@ -23,6 +23,8 @@ dependencies:
     path: ../apps/vani
   vidya:
     path: ../apps/vidya
+  bhojana:
+    path: ../apps/bhojana
   drift: ^2.35.2
   flutter:
     sdk: flutter

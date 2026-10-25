@@ -5,6 +5,8 @@ changelog in `apps/<name>`.
 
 ## Unreleased
 
+- New app: Bhojana (shopping, `apps/bhojana`), with UK shopping lists, price comparison across
+  shops, live prices through your own shop logins and basket filling.
 - Anveshana splits in two: Graha Anveshana (property, still `apps/anveshana`) and the new
   Vahana Anveshana (cars, `apps/vahana`), each with its own card, look and database.
 - Every app's phone navigation is a scrolling dock plus a side panel (swipe right on any page);

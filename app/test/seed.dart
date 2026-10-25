@@ -5,6 +5,7 @@ import 'package:anveshana/domain/pipeline.dart';
 import 'package:artha/app/session.dart' as artha;
 import 'package:artha/modules/finance/domain/accounting.dart';
 import 'package:artha/modules/finance/domain/ledger.dart';
+import 'package:bhojana/app/session.dart' as bhojana;
 import 'package:brahma/app/session.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:udyoga/app/session.dart' as udyoga;
@@ -14,6 +15,7 @@ import 'package:vani/app/session.dart' as vani;
 import 'package:vani/domain/hub.dart';
 import 'package:vidya/app/session.dart' as vidya;
 
+import '../../apps/bhojana/test/seed.dart' as bhojana_seed;
 import '../../apps/udyoga/test/seed.dart' as udyoga_seed;
 import '../../apps/vani/test/fake_hub.dart';
 import '../../apps/vidya/test/seed.dart' as vidya_seed;
@@ -38,6 +40,8 @@ Future<void> seedSuite(SuiteSession suite, String today) async {
         await udyoga_seed.seedBook(s.book, today: today);
       case vidya.AppSession():
         await vidya_seed.seedBook(s.book, today: today);
+      case bhojana.AppSession():
+        await bhojana_seed.seedBook(s.book);
       case vani.AppSession():
         await s.prefs.saveHub(const HubLink(url: hubUrl, token: hubToken));
     }
