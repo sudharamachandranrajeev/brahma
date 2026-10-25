@@ -5,7 +5,7 @@
 /// all of them. Each app keeps its own keychain entries, database file and
 /// link scheme.
 class AppIdentity {
-  const AppIdentity({required this.id, required this.name, required this.androidPackage});
+  const AppIdentity({required this.id, required this.name, required this.androidPackage, this.releases});
 
   /// Lower-case id: keychain prefix, database file name and link scheme.
   final String id;
@@ -15,6 +15,10 @@ class AppIdentity {
 
   /// Android application id; the links method channel lives under it.
   final String androidPackage;
+
+  /// The GitHub repository ("owner/name") whose releases ship this app, so
+  /// Sentinel can say when a newer one is out; null for no update check.
+  final String? releases;
 
   String get linkScheme => id;
   String get linkChannel => '$androidPackage/links';

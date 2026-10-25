@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show Override;
 
 import '../identity.dart';
 import '../security/key_vault.dart';
+import '../sentinel/sentinel.dart';
 import '../ui/widgets.dart';
 import 'session.dart';
 
@@ -26,6 +27,7 @@ class SuiteApp {
     this.themeMode,
     this.builder,
     this.onStart,
+    this.securityChecks = const [],
   });
 
   final AppIdentity identity;
@@ -65,6 +67,10 @@ class SuiteApp {
 
   /// Background work to start with the suite (e.g. a routine refresh).
   final void Function(WidgetRef ref)? onStart;
+
+  /// The app's own Sentinel checks (its tokens, keys, sign-ins), run next
+  /// to core's.
+  final List<SecurityCheck> securityChecks;
 }
 
 /// A home-screen card body: a few figures and, optionally, the next thing

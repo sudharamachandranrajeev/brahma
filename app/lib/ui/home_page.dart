@@ -95,7 +95,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 }
 
 /// The top of the page: Brahma's dusk-to-saffron panel with the greeting,
-/// the date, sync and settings.
+/// the date, Sentinel, sync and settings.
 class _Hero extends StatelessWidget {
   const _Hero();
 
@@ -181,11 +181,48 @@ class _Hero extends StatelessWidget {
                     niceDate(today()),
                     style: type.titleMedium?.copyWith(color: ink.withValues(alpha: 0.78)),
                   ),
+                  SizedBox(height: wide ? 20 : 16),
+                  const _SentinelChip(),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Sentinel's summary on the panel; opens the Sentinel page.
+class _SentinelChip extends ConsumerWidget {
+  const _SentinelChip();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final r = ref.watch(sentinelProvider);
+    const ink = Colors.white;
+    // Saffron for something to look at: the panel's own colours stay legible.
+    final color = r.toFix.isEmpty ? ink : saffron;
+    return Material(
+      color: ink.withValues(alpha: 0.14),
+      shape: const StadiumBorder(),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: () => openSentinel(context),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(sentinelIcon(r.status), size: 18, color: color),
+              const SizedBox(width: 8),
+              Text(
+                'Sentinel · ${sentinelSummary(r)}',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: color),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

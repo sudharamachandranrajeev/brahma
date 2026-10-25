@@ -6,6 +6,7 @@ import '../ui/hints.dart';
 import '../ui/widgets.dart';
 import 'pairing_dialogs.dart';
 import 'providers.dart';
+import 'sentinel_page.dart';
 import 'sync_dialogs.dart';
 
 /// Settings sections every Brahma app shows. Each app's settings page puts
@@ -53,8 +54,8 @@ class HintsCard extends ConsumerWidget {
   }
 }
 
-/// How the data is protected. [network] says what, if anything, the app
-/// sends without sync.
+/// How the data is protected, and what Sentinel found. [network] says what,
+/// if anything, the app sends without sync.
 class SecurityCard extends StatelessWidget {
   const SecurityCard({super.key, required this.network});
   final String network;
@@ -66,6 +67,7 @@ class SecurityCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SentinelTile(),
           for (final (icon, text) in [
             (
               Icons.lock_outline,

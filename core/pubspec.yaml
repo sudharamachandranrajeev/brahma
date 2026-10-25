@@ -15,12 +15,15 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.4.3
   flutter_secure_storage: ^11.2.0
+  http: ^1.6.0
   intl: ^0.20.3
+  package_info_plus: ^10.2.2
   path: ^1.9.1
   path_provider: ^2.1.6
   pocketbase: ^0.25.2
   qr: ^4.0.0
   sqlite3: ^3.7.1
+  url_launcher: ^6.3.2
   uuid: ^4.6.0
 
 dev_dependencies:

@@ -14,6 +14,8 @@ void main() {
   late Directory dir;
   late MemorySecretStore secrets;
   late SuiteSession suite;
+  // What the update check finds; GitHub is never asked from the tests.
+  var updates = <Finding>[];
 
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('brahma');
@@ -24,7 +26,10 @@ void main() {
     );
   });
 
-  tearDown(() => dir.delete(recursive: true));
+  tearDown(() {
+    updates = [];
+    return dir.delete(recursive: true);
+  });
 
   Future<void> settle(WidgetTester tester) async {
     for (var i = 0; i < 16; i++) {
@@ -38,7 +43,11 @@ void main() {
       suite = await SuiteSession.open(KeyVault(secrets, brahmaIdentity), suiteApps);
     });
     await tester.pumpWidget(
-      ProviderScope(overrides: suiteOverrides(suite), retry: (_, _) => null, child: const BrahmaApp()),
+      ProviderScope(
+        overrides: [...suiteOverrides(suite), updateCheck.findings.overrideWith((_) async => updates)],
+        retry: (_, _) => null,
+        child: const BrahmaApp(),
+      ),
     );
     await settle(tester);
   }
@@ -95,6 +104,38 @@ void main() {
     await settle(tester);
     expect(find.textContaining(RegExp('^Good (morning|afternoon|evening)')), findsOneWidget);
     expect(find.text('Vidya'), findsOneWidget);
+    await stop(tester);
+  });
+
+  testWidgets('Sentinel shows on the home panel, lists what it found and snoozes it', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    updates = [
+      const Finding(
+        id: 'update.9.0.0',
+        status: Status.warning,
+        title: 'Brahma 9.0.0 is out',
+        why: 'You have 0.2.0.',
+      ),
+    ];
+    await start(tester);
+    // Every app's checks run next to core's.
+    final container = ProviderScope.containerOf(tester.element(find.byType(BrahmaApp)));
+    expect(container.read(sentinelChecksProvider), containsAll(coreChecks));
+
+    await tester.tap(find.text('Sentinel · 1 to look at'));
+    await settle(tester);
+    expect(find.text('Brahma 9.0.0 is out'), findsOneWidget);
+    await tester.tap(find.text('Snooze 30 days'));
+    await settle(tester);
+    expect(find.text('Brahma 9.0.0 is out'), findsNothing);
+    expect(find.text('All clear'), findsOneWidget);
+    expect(find.text('1 hidden for now.'), findsOneWidget);
+
+    await tester.pageBack();
+    await settle(tester);
+    expect(find.text('Sentinel · All clear'), findsOneWidget);
     await stop(tester);
   });
 }

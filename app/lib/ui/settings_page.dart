@@ -13,8 +13,9 @@ class SettingsPage extends StatelessWidget {
       HintsCard(),
       SecurityCard(
         network:
-            'Brahma itself talks only to your sync server, and only if you sign in. Each app reaches '
-            'the online services its own Settings page lists.',
+            'Brahma itself talks only to your sync server, if you sign in, and to GitHub to look for '
+            'new versions (you can turn that off under Sentinel). Each app reaches the online services '
+            'its own Settings page lists.',
       ),
       AboutCard(
         description:

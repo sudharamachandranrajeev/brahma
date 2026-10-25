@@ -98,6 +98,8 @@ void main() {
                 vani.httpClientProvider.overrideWithValue(hub.client),
                 // No start-up job refresh: it would show a spinner.
                 udyoga.refreshTickerProvider.overrideWithValue(null),
+                // No GitHub: the panel reads "All clear".
+                updateCheck.findings.overrideWith((_) async => const []),
               ],
               retry: (_, _) => null,
               child: const BrahmaApp(),

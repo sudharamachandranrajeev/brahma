@@ -3,7 +3,12 @@ import 'package:brahma_core/brahma_core.dart';
 import '../db/database.dart';
 
 /// The suite app in Brahma's terms.
-const brahmaIdentity = AppIdentity(id: 'brahma', name: 'Brahma', androidPackage: 'dev.brahma.app');
+const brahmaIdentity = AppIdentity(
+  id: 'brahma',
+  name: 'Brahma',
+  androidPackage: 'dev.brahma.app',
+  releases: 'sudharamachandranrajeev/brahma',
+);
 
 /// The suite's own session (its local settings and the sync account) and
 /// one open session per hosted app, in [apps] order.
