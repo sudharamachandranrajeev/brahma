@@ -4,10 +4,13 @@ import 'json.dart';
 
 /// A failure talking to the AI, worded for the user.
 class AiException implements Exception, UserFacingError {
-  AiException(this.message, {this.retryable = false});
+  AiException(this.message, {this.retryable = false, this.retryAfter});
   @override
   final String message;
   final bool retryable;
+
+  /// How long the service asked to wait before trying again, when it said.
+  final Duration? retryAfter;
   @override
   String toString() => message;
 }
