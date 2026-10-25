@@ -7,6 +7,7 @@ import '../ui/contacts_page.dart';
 import '../ui/growth_page.dart';
 import '../ui/interview_page.dart';
 import '../ui/jobs_page.dart';
+import '../ui/linkedin_page.dart';
 import '../ui/profile_page.dart';
 import '../ui/today_page.dart';
 import 'settings_page.dart';
@@ -61,6 +62,13 @@ final careerModule = AppModule(
       icon: Icons.contacts_outlined,
       selectedIcon: Icons.contacts,
       page: (_) => const ContactsPage(),
+    ),
+    Destination(
+      id: 'linkedin',
+      label: 'LinkedIn',
+      icon: Icons.campaign_outlined,
+      selectedIcon: Icons.campaign,
+      page: (_) => const LinkedInPage(),
     ),
     Destination(
       id: 'growth',

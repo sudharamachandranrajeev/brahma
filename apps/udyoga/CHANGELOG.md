@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.4.1 (2026-10-25)
+
+- LinkedIn: the week plan and repurpose tools now pick from the hook formulas too (only the post
+  writer had them).
+
+## 0.4.0 (2026-10-25)
+
+- LinkedIn studio: profile score and rewrite, post writer, comment writer, connection notes and
+  follow-ups (also from a contact), inbox triage, replies to comments, week plan, post audit,
+  carousel (with a PDF to upload) and repurposing. Everything is a draft for you to post by hand,
+  in your own voice (set it on the page). A human check cleans each draft of dashes, invisible
+  characters and stock phrases and scores it on five checks; it also runs on a CV and cover letter.
+- Claude subscription (Linux and Windows): use the Claude Code you have installed, signed in to
+  your own plan, instead of an API key. Udyoga's access lasts 24 hours and it asks you to renew it
+  at the next start; it never sees your Claude login.
+- Updates: Udyoga checks for a new version at start and asks before installing. Settings > Updates
+  has a switch to turn the start-up check off and a Check now button.
+
 ## 0.3.1 (2026-10-25)
 
 - Phones get new navigation: a floating dock that scrolls through every screen (the "More"

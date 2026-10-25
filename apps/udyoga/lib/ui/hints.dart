@@ -11,7 +11,9 @@ const udyogaHints = <String, String>{
   'nav.contacts': 'Recruiters, hiring managers and referrers to follow up.',
   'nav.growth': 'Certifications, courses and skills to build.',
   'nav.profile': 'Your CV, experience and what you are looking for.',
-  'nav.settings': 'AI keys, job sites, the AI routine, sync and security.',
+  'nav.linkedin': 'Posts, comments, connection notes and a profile score, for you to post by hand.',
+  'nav.settings':
+      'AI keys or your Claude subscription, updates, job sites, the AI routine, sync and security.',
   // Jobs
   'jobs.refresh': 'Check the job sites now.',
   'jobs.ai': 'Ask the AI to search LinkedIn, Indeed, national and public-sector boards for you.',
@@ -36,7 +38,10 @@ const udyogaHints = <String, String>{
   // Settings
   'settings.n8n': 'A webhook in your own n8n that takes a job and answers with contacts. See docs/n8n in the Udyoga repository.',
   'settings.ai':
-      'Your own Gemini or Claude key. Requests go straight from this device to Google or Anthropic.',
+      'Your own Gemini or Claude key, or on a computer your Claude subscription through Claude Code. Requests '
+      'go straight from this device to Google or Anthropic.',
+  'linkedin.voice':
+      'A few words on how you write and a few lines you wrote. Every draft is written to match.',
   'settings.routine':
       'Let the AI search for jobs and refresh your career map on its own. Each run costs a little.',
   'settings.feeds': 'Free keys for Adzuna (many countries) and Reed (UK) add their jobs to each refresh.',
@@ -61,6 +66,9 @@ const udyogaHints = <String, String>{
       'LinkedIn searches open in your browser.',
   'page.growth':
       'What to learn next and how far you have got. Suggestions come from your assessment and career map.',
+  'page.linkedin':
+      'Drafts for LinkedIn in your voice: your profile scored and rewritten, posts, comments, connection notes, '
+      'replies and a week plan. Every draft is cleaned of machine marks. You post and send everything yourself.',
   'page.profile':
       'Import your CV and the AI fills this in. Everything Udyoga does starts from it, so keep it accurate.',
 };

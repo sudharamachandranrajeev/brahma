@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 
 import '../db/database.dart';
 import 'ai.dart';
+import 'claude_code.dart';
 import 'feeds.dart';
 import 'insights.dart';
 import 'json.dart';
@@ -31,6 +32,9 @@ abstract final class PrefKeys {
 
   /// The user's n8n lead workflow: {"url": ..., "secret": ...}.
   static const n8n = 'udyoga.n8n';
+
+  /// How the user writes on LinkedIn: their notes and a few past posts.
+  static const linkedInVoice = 'udyoga.linkedin.voice';
 }
 
 /// Device-only settings (local_settings).
@@ -40,6 +44,12 @@ abstract final class LocalKeys {
 
   /// Spend this month: {"month": "2026-10", "dollars": 1.23}.
   static const spend = 'udyoga.ai.spend';
+
+  /// Permission to use this device's Claude Code (ClaudeCodeGrant), or ''.
+  static const claudeCode = 'udyoga.ai.claude_code';
+
+  /// 'off' when Udyoga should not look for a new version at start.
+  static const updateOnStart = 'udyoga.update.on_start';
 }
 
 /// Udyoga's write path and the reads screens share.
@@ -70,11 +80,28 @@ class CareerBook {
   Future<FeedKeys> feedKeys() async =>
       FeedKeys.fromJson(await pref<Map<String, Object?>>(PrefKeys.feedKeys, const {}));
 
-  /// The user's key for each AI service, '' where there is none.
+  /// The user's key for each AI service, '' where there is none. The
+  /// subscription has no key: it counts as set while a grant exists, even a
+  /// lapsed one, so a lapsed grant is reported rather than quietly replaced
+  /// by a paid key.
   Future<Map<AiProvider, String>> aiKeys() async => {
+    AiProvider.claudeCode: await claudeCodeGrant() == null ? '' : 'subscription',
     AiProvider.claude: await pref<String>(PrefKeys.aiKey, ''),
     AiProvider.gemini: await pref<String>(PrefKeys.geminiKey, ''),
   };
+
+  Future<ClaudeCodeGrant?> claudeCodeGrant() async {
+    final j = decodeObject(await db.localSetting(LocalKeys.claudeCode) ?? '');
+    return j.isEmpty ? null : ClaudeCodeGrant.fromJson(j);
+  }
+
+  /// Saves or (with null) removes the grant, on this device only.
+  Future<void> setClaudeCodeGrant(ClaudeCodeGrant? g) =>
+      db.setLocalSetting(LocalKeys.claudeCode, g == null ? '' : jsonEncode(g.toJson()));
+
+  Future<bool> updateOnStart() async => await db.localSetting(LocalKeys.updateOnStart) != 'off';
+
+  Future<void> setUpdateOnStart(bool on) => db.setLocalSetting(LocalKeys.updateOnStart, on ? 'on' : 'off');
 
   Future<N8nLink> n8nLink() async =>
       N8nLink.fromJson(await pref<Map<String, Object?>>(PrefKeys.n8n, const {}));
