@@ -7,7 +7,6 @@ import '../app/providers.dart';
 /// [hintTextsProvider].
 const coreHints = <String, String>{
   'nav.settings': 'Hints, sync and security.',
-  'nav.more': 'The rest of the app.',
   'settings.hints': 'Show these tips and the explanations at the top of each page.',
   'settings.restoreHints': 'Turn hints on and show every page explanation again.',
   'settings.sync':

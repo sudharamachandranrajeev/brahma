@@ -16,7 +16,7 @@ class Destination {
   final IconData selectedIcon;
   final WidgetBuilder page;
 
-  /// Shown in the phone bottom bar; the rest sit under "More".
+  /// First in the phone dock; the rest follow it, a scroll away.
   final bool primary;
 
   /// Hint id for the navigation item.
