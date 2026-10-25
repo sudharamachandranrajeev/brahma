@@ -10,7 +10,6 @@ const anveshanaHints = <String, String>{
   'nav.lettings': 'Tenancies, rent and landlord safety checks.',
   'nav.research': 'Area reports for any UK postcode, purchase tax and where to look further.',
   'nav.settings': 'Your details for enquiries, your home point, Brahma Watch, sync and security.',
-  'nav.more': 'The rest of Graha Anveshana.',
   // Hunt
   'hunt.add': 'Paste a PropertyPal link, or type a property in.',
   'hunt.watch': 'Bring in what Brahma Watch found since the last check.',

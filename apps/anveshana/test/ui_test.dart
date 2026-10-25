@@ -86,17 +86,18 @@ void main() {
     final app = AppHarness(tester);
     await app.open(seed: seed);
     await app.run();
-    for (final label in pages) {
-      final bar = find.descendant(of: find.byType(NavigationBar), matching: find.text(label));
-      if (bar.evaluate().isNotEmpty) {
-        // The bar shows only the selected label; tap the destination itself.
-        await app.tap(find.ancestor(of: bar, matching: find.byType(NavigationDestination)));
-      } else {
-        await app.tap(find.descendant(of: find.byType(NavigationBar), matching: find.text('More')));
-        await app.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text(label)));
-      }
+    // Half through the dock, half through the side panel.
+    for (final (i, label) in pages.indexed) {
+      await (i.isEven ? app.dock(label) : app.panel(label));
       expect(tester.takeException(), isNull, reason: label);
     }
+    // Back closes the panel before anything else.
+    await tester.flingFrom(const Offset(40, 400), const Offset(300, 0), 1000);
+    await app.settle();
+    expect(find.text('SCREENS'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await app.settle();
+    expect(find.text('SCREENS'), findsNothing);
     // A property's page too.
     await app.tapText('Apt 1 Sample Street, Enniskillen, BT74 1AA');
     expect(find.text('Write an enquiry'), findsOneWidget);

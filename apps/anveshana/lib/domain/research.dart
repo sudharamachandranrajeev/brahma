@@ -213,8 +213,9 @@ class Research {
   }
 
   Future<Place> place(String postcode) async {
+    // Uri encodes the path itself; encoding the postcode first sent "%2520".
     final body = await _get(
-      Uri.https('api.postcodes.io', '/postcodes/${Uri.encodeComponent(postcode.trim())}'),
+      Uri(scheme: 'https', host: 'api.postcodes.io', pathSegments: ['postcodes', postcode.trim()]),
     );
     final r = (body as Map?)?['result'] as Map?;
     if (r == null) throw ResearchException('$postcode is not a known postcode');
