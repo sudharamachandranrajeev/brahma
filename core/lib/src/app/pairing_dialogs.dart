@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr/qr.dart';
 
 import '../security/crypto.dart' show CryptoException;
+import '../sync/account_api.dart';
 import '../sync/account_service.dart';
 import '../sync/pairing.dart';
 import '../ui/widgets.dart';

@@ -1,10 +1,8 @@
-import 'package:pocketbase/pocketbase.dart';
-
 import '../db/store.dart';
 import '../security/crypto.dart';
 import '../security/key_vault.dart';
+import 'account_api.dart';
 import 'pairing.dart';
-import 'pocketbase_remote.dart';
 import 'sync_engine.dart';
 
 /// Signed in, but the password no longer opens the vault (it was reset by
@@ -12,11 +10,6 @@ import 'sync_engine.dart';
 class RecoveryKeyNeeded implements Exception {
   @override
   String toString() => 'Enter your recovery key to unlock your synced data';
-}
-
-/// The pairing record is gone: it expired, was used, or was cancelled.
-class PairingClosed extends SyncException {
-  PairingClosed(super.message);
 }
 
 /// Sync account lifecycle. The password never leaves this class: the server
@@ -32,15 +25,11 @@ class AccountService {
   final String deviceName;
   final String platform;
 
-  PocketBase? _pb;
+  AccountApi? _api;
   PasswordKeys? _pendingKeys;
-  String? _pendingEmail;
+  String? _pendingEmail, _pendingOwner;
 
   static const _password = 'password', _recovery = 'recovery';
-
-  RecordService _users(PocketBase pb) => pb.collection('users');
-  RecordService _vaults(PocketBase pb) => pb.collection('vaults');
-  RecordService _pairings(PocketBase pb) => pb.collection('pairings');
 
   /// Creates the account and its vault. Returns the recovery key, which the
   /// user must write down: it is shown once and never stored.
@@ -52,85 +41,69 @@ class AccountService {
     required String password,
     required String invite,
   }) async {
-    final url = validateServerUrl(server);
     final keys = await VaultCrypto.fromPassword(email, password);
     final mail = email.trim().toLowerCase();
-    final pb = PocketBase(url.toString());
-    try {
-      await _users(pb).create(
-        body: {
-          'email': mail,
-          'password': keys.authSecret,
-          'passwordConfirm': keys.authSecret,
-          'invite': invite,
-        },
-      );
-    } on ClientException catch (e) {
-      if (!isNotUnique(e)) await pbCall(() => Future<void>.error(e));
-    }
-    final ownerId = (await pbCall(() => _users(pb).authWithPassword(mail, keys.authSecret))).record.id;
-    if (await _findVault(pb, ownerId) != null) {
+    final api = await AccountApi.connect(server);
+    final ownerId = await api.register(mail, keys.authSecret, invite);
+    if (await api.vault(ownerId) != null) {
       throw SyncException('This e-mail already has an account: sign in instead');
     }
     final dek = VaultCrypto.newDataKey();
     final recovery = VaultCrypto.newRecoveryKey();
-    final body = {
-      'owner': ownerId,
-      'wrapped_password': await VaultCrypto.wrapKey(dek, keys.kek, _password),
-      'wrapped_recovery': await VaultCrypto.wrapKey(dek, await VaultCrypto.recoveryKek(recovery), _recovery),
-      'version': 1,
-    };
-    await pbCall(() => _vaults(pb).create(body: body));
-    await _finish(pb, mail, keys.authSecret, ownerId, dek);
+    await api.createVault(
+      ownerId,
+      VaultRecord(
+        wrappedPassword: await VaultCrypto.wrapKey(dek, keys.kek, _password),
+        wrappedRecovery: await VaultCrypto.wrapKey(dek, await VaultCrypto.recoveryKek(recovery), _recovery),
+      ),
+    );
+    await _finish(api, mail, keys.authSecret, ownerId, dek);
     return recovery;
   }
 
   /// Signs in on this device. Throws [RecoveryKeyNeeded] when the vault was
   /// wrapped under an older password; then call [unlockWithRecoveryKey].
   Future<void> signIn({required String server, required String email, required String password}) async {
-    final url = validateServerUrl(server);
     final keys = await VaultCrypto.fromPassword(email, password);
     final mail = email.trim().toLowerCase();
-    final pb = PocketBase(url.toString());
-    final ownerId = (await pbCall(() => _users(pb).authWithPassword(mail, keys.authSecret))).record.id;
-    final v = await _findVault(pb, ownerId);
+    final api = await AccountApi.connect(server);
+    final ownerId = await api.login(mail, keys.authSecret);
+    final v = await api.vault(ownerId);
     if (v == null) throw SyncException('Account setup did not finish: sign up again with the same details');
     final List<int> dek;
     try {
-      dek = await VaultCrypto.unwrapKey(v.getStringValue('wrapped_password'), keys.kek, _password);
+      dek = await VaultCrypto.unwrapKey(v.wrappedPassword, keys.kek, _password);
     } on CryptoException {
-      _pb = pb;
+      _api = api;
       _pendingKeys = keys;
       _pendingEmail = mail;
+      _pendingOwner = ownerId;
       throw RecoveryKeyNeeded();
     }
-    await _finish(pb, mail, keys.authSecret, ownerId, dek);
+    await _finish(api, mail, keys.authSecret, ownerId, dek);
   }
 
   /// After [RecoveryKeyNeeded]: opens the vault with the recovery key and
   /// re-wraps the data key under the current password.
   Future<void> unlockWithRecoveryKey(String recoveryKey) async {
-    final pb = _pb, keys = _pendingKeys, mail = _pendingEmail;
-    if (pb == null || keys == null || mail == null) throw SyncException('Sign in first');
-    final ownerId = pb.authStore.record!.id;
-    final v = (await _findVault(pb, ownerId))!;
+    final api = _api, keys = _pendingKeys, mail = _pendingEmail, ownerId = _pendingOwner;
+    if (api == null || keys == null || mail == null || ownerId == null) throw SyncException('Sign in first');
+    final v = (await api.vault(ownerId))!;
     final dek = await VaultCrypto.unwrapKey(
-      v.getStringValue('wrapped_recovery'),
+      v.wrappedRecovery,
       await VaultCrypto.recoveryKek(recoveryKey),
       _recovery,
     );
-    final wrapped = await VaultCrypto.wrapKey(dek, keys.kek, _password);
-    await pbCall(() => _vaults(pb).update(v.id, body: {'wrapped_password': wrapped}));
-    await _finish(pb, mail, keys.authSecret, ownerId, dek);
+    await api.rewrapVault(ownerId, await VaultCrypto.wrapKey(dek, keys.kek, _password));
+    await _finish(api, mail, keys.authSecret, ownerId, dek);
   }
 
-  /// Sends the server's password-reset e-mail (needs SMTP on the server).
-  Future<void> requestPasswordReset({required String server, required String email}) {
-    final pb = PocketBase(validateServerUrl(server).toString());
-    return pbCall(() => _users(pb).requestPasswordReset(email.trim().toLowerCase()));
-  }
+  /// Asks the server to send its password-reset e-mail (needs SMTP on a
+  /// PocketBase server; the Worker has none and says so).
+  Future<void> requestPasswordReset({required String server, required String email}) async =>
+      (await AccountApi.connect(server)).requestReset(email.trim().toLowerCase());
 
-  /// Sets a new password from the e-mailed token; the recovery key then
+  /// Sets a new password from the reset code; the recovery key then
   /// re-opens the vault.
   Future<void> resetPassword({
     required String server,
@@ -139,12 +112,10 @@ class AccountService {
     required String newPassword,
     required String recoveryKey,
   }) async {
-    final url = validateServerUrl(server);
     // Reject a mistyped recovery key before anything changes on the server.
     await VaultCrypto.recoveryKek(recoveryKey);
     final keys = await VaultCrypto.fromPassword(email, newPassword);
-    final pb = PocketBase(url.toString());
-    await pbCall(() => _users(pb).confirmPasswordReset(token.trim(), keys.authSecret, keys.authSecret));
+    await (await AccountApi.connect(server)).confirmReset(email.trim().toLowerCase(), token, keys.authSecret);
     try {
       await signIn(server: server, email: email, password: newPassword);
     } on RecoveryKeyNeeded {
@@ -161,24 +132,14 @@ class AccountService {
     final mail = s['email']! as String, ownerId = s['userId']! as String;
     final oldKeys = await VaultCrypto.fromPassword(mail, oldPassword);
     final newKeys = await VaultCrypto.fromPassword(mail, newPassword);
-    final pb = await _signedIn();
-    final v = (await _findVault(pb, ownerId))!;
+    final api = await _signedIn();
+    final v = (await api.vault(ownerId))!;
     // Checked here too so a wrong old password fails before any change.
-    await VaultCrypto.unwrapKey(v.getStringValue('wrapped_password'), oldKeys.kek, _password);
+    await VaultCrypto.unwrapKey(v.wrappedPassword, oldKeys.kek, _password);
     final wrapped = await VaultCrypto.wrapKey(dek, newKeys.kek, _password);
-    await pbCall(
-      () => _users(pb).update(
-        ownerId,
-        body: {
-          'oldPassword': oldKeys.authSecret,
-          'password': newKeys.authSecret,
-          'passwordConfirm': newKeys.authSecret,
-        },
-      ),
-    );
+    await api.changeSecret(ownerId, mail, oldKeys.authSecret, newKeys.authSecret);
     await vault.setSession({...s, 'secret': newKeys.authSecret});
-    await pbCall(() => _users(pb).authWithPassword(mail, newKeys.authSecret));
-    await pbCall(() => _vaults(pb).update(v.id, body: {'wrapped_password': wrapped}));
+    await api.rewrapVault(ownerId, wrapped);
   }
 
   // Pairing (see [PairingCrypto]). On the signed-in device: [offerPairing],
@@ -187,12 +148,11 @@ class AccountService {
 
   /// Opens a pairing record and returns the link to show as a QR code.
   Future<PairingLink> offerPairing() async {
-    final pb = await _signedIn();
+    final api = await _signedIn();
     final ownerId = (await vault.session())!['userId']! as String;
-    final r = await pbCall(() => _pairings(pb).create(body: {'owner': ownerId}));
     return PairingLink(
-      Uri.parse(pb.baseURL),
-      r.id,
+      api.server,
+      await api.openPairing(ownerId),
       VaultCrypto.randomBytes(32),
       scheme: vault.app.linkScheme,
     );
@@ -201,8 +161,7 @@ class AccountService {
   /// The request waiting on [link], or null while there is none.
   Future<JoinRequest?> pairingRequest(PairingLink link) async {
     final r = await _pairing(await _signedIn(), link.id, 'This code has expired. Make a new one.');
-    final sealed = r.getStringValue('request');
-    return sealed.isEmpty ? null : PairingCrypto.openRequest(link, sealed);
+    return r.request.isEmpty ? null : PairingCrypto.openRequest(link, r.request);
   }
 
   /// Sends this account's keys to the device that made [request].
@@ -217,8 +176,7 @@ class AccountService {
       dataKey: dek,
     );
     final response = await PairingCrypto.sealGrant(link, request.publicKey, grant);
-    final pb = await _signedIn();
-    await pbCall(() => _pairings(pb).update(link.id, body: {'response': response}));
+    await (await _signedIn()).writeResponse(link.id, response);
   }
 
   /// Whether the new device has finished with [link] (it deletes the record).
@@ -232,13 +190,7 @@ class AccountService {
   }
 
   /// Withdraws [link]; a device waiting on it is told it was declined.
-  Future<void> cancelPairing(PairingLink link) async {
-    try {
-      await _pairings(await _signedIn()).delete(link.id);
-    } on ClientException catch (e) {
-      if (e.statusCode != 404) await pbCall(() => Future<void>.error(e));
-    }
-  }
+  Future<void> cancelPairing(PairingLink link) async => (await _signedIn()).closePairing(link.id);
 
   /// On a new device: asks to join through [link]. The ticket's code must
   /// match the one the other device shows.
@@ -250,17 +202,11 @@ class AccountService {
       link,
       JoinRequest(name: deviceName, platform: platform, publicKey: publicKey),
     );
-    final pb = PocketBase(link.server.toString());
+    final api = await AccountApi.connect('${link.server}');
     try {
-      await _pairings(pb).update(link.id, body: {'request': sealed});
-    } on ClientException catch (e) {
-      // Rules hide a used or expired record, so both read as not found.
-      if (e.statusCode == 404) {
-        throw PairingClosed(
-          'This code has expired or was already used. Make a new one on your other device.',
-        );
-      }
-      await pbCall(() => Future<void>.error(e));
+      await api.writeRequest(link.id, sealed);
+    } on PairingClosed {
+      throw PairingClosed('This code has expired or was already used. Make a new one on your other device.');
     }
     return JoinTicket(link, keyPair, await PairingCrypto.code(link, publicKey));
   }
@@ -268,35 +214,33 @@ class AccountService {
   /// The account the other device sent, once it approved; null while waiting.
   Future<PairingGrant?> joinGrant(JoinTicket ticket) async {
     final r = await _pairing(
-      PocketBase(ticket.link.server.toString()),
+      await AccountApi.connect('${ticket.link.server}'),
       ticket.link.id,
       'The other device declined, or the code expired.',
     );
-    final sealed = r.getStringValue('response');
-    return sealed.isEmpty ? null : PairingCrypto.openGrant(ticket, sealed);
+    return r.response.isEmpty ? null : PairingCrypto.openGrant(ticket, r.response);
   }
 
   /// Signs this device in with [grant] and closes the pairing.
   Future<void> join(JoinTicket ticket, PairingGrant grant) async {
-    final pb = PocketBase(ticket.link.server.toString());
-    final ownerId = (await pbCall(() => _users(pb).authWithPassword(grant.email, grant.secret))).record.id;
-    if (ownerId != grant.userId || await _findVault(pb, ownerId) == null) {
+    final api = await AccountApi.connect('${ticket.link.server}');
+    final ownerId = await api.login(grant.email, grant.secret);
+    if (ownerId != grant.userId || await api.vault(ownerId) == null) {
       throw SyncException('The other device sent keys for an account this server does not know');
     }
-    await _finish(pb, grant.email, grant.secret, ownerId, grant.dataKey);
+    await _finish(api, grant.email, grant.secret, ownerId, grant.dataKey);
     try {
-      await _pairings(pb).delete(ticket.link.id);
-    } on ClientException {
+      await api.closePairing(ticket.link.id);
+    } on SyncException {
       // It expires on its own.
     }
   }
 
-  Future<RecordModel> _pairing(PocketBase pb, String id, String gone) async {
+  Future<PairingState> _pairing(AccountApi api, String id, String gone) async {
     try {
-      return await _pairings(pb).getOne(id);
-    } on ClientException catch (e) {
-      if (e.statusCode == 404) throw PairingClosed(gone);
-      return pbCall(() => Future<RecordModel>.error(e));
+      return await api.pairing(id);
+    } on PairingClosed {
+      throw PairingClosed(gone);
     }
   }
 
@@ -306,48 +250,41 @@ class AccountService {
     final s = await vault.session();
     final dek = await vault.dataKey();
     if (s == null || dek == null) return null;
-    final pb = await _signedIn();
+    final api = await _signedIn();
     final ownerId = s['userId']! as String;
-    return SyncEngine(store, PocketBaseRemote(pb, ownerId), dek, ownerId);
+    return SyncEngine(store, api.remote(ownerId), dek, ownerId);
   }
 
   Future<void> signOut() async {
-    _pb?.authStore.clear();
-    _pb = null;
+    _api = null;
     await vault.signOut();
   }
 
-  Future<PocketBase> _signedIn() async {
+  /// The signed-in server connection, for what only some servers offer
+  /// (inviting people).
+  Future<AccountApi> api() => _signedIn();
+
+  Future<AccountApi> _signedIn() async {
     final s = await vault.session();
     if (s == null) throw SyncException('Not signed in');
-    final pb = _pb ??= PocketBase(s['server']! as String);
-    if (!pb.authStore.isValid) {
-      await pbCall(() => _users(pb).authWithPassword(s['email']! as String, s['secret']! as String));
-    }
-    return pb;
-  }
-
-  Future<RecordModel?> _findVault(PocketBase pb, String ownerId) async {
-    final r = await pbCall(
-      () =>
-          _vaults(pb).getList(perPage: 1, skipTotal: true, filter: pb.filter('owner = {:o}', {'o': ownerId})),
-    );
-    return r.items.firstOrNull;
+    final api = _api ??= await AccountApi.connect(s['server']! as String);
+    if (!api.signedIn) await api.login(s['email']! as String, s['secret']! as String);
+    return api;
   }
 
   /// Keeps the keys on this device and registers it with the account.
-  Future<void> _finish(PocketBase pb, String mail, String secret, String ownerId, List<int> dek) async {
-    try {
-      await pb
-          .collection('devices')
-          .create(body: {'owner': ownerId, 'device': deviceId, 'platform': platform});
-    } on ClientException catch (e) {
-      if (!isNotUnique(e)) await pbCall(() => Future<void>.error(e));
-    }
+  Future<void> _finish(AccountApi api, String mail, String secret, String ownerId, List<int> dek) async {
+    await api.addDevice(ownerId, deviceId, platform);
     await vault.setDataKey(dek);
-    await vault.setSession({'server': pb.baseURL, 'email': mail, 'userId': ownerId, 'secret': secret});
-    _pb = pb;
+    await vault.setSession({
+      'server': api.server.toString(),
+      'email': mail,
+      'userId': ownerId,
+      'secret': secret,
+    });
+    _api = api;
     _pendingKeys = null;
     _pendingEmail = null;
+    _pendingOwner = null;
   }
 }

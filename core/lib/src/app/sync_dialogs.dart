@@ -190,7 +190,7 @@ class _SyncDialogState extends ConsumerState<_SyncDialog> {
                     obscureText: true,
                     decoration: const InputDecoration(
                       labelText: 'Invite code',
-                      helperText: 'Part of the setup link; also ARTHA_SIGNUP_CODE on the server.',
+                      helperText: 'Part of the setup link, or a code from the server owner.',
                     ),
                     validator: (v) => (v ?? '').trim().isEmpty ? 'Enter the invite code' : null,
                   ),
@@ -271,7 +271,7 @@ class _SyncDialogState extends ConsumerState<_SyncDialog> {
             await account.signIn(server: server, email: email, password: _password.text);
           } on RecoveryKeyNeeded {
             if (!mounted) return;
-            final key = await _askRecoveryKey(context);
+            final key = await askRecoveryKey(context);
             if (key == null) {
               setState(() => _busy = false);
               return;
@@ -308,7 +308,7 @@ class _SyncDialogState extends ConsumerState<_SyncDialog> {
   }
 }
 
-Future<String?> _askRecoveryKey(BuildContext context) {
+Future<String?> askRecoveryKey(BuildContext context) {
   final c = TextEditingController();
   return showDialog<String>(
     context: context,

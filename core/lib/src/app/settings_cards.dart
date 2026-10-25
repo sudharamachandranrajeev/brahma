@@ -5,9 +5,11 @@ import '../ui/format.dart';
 import '../ui/hints.dart';
 import '../ui/widgets.dart';
 import 'pairing_dialogs.dart';
+import 'owner_tools.dart';
 import 'providers.dart';
 import 'sentinel_page.dart';
 import 'sync_dialogs.dart';
+import 'sync_wizard.dart';
 
 /// Settings sections every Brahma app shows. Each app's settings page puts
 /// its own sections around these.
@@ -152,17 +154,17 @@ class SyncCard extends ConsumerWidget {
                     runSpacing: 8,
                     children: [
                       FilledButton.icon(
-                        onPressed: () => showJoinDialog(context),
-                        icon: const Icon(Icons.devices_outlined),
-                        label: const Text('Join from another device'),
+                        onPressed: () => showSyncWizard(context),
+                        icon: const Icon(Icons.cloud_sync_outlined),
+                        label: const Text('Set up sync'),
                       ),
                       OutlinedButton(
-                        onPressed: () => showSyncDialog(context, mode: SyncMode.signIn),
-                        child: const Text('Sign in with e-mail'),
+                        onPressed: () => showJoinDialog(context),
+                        child: const Text('Join from another device'),
                       ),
                       TextButton(
-                        onPressed: () => showSyncDialog(context, mode: SyncMode.signUp),
-                        child: const Text('Create account'),
+                        onPressed: () => showSyncDialog(context, mode: SyncMode.signIn),
+                        child: const Text('Sign in with e-mail'),
                       ),
                     ],
                   ),
@@ -184,6 +186,7 @@ class SyncCard extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => showAddDevice(context),
                 ),
+                const OwnerTools(),
                 ListTile(
                   leading: Icon(switch (sync.phase) {
                     SyncPhase.failed => Status.critical.icon,
