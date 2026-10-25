@@ -85,8 +85,9 @@ class Gemini implements Ai {
 
     var usage = const AiUsage();
     // The schema is enforced while decoding, but a reply can still come back
-    // empty or cut off; a few rounds is plenty.
-    for (var round = 0; round < 3; round++) {
+    // empty or cut off. Each round repeats any research and counts against
+    // the free tier's per-minute limits, so only one more.
+    for (var round = 0; round < 2; round++) {
       onProgress?.call(web ? 'Researching with Google Search…' : 'Thinking…');
       final reply = obj(await _send(body, onProgress));
       usage += _usage(obj(reply['usage']));
@@ -112,19 +113,27 @@ class Gemini implements Ai {
           for (final a in objs(t['annotations']))
             if (a['type'] == 'url_citation') (title: str(a['title']), url: str(a['url'])),
       ];
-      try {
-        final data = jsonDecode(texts.map((t) => str(t['text'])).join());
-        if (data is Map && violation(schema, data) == null) {
-          onUsage?.call(usage);
-          final json = data.cast<String, Object?>();
-          return AiResult(json, sources: mergeSources(json, read), usage: usage);
-        }
-      } on FormatException {
-        // Asked again below.
+      final data = _json(texts.map((t) => str(t['text'])).join());
+      if (data != null && violation(schema, data) == null) {
+        onUsage?.call(usage);
+        return AiResult(data, sources: mergeSources(data, read), usage: usage);
       }
     }
     onUsage?.call(usage);
     throw AiException('Gemini answered in an unexpected form. Try again.', retryable: true);
+  }
+
+  /// The JSON object in [text]. With tools on, the schema is not always
+  /// enforced, and the object can come wrapped in a code fence or a sentence.
+  static Json? _json(String text) {
+    final start = text.indexOf('{'), end = text.lastIndexOf('}');
+    if (start < 0 || end < start) return null;
+    try {
+      final v = jsonDecode(text.substring(start, end + 1));
+      return v is Map ? v.cast<String, Object?>() : null;
+    } on FormatException {
+      return null;
+    }
   }
 
   /// A Claude-format content block as an Interactions content object.
@@ -156,14 +165,21 @@ class Gemini implements Ai {
   }
 
   /// One request, retried on rate limits, overload and dropped connections.
+  /// A rate limit is waited out for as long as Google asks, not retried
+  /// blindly: every refused request counts against the limit too.
   Future<Object?> _send(Json body, void Function(String)? onProgress) async {
     for (var attempt = 0; ; attempt++) {
       try {
         return await _post(body);
       } on AiException catch (e) {
-        if (!e.retryable || attempt >= 3) rethrow;
-        onProgress?.call('Busy, trying again…');
-        await Future<void>.delayed(Duration(seconds: 2 << attempt));
+        if (!e.retryable || attempt >= 2) rethrow;
+        final wait = e.retryAfter ?? Duration(seconds: 2 << attempt);
+        onProgress?.call(
+          e.retryAfter == null
+              ? 'Busy, trying again…'
+              : 'At the free tier\'s per-minute limit; waiting ${wait.inSeconds} s…',
+        );
+        await Future<void>.delayed(wait);
       }
     }
   }
@@ -211,13 +227,41 @@ class Gemini implements Ai {
       401 || 403 => AiException('This Gemini key may not be used here. $detail'),
       404 => AiException('Model $model is not available to this key. Choose another in Settings.'),
       413 => AiException('That is too much to send at once. Try a shorter CV or description.'),
-      429 when all.contains('perday') => AiException(
-        'The key\'s daily Gemini limit is used up. It resets at midnight Pacific time, or turn on '
-        'billing for the key in Google AI Studio.',
-      ),
-      429 => AiException('Too many requests to Gemini just now.', retryable: true),
+      429 => _rateLimit(err, detail),
       >= 500 => AiException('Gemini is busy.', retryable: true),
       _ => AiException('Gemini answered with error $status. $detail'),
     };
+  }
+
+  /// A 429, read from Google's QuotaFailure and RetryInfo details: which
+  /// limit was hit and how long to wait.
+  AiException _rateLimit(Json err, String detail) {
+    final details = objs(err['details']);
+    final violations = [for (final d in details) ...objs(d['violations'])];
+    final quota = violations.map((v) => str(v['quotaId'])).join(' ');
+    final zero = violations.any((v) => str(v['quotaValue']) == '0');
+    final delay = details.map((d) => str(d['retryDelay'])).firstWhere((d) => d.isNotEmpty, orElse: () => '');
+    final seconds = double.tryParse(delay.replaceAll('s', ''));
+    if (zero) {
+      return AiException(
+        'This key\'s free tier does not include $model. Choose another Gemini model in Settings, or turn on '
+        'billing for the key in Google AI Studio.',
+      );
+    }
+    if (quota.contains('PerDay')) {
+      return AiException(
+        'The key\'s daily limit for $model is used up. It resets at midnight Pacific time. Choose another '
+        'Gemini model in Settings, or turn on billing for the key in Google AI Studio.',
+      );
+    }
+    final wait = seconds == null ? null : Duration(milliseconds: (seconds * 1000).ceil());
+    final what = quota.contains('Token') ? 'tokens' : 'requests';
+    return AiException(
+      'Gemini\'s free tier allows only a few $what a minute for $model, and this went over it. Wait a '
+      'minute and try again, or choose Gemini 3.5 Flash-Lite in Settings. ($detail)',
+      // A wait of more than a minute or so is better left to the user.
+      retryable: wait == null || wait <= const Duration(seconds: 70),
+      retryAfter: wait,
+    );
   }
 }

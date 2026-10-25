@@ -310,6 +310,61 @@ void main() {
       }
     });
 
+    test('waits as long as Google asks at the per-minute limit, and reads a fenced answer', () async {
+      var calls = 0;
+      final said = <String>[];
+      final client = MockClient((_) async {
+        if (++calls == 1) {
+          return http.Response(
+            jsonEncode({
+              'error': {
+                'code': 429,
+                'message': 'Quota exceeded.',
+                'details': [
+                  {
+                    'violations': [
+                      {'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaValue': '5'},
+                    ],
+                  },
+                  {'retryDelay': '1s'},
+                ],
+              },
+            }),
+            429,
+          );
+        }
+        return http.Response(jsonEncode(interaction('```json\n{"answer":"ok","sources":[]}\n```')), 200);
+      });
+      final r = await Gemini(
+        apiKey: 'g',
+        model: 'gemini-3.8-flash',
+        client: client,
+      ).ask(system: 's', content: const [], schema: schema, onProgress: said.add);
+      expect(r.data['answer'], 'ok');
+      expect(calls, 2);
+      expect(said, contains(contains('waiting 1 s')));
+    });
+
+    test('a model outside the free tier is said plainly, without retrying', () async {
+      var calls = 0;
+      final client = MockClient((_) async {
+        calls++;
+        return http.Response(
+          '{"error":{"code":429,"details":[{"violations":[{"quotaId":"GenerateRequestsPerMinutePerProjectPerModel-FreeTier","quotaValue":"0"}]}]}}',
+          429,
+        );
+      });
+      await expectLater(
+        Gemini(
+          apiKey: 'g',
+          model: 'gemini-3.8-flash',
+          client: client,
+        ).ask(system: 's', content: const [], schema: schema),
+        throwsA(isA<AiException>().having((e) => e.message, 'message', contains('does not include'))),
+      );
+      expect(calls, 1);
+    });
+
     test('the chosen model is used only when its service has a key', () {
       expect(effectiveModel('', {}), isNull);
       expect(effectiveModel('claude-opus-5-5', {AiProvider.gemini: 'g'}), 'gemini-3.8-flash');
