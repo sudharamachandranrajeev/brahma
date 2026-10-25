@@ -72,6 +72,19 @@ class AppHarness {
   Future<void> go(String page) =>
       tap(find.descendant(of: find.byType(NavigationRail), matching: find.text(page)));
 
+  static Finder _within(String widget, Finder f) =>
+      find.descendant(of: find.byWidgetPredicate((w) => '${w.runtimeType}' == widget), matching: f);
+
+  /// Taps [page] in the phone dock, which scrolls it into view first.
+  Future<void> dock(String page) => tap(_within('_Dock', find.byTooltip(page)));
+
+  /// Swipes the page aside and picks [page] from the phone side panel.
+  Future<void> panel(String page) async {
+    await tester.flingFrom(const Offset(40, 400), const Offset(300, 0), 1000);
+    await settle();
+    await tap(_within('_SidePanel', find.text(page)));
+  }
+
   void desktop() {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;

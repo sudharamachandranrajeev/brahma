@@ -240,6 +240,8 @@ void main() {
         asked.add(req.url.toString());
         final path = req.url.path;
         if (req.url.host == 'api.postcodes.io') {
+          // The real API 404s a double-encoded space ("%2520").
+          if (req.url.path != '/postcodes/bt74%207hh') return http.Response('{"status":404}', 404);
           return http.Response(
             jsonEncode({
               'result': {

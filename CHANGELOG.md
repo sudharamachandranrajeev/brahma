@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1
+
+- Postcode lookups work again: any postcode with a space ("BT74 7BA") was sent double-encoded
+  and came back "not a known postcode". Fixes the home point in Settings and Research.
+- Phones get new navigation: a floating dock that scrolls through every screen (the "More"
+  sheet is gone) and a side panel listing them all with what each is for. Swipe right on any
+  page, or tap the dock's menu button, to open it; Back closes it.
+
 ## 0.4.0
 
 A new look, after a dark instrument-panel reference: a charcoal canvas with faint contour lines,

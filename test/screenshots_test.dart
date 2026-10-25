@@ -31,7 +31,9 @@ void main() {
       await loader.load();
     }
 
-    final inter = [for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf'];
+    final inter = [
+      for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf',
+    ];
     await family('Inter', inter);
     // A few list-tile trailing texts ask for the platform's Roboto, which the
     // test engine lacks (it draws boxes); stand Inter in for it.
@@ -158,22 +160,14 @@ void main() {
       await app.settle();
       final mode = dark ? 'dark' : 'light';
       await shot('hunt-$mode');
-      Future<void> go(String page) => app.tap(
-        find.ancestor(
-          of: find.descendant(of: find.byType(NavigationBar), matching: find.text(page)),
-          matching: find.byType(NavigationDestination),
-        ),
-      );
       for (final page in ['Invest', 'Lettings']) {
-        if (find.descendant(of: find.byType(NavigationBar), matching: find.text(page)).evaluate().isEmpty) {
-          await go('More');
-          await app.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text(page)));
-        } else {
-          await go(page);
-        }
+        await app.dock(page);
         await shot('${page.toLowerCase()}-$mode');
       }
-      await go('Hunt');
+      await tester.flingFrom(const Offset(40, 400), const Offset(300, 0), 1000);
+      await app.settle();
+      await shot('panel-$mode');
+      await app.tap(find.text('Hunt').last);
       await app.tap(find.text('27 Fictional Gardens').last);
       await shot('home-$mode');
       await app.close();
