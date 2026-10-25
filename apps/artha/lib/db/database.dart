@@ -16,6 +16,8 @@ part 'database.g.dart';
     Prices,
     BalanceChecks,
     Rules,
+    Recurrings,
+    Planned,
     Budgets,
     Targets,
     Facts,
@@ -40,6 +42,8 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
     'prices',
     'balance_checks',
     'rules',
+    'recurrings',
+    'planned',
     'budgets',
     'targets',
     'facts',
@@ -54,7 +58,7 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
   };
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +67,19 @@ class AppDatabase extends _$AppDatabase with SyncedDatabase {
       for (final sql in _indexes) {
         await customStatement(sql);
       }
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(entries, entries.reviewed);
+        await m.addColumn(rules, rules.payee);
+        await m.createTable(recurrings);
+      }
+      if (from < 3) await m.createTable(planned);
+      // Older versions skipped synced rows for tables they did not have yet;
+      // pulling every device's changes again from the start brings them in.
+      // Applying a change is idempotent (the newer row wins), so only the
+      // download repeats.
+      await customStatement('DELETE FROM sync_cursors');
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');

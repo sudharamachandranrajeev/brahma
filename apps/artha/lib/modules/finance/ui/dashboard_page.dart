@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
-import '../../../db/database.dart' show Fact;
+import '../../../db/database.dart' show Fact, PlannedRow;
 import '../../../ui/components.dart';
 import '../../../ui/theme.dart';
+import '../insights/forecast.dart';
 import '../insights/insights.dart' show Metrics, Recurring;
 import 'accounts_page.dart';
 import 'budgets_page.dart';
@@ -14,9 +15,14 @@ import 'common.dart';
 import 'entry_editor.dart';
 import 'import_page.dart';
 import 'insights_page.dart';
+import 'recurring_page.dart';
+import 'transactions_page.dart';
 
 void _openInsights(BuildContext context) =>
     Navigator.push(context, MaterialPageRoute(builder: (_) => const InsightsPage()));
+
+void _openRecurring(BuildContext context) =>
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const RecurringPage()));
 
 void _openBudgets(BuildContext context) =>
     Navigator.push(context, MaterialPageRoute(builder: (_) => const BudgetsPage()));
@@ -62,6 +68,7 @@ class DashboardPage extends ConsumerWidget {
             final m = insights.value?.metrics;
             final facts = insights.value?.facts ?? const <Fact>[];
             final recurring = insights.value?.recurring ?? const <Recurring>[];
+            final planned = ref.watch(plannedProvider).value ?? const <PlannedRow>[];
             final cur = ref.watch(setupProvider).value ?? 'GBP';
             if (!hasAccounts) {
               return Card(
@@ -247,6 +254,22 @@ class DashboardPage extends ConsumerWidget {
                     child: Text('You saved ${money(net, cur)} this month'),
                   ),
                 ],
+                if ((ref.watch(reviewCountProvider).value ?? 0) case final n when n > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.fact_check_outlined),
+                        title: Text('$n imported ${n == 1 ? 'entry' : 'entries'} to review'),
+                        subtitle: const Text('Check the categories, then mark them reviewed'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const TransactionsPage(review: true)),
+                        ),
+                      ),
+                    ),
+                  ),
                 SectionHeader(
                   'Your activity',
                   actionLabel: 'See all',
@@ -260,8 +283,51 @@ class DashboardPage extends ConsumerWidget {
                 ),
                 Hint('card.budgets', child: _budgetsCard(context, ref, budgets, cur)),
                 if (recurring.any((r) => r.amount < 0)) ...[
-                  SectionHeader('Upcoming bills'),
+                  SectionHeader(
+                    'Upcoming bills',
+                    actionLabel: 'Manage',
+                    onAction: () => _openRecurring(context),
+                  ),
                   Hint('card.bills', child: _billsCard(context, recurring, ref.watch(todayProvider), cur)),
+                ] else if (hasAccounts) ...[
+                  SectionHeader('Upcoming bills'),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.event_repeat),
+                      title: const Text('No bills spotted yet'),
+                      subtitle: const Text('Add your subscriptions to see them coming'),
+                      trailing: TextButton(
+                        onPressed: () => editRecurring(context, ref),
+                        child: const Text('Add subscription'),
+                      ),
+                    ),
+                  ),
+                ],
+                if (m != null && (m.liquid != 0 || recurring.isNotEmpty || planned.isNotEmpty)) ...[
+                  SectionHeader(
+                    'Next 90 days',
+                    actionLabel: 'Plan a one-off',
+                    onAction: () => editPlanned(context, ref),
+                  ),
+                  Hint(
+                    'card.forecast',
+                    child: _forecastCard(
+                      context,
+                      ref,
+                      forecastCash(
+                        liquid: m.liquid,
+                        recurring: recurring,
+                        monthlySpend: m.monthlySpend,
+                        today: ref.watch(todayProvider),
+                        oneOffs: [
+                          for (final p in planned) ForecastEvent(p.date, p.label, p.amount, id: p.id),
+                        ],
+                      ),
+                      recurring.length,
+                      planned,
+                      cur,
+                    ),
+                  ),
                 ],
                 SectionHeader('Your stats'),
                 _statsGrid(d, m, cur),
@@ -351,15 +417,85 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
+  /// Expected liquid money over the next 90 days, its lowest point and what
+  /// the projection assumes.
+  Widget _forecastCard(
+    BuildContext context,
+    WidgetRef ref,
+    CashForecast f,
+    int scheduled,
+    List<PlannedRow> planned,
+    String cur,
+  ) {
+    final low = f.lowest;
+    final byId = {for (final p in planned) p.id: p};
+    final oneOffs = [
+      for (final e in f.events)
+        if (byId[e.id] case final p?) (e, p),
+    ];
+    final caption = TextStyle(fontSize: 12, color: ArthaSkin.of(context).muted);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ForecastChart(f, cur),
+            const SizedBox(height: 12),
+            if (low.balance < 0)
+              StatusLabel(
+                Status.warning,
+                'Runs ${money(-low.balance, cur)} short around ${niceDate(low.date)}',
+              )
+            else
+              StatusLabel(Status.good, 'Lowest ${money(low.balance, cur)} around ${niceDate(low.date)}'),
+            const SizedBox(height: 4),
+            Text(
+              '${money(f.closing, cur)} expected on ${niceDate(f.dateAt(f.days - 1))}',
+              style: const TextStyle(fontWeight: FontWeight.w600).merge(tabular),
+            ),
+            const SizedBox(height: 8),
+            if (oneOffs.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              for (final (e, p) in oneOffs)
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(e.amount < 0 ? Icons.event_busy_outlined : Icons.event_available_outlined),
+                  title: Text(e.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(niceDate(p.date)),
+                  trailing: Text(
+                    money(e.amount, cur, signed: true),
+                    style: const TextStyle(fontWeight: FontWeight.w600).merge(tabular),
+                  ),
+                  onTap: () => editPlanned(context, ref, item: p),
+                ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              'From your current, savings and cash balances: $scheduled recurring '
+              '${scheduled == 1 ? 'item' : 'items'} on schedule'
+              '${oneOffs.isEmpty ? '' : ', ${oneOffs.length} planned one-off${oneOffs.length == 1 ? '' : 's'}'} '
+              'and ${money(f.everydayPerMonth, cur)} a month of everyday spending. Other irregular income '
+              'is left out.',
+              style: caption,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// The next payment of each recurring bill, soonest first.
   Widget _billsCard(BuildContext context, List<Recurring> recurring, String today, String cur) {
     final bills = recurring.where((r) => r.amount < 0).toList()
       ..sort((a, b) => a.nextDate.compareTo(b.nextDate));
     final muted = ArthaSkin.of(context).muted;
     String due(String date) {
+      // daysBetween is unsigned; the order of the dates says which side.
       final d = daysBetween(date, today);
-      return d < 0
-          ? 'Overdue by ${-d} days'
+      return date.compareTo(today) < 0
+          ? 'Overdue by $d ${d == 1 ? 'day' : 'days'}'
           : d == 0
           ? 'Due today'
           : d == 1

@@ -1,12 +1,15 @@
 import 'package:brahma_core/brahma_core.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/misc.dart' show Override;
 
 import '../db/database.dart';
 import '../modules/finance/domain/ledger.dart';
 import '../modules/finance/fx/fx_service.dart';
 import '../modules/finance/insights/insights.dart';
+import '../modules/finance/insights/risk.dart';
+import '../modules/finance/insights/world.dart';
 import '../modules/finance/portfolio/portfolio.dart';
 import '../modules/finance/reports/reports.dart';
 import '../ui/hints.dart';
@@ -140,11 +143,63 @@ final insightsProvider = FutureProvider<InsightsData>((ref) async {
   );
   final kb = KnowledgeBase(s.ledger);
   await kb.apply(await engine.generate());
-  return InsightsData(
-    await engine.metrics(),
-    await kb.ranked(),
-    detectRecurring(await engine.transactions(), day),
-  );
+  return InsightsData(await engine.metrics(), await kb.ranked(), await engine.recurring());
+});
+
+/// Accounts and totals as the risk tools see them.
+final situationProvider = FutureProvider<Situation>((ref) async {
+  final data = await ref.watch(insightsProvider.future);
+  final reports = await ref.watch(reportsProvider.future);
+  final portfolio = await ref.watch(portfolioProvider.future);
+  return Situation.from(data.metrics, await reports.balanceSheet(ref.watch(todayProvider)), portfolio);
+});
+
+/// The risk questions answered so far: question id -> option index.
+final riskAnswersProvider = FutureProvider<Map<String, int>>((ref) async {
+  ref.watch(revisionProvider);
+  final raw = await ref.watch(sessionProvider).ledger.pref<Map>(riskAnswersKey, const {});
+  return {
+    for (final MapEntry(:key, :value) in raw.entries)
+      if (key is String && value is int) key: value,
+  };
+});
+
+/// How you stand against the risk you want and can take.
+final riskProvider = FutureProvider<RiskAssessment>((ref) async {
+  return assessRisk(await ref.watch(situationProvider.future), await ref.watch(riskAnswersProvider.future));
+});
+
+const _worldCache = 'world.cache';
+const _worldMaxAge = Duration(hours: 6);
+
+/// What was last fetched (news and market figures); never fetches itself.
+final worldProvider = FutureProvider<WorldData>((ref) async {
+  final db = ref.watch(sessionProvider).db;
+  return WorldData.decode(await db.localSetting(_worldCache));
+});
+
+/// Downloads news and figures now and keeps them. Throws nothing a screen
+/// cannot show: sources that fail are listed in [WorldData.failed].
+Future<WorldData> refreshWorld(AppSession s, {http.Client? client}) async {
+  final previous = WorldData.decode(await s.db.localSetting(_worldCache));
+  final data = await WorldService(client: client).refresh(today(), previous: previous);
+  await s.db.setLocalSetting(_worldCache, data.encode());
+  return data;
+}
+
+/// Refreshes the news every six hours unless turned off in Settings. Offline
+/// is fine: what was fetched last stays.
+final worldAutoProvider = FutureProvider<void>((ref) async {
+  final s = ref.read(sessionProvider);
+  if (await s.db.localSetting('world.auto') == 'off') return;
+  final last = DateTime.tryParse(WorldData.decode(await s.db.localSetting(_worldCache)).fetched);
+  if (last != null && DateTime.now().toUtc().difference(last) < _worldMaxAge) return;
+  try {
+    await refreshWorld(s);
+    ref.invalidate(worldProvider);
+  } on Object {
+    return;
+  }
 });
 
 class DashboardData {
@@ -178,6 +233,21 @@ final dashboardProvider = FutureProvider<DashboardData>((ref) async {
   );
 });
 
+typedef EntryFilter = ({String query, String? accountId, bool review});
+
+/// How many entries wait in the review queue.
+final reviewCountProvider = FutureProvider<int>((ref) async {
+  ref.watch(revisionProvider);
+  final db = ref.watch(sessionProvider).db;
+  final row = await db
+      .customSelect(
+        'SELECT COUNT(*) AS n FROM entries WHERE deleted = 0 AND reviewed = 0',
+        readsFrom: {db.entries},
+      )
+      .getSingle();
+  return row.read<int>('n');
+});
+
 /// One journal entry with its postings, for lists and the editor.
 class EntryView {
   EntryView(this.entry, this.postings);
@@ -185,11 +255,9 @@ class EntryView {
   final List<Posting> postings;
 }
 
-/// Latest entries, newest first, optionally narrowed by text or account.
-final entriesProvider = FutureProvider.family<List<EntryView>, ({String query, String? accountId})>((
-  ref,
-  filter,
-) async {
+/// Latest entries, newest first, optionally narrowed by text, account or to
+/// the ones waiting for review.
+final entriesProvider = FutureProvider.family<List<EntryView>, EntryFilter>((ref, filter) async {
   ref.watch(revisionProvider);
   final db = ref.watch(sessionProvider).db;
   final q = filter.query.trim().toLowerCase();
@@ -198,6 +266,7 @@ final entriesProvider = FutureProvider.family<List<EntryView>, ({String query, S
         'SELECT * FROM entries e WHERE e.deleted = 0 '
         "${q.isEmpty ? '' : "AND (lower(e.payee) LIKE ? ESCAPE '\\' OR lower(e.memo) LIKE ? ESCAPE '\\') "}"
         '${filter.accountId == null ? '' : 'AND EXISTS (SELECT 1 FROM postings p WHERE p.entry_id = e.id AND p.account_id = ?) '}'
+        '${filter.review ? 'AND e.reviewed = 0 ' : ''}'
         'ORDER BY e.date DESC, e.rowid DESC LIMIT 500',
         variables: [
           if (q.isNotEmpty) ...[
@@ -252,4 +321,22 @@ final budgetsProvider = FutureProvider<List<BudgetLine>>((ref) async {
     if (r != 0) return r;
     return x.budget > 0 ? y.used.compareTo(x.used) : y.spent.compareTo(x.spent);
   });
+});
+
+/// Categorisation rules in the order they are tried.
+final rulesProvider = FutureProvider<List<Rule>>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).ledger.rules();
+});
+
+/// Recurring items the user added and the detected ones they hid.
+final recurringRowsProvider = FutureProvider<List<RecurringRow>>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).ledger.recurrings();
+});
+
+/// One-off payments and receipts the user planned, by date.
+final plannedProvider = FutureProvider<List<PlannedRow>>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).ledger.planned();
 });

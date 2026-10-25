@@ -9,6 +9,7 @@ import 'package:artha/modules/finance/import/ofx_qif.dart';
 import 'package:artha/modules/finance/import/statement.dart';
 import 'package:artha/modules/finance/insights/categorizer.dart';
 import 'package:brahma_core/brahma_core.dart';
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support.dart';
@@ -259,6 +260,245 @@ void main() {
         () => svc.plan(bank, ParsedStatement(lines: const [], currency: 'USD')),
         throwsA(isA<StatementFormatException>()),
       );
+    });
+  });
+
+  group('categorisation rules', () {
+    late AppDatabase db;
+    late Ledger ledger;
+    late String bank;
+
+    setUp(() async {
+      db = await openTestDatabase();
+      ledger = Ledger(await Store.open(db));
+      await ledger.seedDefaults('GBP');
+      bank = await ledger.saveAccount(name: 'Nationwide', subtype: 'current', commodityId: 'GBP');
+    });
+    tearDown(() => db.close());
+
+    test('are validated, kept in order and moved', () async {
+      expect(
+        () => ledger.saveRule(pattern: ' x ', accountId: 'cat.groceries'),
+        throwsA(isA<LedgerException>()),
+      );
+      expect(() => ledger.saveRule(pattern: 'tesco', accountId: bank), throwsA(isA<LedgerException>()));
+      expect(
+        () => ledger.saveRule(pattern: 'tesco', accountId: uncategorizedId),
+        throwsA(isA<LedgerException>()),
+      );
+      final a = await ledger.saveRule(pattern: ' TESCO ', accountId: 'cat.groceries');
+      final b = await ledger.saveRule(pattern: 'TFL', accountId: 'cat.transport');
+      expect(() => ledger.saveRule(pattern: 'tesco', accountId: 'cat.fees'), throwsA(isA<LedgerException>()));
+      expect([for (final r in await ledger.rules()) r.pattern], ['TESCO', 'TFL']);
+      await ledger.moveRule(b, -1);
+      expect([for (final r in await ledger.rules()) r.id], [b, a]);
+      await ledger.saveRule(id: a, pattern: 'Tesco Stores', accountId: 'cat.groceries');
+      expect([for (final r in await ledger.rules()) r.pattern], ['TFL', 'Tesco Stores']);
+      await ledger.deleteRule(b);
+      expect((await ledger.rules()).single.id, a);
+    });
+
+    test('decide import categories before history', () async {
+      await ledger.saveRule(pattern: 'octopus', accountId: 'cat.fees');
+      final plan = await ImportService(ledger).plan(bank, csv('nationwide.csv'));
+      final octopus = plan.rows.firstWhere((r) => r.line.text.contains('OCTOPUS'));
+      expect((octopus.categoryId, octopus.suggestion!.source), ('cat.fees', 'rule'));
+    });
+
+    test('a rule made during an import files the other new rows it catches', () async {
+      final svc = ImportService(ledger);
+      final plan = await svc.plan(
+        bank,
+        ParsedStatement(
+          lines: [
+            StatementLine(date: '2026-10-01', amount: -899, payee: 'NETFLIX.COM'),
+            StatementLine(date: '2026-10-02', amount: -1500, payee: 'SPOTIFY'),
+            StatementLine(date: '2026-11-01', amount: -899, payee: 'NETFLIX.COM LONDON'),
+          ],
+        ),
+      );
+      plan.rows.first.categoryId = 'cat.subscriptions';
+      await ledger.saveRule(pattern: 'netflix', accountId: 'cat.subscriptions');
+      expect(await svc.reapplyRules(plan), 1);
+      expect(
+        [for (final r in plan.rows) r.categoryId],
+        ['cat.subscriptions', uncategorizedId, 'cat.subscriptions'],
+      );
+    });
+
+    test('sort uncategorised entries, by direction, and leave the rest alone', () async {
+      Future<String> add(String payee, int amount, [String category = uncategorizedId]) => ledger.saveEntry(
+        simpleEntry(
+          date: '2026-10-04',
+          currency: 'GBP',
+          accountId: bank,
+          categoryId: category,
+          amount: amount,
+          payee: payee,
+        ),
+      );
+      final spend = await add('TESCO STORES 3021', 1950);
+      final refund = await add('TESCO REFUND', -500); // money in: a spending rule does not catch it
+      final chosen = await add('TESCO EXPRESS', 300, 'cat.eating_out');
+      final other = await add('CORNER SHOP', 200);
+      await ledger.saveRule(pattern: 'tesco', accountId: 'cat.groceries');
+      expect(await ledger.applyRules(), 1);
+      Future<Set<String>> legs(String id) async => {
+        for (final p in await (db.select(db.postings)..where((p) => p.entryId.equals(id))).get()) p.accountId,
+      };
+      expect(await legs(spend), {bank, 'cat.groceries'});
+      expect(await legs(refund), {bank, uncategorizedId});
+      expect(await legs(chosen), {bank, 'cat.eating_out'});
+      expect(await legs(other), {bank, uncategorizedId});
+      expect((await ledger.balances())[bank]!.amount, -1950 + 500 - 300 - 200);
+      expect(await ledger.applyRules(), 0);
+    });
+
+    test('a rule may rename without a category, but needs one or the other', () async {
+      expect(() => ledger.saveRule(pattern: 'amzn'), throwsA(isA<LedgerException>()));
+      expect(() => ledger.saveRule(pattern: 'amzn', payee: '  '), throwsA(isA<LedgerException>()));
+      final id = await ledger.saveRule(pattern: 'amzn', payee: ' Amazon ');
+      final r = (await ledger.rules()).single;
+      expect((r.accountId, r.payee), ('', 'Amazon'));
+      // Editing drops the rename when the field is cleared.
+      await ledger.saveRule(id: id, pattern: 'amzn', accountId: 'cat.shopping', payee: '');
+      expect((await ledger.rules()).single.payee, isNull);
+    });
+
+    test('renames recorded entries once, keeping the bank text in the memo', () async {
+      final a = await ledger.saveEntry(
+        simpleEntry(
+          date: '2026-10-04',
+          currency: 'GBP',
+          accountId: bank,
+          categoryId: 'cat.groceries',
+          amount: 1200,
+          payee: 'AMZN MKTP UK*2X4',
+          memo: 'card 1234',
+        ),
+      );
+      final b = await ledger.saveEntry(
+        simpleEntry(
+          date: '2026-10-05',
+          currency: 'GBP',
+          accountId: bank,
+          categoryId: uncategorizedId,
+          amount: 800,
+          payee: 'AMZN DIGITAL',
+        ),
+      );
+      await ledger.saveRule(pattern: 'amzn', payee: 'Amazon');
+      expect(await ledger.applyRules(), 2);
+      Future<Entry> entry(String id) => (db.select(db.entries)..where((e) => e.id.equals(id))).getSingle();
+      expect(((await entry(a)).payee, (await entry(a)).memo), ('Amazon', 'AMZN MKTP UK*2X4 · card 1234'));
+      expect(((await entry(b)).payee, (await entry(b)).memo), ('Amazon', 'AMZN DIGITAL'));
+      // The bank text still matches, and the payee already reads Amazon.
+      expect(await ledger.applyRules(), 0);
+      // A rename-only rule leaves the category alone.
+      final legs = await (db.select(db.postings)..where((p) => p.entryId.equals(b))).get();
+      expect(legs.map((p) => p.accountId), contains(uncategorizedId));
+      expect((await ledger.balances())[bank]!.amount, -2000);
+    });
+
+    test('imports rename new rows and queue them for review', () async {
+      await ledger.saveRule(pattern: 'netflix', accountId: 'cat.subscriptions', payee: 'Netflix');
+      final svc = ImportService(ledger);
+      final plan = await svc.plan(
+        bank,
+        ParsedStatement(
+          lines: [
+            StatementLine(date: '2026-10-01', amount: -899, payee: 'NETFLIX.COM 866'),
+            StatementLine(date: '2026-10-02', amount: -1500, payee: 'SPOTIFY'),
+          ],
+        ),
+      );
+      expect([for (final r in plan.rows) r.rename], ['Netflix', null]);
+      await ledger.saveRule(pattern: 'spotify', payee: 'Spotify');
+      expect(await svc.reapplyRules(plan), 1);
+      await svc.commit(plan);
+      final entries = await (db.select(db.entries)..orderBy([(e) => OrderingTerm(expression: e.date)])).get();
+      expect(
+        [for (final e in entries) (e.payee, e.memo, e.reviewed)],
+        [('Netflix', 'NETFLIX.COM 866', false), ('Spotify', 'SPOTIFY', false)],
+      );
+    });
+  });
+
+  group('review queue', () {
+    late AppDatabase db;
+    late Ledger ledger;
+    late String bank, savings;
+
+    setUp(() async {
+      db = await openTestDatabase();
+      ledger = Ledger(await Store.open(db));
+      await ledger.seedDefaults('GBP');
+      bank = await ledger.saveAccount(name: 'Bank', subtype: 'current', commodityId: 'GBP');
+      savings = await ledger.saveAccount(name: 'Saver', subtype: 'savings', commodityId: 'GBP');
+    });
+    tearDown(() => db.close());
+
+    Future<bool> reviewed(String id) async =>
+        (await (db.select(db.entries)..where((e) => e.id.equals(id))).getSingle()).reviewed;
+
+    test('typed entries start reviewed; marking keeps the postings', () async {
+      final id = await ledger.saveEntry(
+        simpleEntry(
+          date: '2026-10-01',
+          currency: 'GBP',
+          accountId: bank,
+          categoryId: uncategorizedId,
+          amount: 500,
+        ),
+      );
+      expect(await reviewed(id), isTrue);
+      await ledger.setReviewed([id], reviewed: false);
+      expect(await reviewed(id), isFalse);
+      // Re-saving without saying keeps the flag.
+      final e = await (db.select(db.entries)..where((x) => x.id.equals(id))).getSingle();
+      await ledger.saveEntry(
+        simpleEntry(
+          id: id,
+          date: e.date,
+          currency: 'GBP',
+          accountId: bank,
+          categoryId: uncategorizedId,
+          amount: 600,
+        ),
+      );
+      expect(await reviewed(id), isFalse);
+      await ledger.setReviewed([id]);
+      expect(await reviewed(id), isTrue);
+      expect((await ledger.balances())[bank]!.amount, -600);
+    });
+
+    test('bulk categorise files two-line entries and skips transfers', () async {
+      Future<String> add(String category) async {
+        final id = await ledger.saveEntry(
+          simpleEntry(
+            date: '2026-10-01',
+            currency: 'GBP',
+            accountId: bank,
+            categoryId: category,
+            amount: 700,
+          ),
+        );
+        await ledger.setReviewed([id], reviewed: false);
+        return id;
+      }
+
+      final a = await add(uncategorizedId);
+      final b = await add('cat.eating_out');
+      final t = await add(savings);
+      expect(() => ledger.recategorise([a], bank), throwsA(isA<LedgerException>()));
+      expect(await ledger.recategorise([a, b, t], 'cat.groceries'), 2);
+      Future<Set<String>> legs(String id) async => {
+        for (final p in await (db.select(db.postings)..where((p) => p.entryId.equals(id))).get()) p.accountId,
+      };
+      expect(await legs(a), {bank, 'cat.groceries'});
+      expect(await legs(b), {bank, 'cat.groceries'});
+      expect(await legs(t), {bank, savings});
+      expect([await reviewed(a), await reviewed(b), await reviewed(t)], [true, true, false]);
     });
   });
 }

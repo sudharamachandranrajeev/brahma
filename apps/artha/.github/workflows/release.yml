@@ -320,12 +320,15 @@ jobs:
           useradd --create-home --user-group --home-dir /tmp/artha-installer-home artha-test
           install -d -o artha-test -g artha-test /tmp/artha-installer-home/.local/share/dev.artha.artha
           install -m 600 -o artha-test -g artha-test "$db" /tmp/artha-installer-home/.local/share/dev.artha.artha/artha.sqlite
+          # install -d leaves the parent directories it creates owned by root.
+          chown -R artha-test:artha-test /tmp/artha-installer-home
           runuser -u artha-test -- "$app/install.sh"
           test -x /tmp/artha-installer-home/.local/lib/artha/artha
           grep -q 'StartupWMClass=dev.artha.artha' /tmp/artha-installer-home/.local/share/applications/dev.artha.artha.desktop
           runuser -u artha-test -- bash /tmp/artha-installer-home/.local/lib/artha/install.sh --uninstall
           test ! -e /tmp/artha-installer-home/.local/lib/artha
-          cmp "$db" /tmp/artha-installer-home/.local/share/dev.artha.artha/artha.sqlite
+          # cmp (diffutils) is missing from the Fedora and Arch images; sha256sum is in coreutils.
+          [[ $(sha256sum <"$db") == $(sha256sum </tmp/artha-installer-home/.local/share/dev.artha.artha/artha.sqlite) ]]
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')

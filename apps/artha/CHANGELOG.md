@@ -1,6 +1,80 @@
 # Changelog
 
-## 0.2.0-beta.7
+## 0.2.0-beta.15
+
+- Phones get new navigation: a floating dock that scrolls through every screen (the "More"
+  sheet is gone) and a side panel listing them all with what each is for. Swipe right on any
+  page, or tap the dock's menu button, to open it; Back closes it.
+
+## 0.2.0-beta.14
+
+- Plan one-offs: add a payment or receipt you expect once (car insurance, a tax bill, a bonus)
+  from the dashboard's "Next 90 days" → "Plan a one-off". It goes into the forecast on its date,
+  shows as a dot on the line and is listed under the chart; tap it to edit or delete. One planned
+  for today counts from tomorrow; past ones drop out. Ask Artha also sees them, as dated
+  rounded amounts without their names.
+- Sync: after updating, each device downloads the other devices' changes again once, so items an
+  older version skipped (recurring items from 0.2.0-beta.12, planned one-offs) arrive. Update
+  every device: older versions leave one-offs out until they update.
+
+## 0.2.0-beta.13
+
+- Insights: "The world this week" shows the live Bank of England Bank Rate and ONS inflation,
+  quick tips that fit your accounts (inflation against your savings, the next rate decision, the
+  31 January Self Assessment deadline, the cash ISA limit falling to £12,000 in April 2027,
+  Premium Bonds, deposit protection) and the headlines most relevant to you, ranked by what you
+  hold or owe, from the Bank of England, FCA, HMRC, MoneySavingExpert and BBC Business. Only
+  public pages are downloaded, at most every 6 hours when you open Insights; nothing about you is
+  sent. Switch it off in Settings → News and rates.
+- Risk and safest plan: four questions set how much risk you are comfortable with, your
+  finances set how much you can take, and the lower one is your level. Risk checks (thin
+  emergency fund, debt at 10%+, cash above the £120,000 FSCS limit at one bank, savings losing to
+  inflation, one holding above 20%, crypto above 10%), three stress tests (income stops, markets
+  fall, rates rise 1 point) and a safety-first plan: spend less than you earn, clear expensive
+  debt, one month in cash, the employer pension match, a 3-6 month emergency fund, money for 1-5
+  years, then a global index fund for 5+ years. Each step lists the lowest-risk options first
+  with current UK best-buy rates, dated.
+- Ask Artha: ask a money question in the app and get a short, sourced answer from Claude with web
+  search, using your own Anthropic API key (Settings → Ask Artha; billed to your Anthropic
+  account). The key stays in the system keychain, never in the database or sync. Each question
+  sends a rounded summary (no payees, account names or numbers) which you can read under the eye
+  icon. Questions can also start from a tip, a headline, a risk check or a plan step. If Claude
+  declines a request, the API retries it on a fallback model.
+
+## 0.2.0-beta.12
+
+- Review queue: imported entries wait under Transactions → "To review" until you have looked at
+  them, and the dashboard says how many. Tick several to set their category or mark them
+  reviewed in one go; on a keyboard, arrows move, R marks the current one, Space selects and
+  Enter opens it. Saving an entry in the editor also marks it reviewed.
+- Payee renaming: a rule can give a payee a tidier name ("AMZN MKTP UK*2X4" → Amazon), with or
+  without a category. Imports apply it, and the rules page applies it to what is already
+  recorded; the bank's own text moves to the memo, so search and rules still find it.
+- Bills and subscriptions page (dashboard → Upcoming bills → Manage, or Insights): add a monthly
+  (or weekly, quarterly, yearly) subscription by hand and it shows in Upcoming bills and the
+  forecast straight away. Edit or delete your own, hide spotted ones that are not really bills,
+  or edit a spotted one to keep it as your own. A fixed price that changed is flagged, and the
+  new price is the one expected.
+- The database moves to schema 2 (review flag, rename rules, recurring items); existing data is
+  kept.
+
+## 0.2.0-beta.11
+
+- Cash-flow forecast on the dashboard: spendable money day by day for the next 90 days, from
+  recurring pay and bills on their schedule plus everyday spending spread evenly. It shows the
+  lowest point and warns when money would run short; one-off income is left out, so it errs low.
+- Make a rule from an import row: the rule icon beside a new row's category saves "first word →
+  that category", and the other new rows it catches are filed straight away.
+- Fixes: overdue bills said "Due in N days"; monthly recurring amounts were counted 1.4% high.
+
+## 0.2.0-beta.10
+
+- Categorisation rules: Import → rules lists text to look for and the category it files into,
+  tried top to bottom before learned history. Add, edit, reorder and delete them, and sort
+  every uncategorised entry that matches in one go. Spending rules only catch money out and
+  income rules only money in.
+
+## 0.2.0-beta.9
 
 - Overlapping imports no longer double-count: a statement row that matches an entry already
   imported from another file (a CSV export and the PDF for the same month, say) is linked to it

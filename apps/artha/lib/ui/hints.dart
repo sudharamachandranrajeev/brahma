@@ -11,7 +11,6 @@ const arthaHints = <String, String>{
   'nav.reports': 'Balance sheet, income statement, trial balance and checks.',
   'nav.import': 'Bring in bank statements (PDF, CSV, OFX, QFX, QIF).',
   'nav.settings': 'Currency, hints, exchange rates, sync and security.',
-  'nav.more': 'The rest of Artha.',
   // Dashboard
   'kpi.networth': 'Everything you own minus everything you owe, in your base currency.',
   'kpi.liquid': 'Money you can use within days: current, savings, cash and cash ISAs.',
@@ -47,7 +46,14 @@ const arthaHints = <String, String>{
   // Insights
   'insights.useful': 'Keep insights like this one higher up.',
   'insights.dismiss': 'Hide this one and show fewer like it.',
+  'settings.world': 'Public downloads only: Bank Rate, inflation and news headlines.',
+  'settings.assistant': 'Optional. Uses your own Anthropic API key, kept in the system keychain.',
+  'insights.ask': 'Ask a money question; answers use the web and your own Anthropic key.',
   'insights.remember': 'Tell Artha about a goal or a coming cost so suggestions fit.',
+  'risk.profile':
+      'Your level is the lower of how much risk you are comfortable with and how much your finances can '
+      'absorb. Cash cushion, debt and spare income all count.',
+  'insights.world': 'News and rates from the Bank of England, ONS, HMRC, the FCA and consumer-money sites.',
   'insights.explore': 'Common ways to save and invest in the UK, with their trade-offs.',
   // Reports
   'reports.period': 'Period the income statement covers.',
@@ -56,6 +62,9 @@ const arthaHints = <String, String>{
   'settings.fx': 'Fetch European Central Bank reference rates for the currencies you use.',
   'settings.base': 'Totals, charts and reports are shown in this currency.',
   'settings.appearance': 'Pick a colour palette and light or dark. Kept on this device, never synced.',
+  'card.forecast':
+      'Where your spendable money is heading if bills, pay and everyday spending carry on as they have, '
+      'plus the one-offs you plan (dots on the line).',
   'card.budgets': 'This month’s spending against the monthly budget you set for each category.',
   'card.bills': 'Payments that repeat on a steady schedule, with the date each is next expected.',
   // Page banners
@@ -79,10 +88,23 @@ const arthaHints = <String, String>{
   'page.insights':
       'Insights are worked out on this device from your own data. Mark them useful or not and the '
       'list adapts. Nothing here is financial advice.',
+  'page.risk':
+      'Worked out on this device from your accounts. The plan puts safety first: spend less than you earn, '
+      'clear expensive debt, hold a cash cushion, then invest for the long term.',
   'page.reports':
       'Business-standard statements from the same ledger. The trial balance must net to zero in '
       'every currency; the integrity check confirms it.',
   'page.budgets':
       'Give a category a monthly limit and Artha tracks this month’s spending against it, in your '
       'base currency. Insights warn when one goes over.',
+  'page.rules':
+      'Imports try these rules first, top to bottom: the first whose text appears in a description '
+      'picks the category and can give the payee a tidier name. Spending categories catch money '
+      'out, income categories money in.',
+  'page.recurring':
+      'Bills and subscriptions: the ones Artha spots in your history and the ones you add. They feed '
+      'Upcoming bills and the 90-day forecast. Hide a spotted one that is not really a bill.',
+  'tx.review':
+      'Imported entries wait here until you have looked at them. Select some to set their category '
+      'or mark them reviewed; on a keyboard, arrows move and R marks the current one.',
 };
