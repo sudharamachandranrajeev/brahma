@@ -29,7 +29,9 @@ void main() {
       await loader.load();
     }
 
-    final inter = [for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf'];
+    final inter = [
+      for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf',
+    ];
     await family('Inter', inter);
     // A few list-tile trailing texts ask for the platform's Roboto, which the
     // test engine lacks (it draws boxes); stand Inter in for it.
@@ -124,17 +126,14 @@ void main() {
       await app.settle();
       final mode = dark ? 'dark' : 'light';
       await shot('search-$mode');
-      Future<void> go(String page) => app.tap(
-        find.ancestor(
-          of: find.descendant(of: find.byType(NavigationBar), matching: find.text(page)),
-          matching: find.byType(NavigationDestination),
-        ),
-      );
       for (final page in ['Garage', 'Finance']) {
-        await go(page);
+        await app.dock(page);
         await shot('${page.toLowerCase()}-$mode');
       }
-      await go('Garage');
+      await tester.flingFrom(const Offset(40, 400), const Offset(300, 0), 1000);
+      await app.settle();
+      await shot('panel-$mode');
+      await app.tap(find.text('Garage').last);
       await app.tap(find.text('Open').last);
       await shot('car-$mode');
       await app.close();
