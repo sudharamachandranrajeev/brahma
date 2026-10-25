@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Bhojana ("food, a meal"): a basket of greens on a tomato-to-saffron tile. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F08A4B"/>
+      <stop offset="1" stop-color="#C2410C"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="992" height="992" rx="232" fill="url(#bg)"/>
+  <path d="M430 470 Q420 330 520 300 Q540 420 430 470 M540 470 Q560 340 670 330 Q660 440 540 470"
+        fill="#9BD37A"/>
+  <path d="M300 470 H724 L676 740 Q668 780 628 780 H396 Q356 780 348 740 Z" fill="#FFF7ED"/>
+  <path d="M410 540 V700 M512 540 V700 M614 540 V700" stroke="#C2410C" stroke-width="36" stroke-linecap="round"/>
+</svg>
