@@ -7,7 +7,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app/providers.dart';
+import '../domain/hub.dart';
 import '../domain/models.dart';
+import 'app_wizard.dart';
 import 'common.dart';
 import 'look.dart';
 
@@ -39,7 +41,8 @@ class AccountsPage extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 18),
                   child: Text(
-                    'No accounts yet. Add your developer app credentials below, then connect.',
+                    'No accounts yet. Bluesky, Mastodon and Telegram connect in a minute; the others first walk you '
+                    'through making your own free app.',
                     style: t.bodyLarge?.copyWith(color: Tone.of(context).muted),
                   ),
                 ),
@@ -263,9 +266,24 @@ class _ConnectCard extends ConsumerWidget {
           ),
           const SizedBox(height: 2),
           Text(provider.brings, style: t.bodySmall),
+          if (set == true)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Wrap(
+                spacing: 6,
+                children: [
+                  const Tag('Ready', color: growth, icon: Icons.check_rounded),
+                  TextButton(onPressed: () => openAppWizard(context, provider), child: const Text('Setup steps')),
+                ],
+              ),
+            ),
           if (set == false) ...[
             const SizedBox(height: 8),
-            const Tag('Add app credentials first', color: Color(0xFFF59E0B), icon: Icons.key_rounded),
+            Tag(
+              'Set up · ${appSetupSteps(provider)} steps',
+              color: const Color(0xFFF59E0B),
+              icon: Icons.construction_rounded,
+            ),
           ],
         ],
       ),
@@ -302,7 +320,7 @@ class _FormCard extends ConsumerWidget {
           Text(switch (platform) {
             Platform.bluesky => 'With an app password',
             Platform.telegram => 'A channel or group, with your bot',
-            _ => 'With an access token from your server',
+            _ => 'Sign in on your server',
           }, style: t.bodySmall),
         ],
       ),
@@ -343,12 +361,46 @@ class _FormCard extends ConsumerWidget {
     if (ok && context.mounted) showMessage(context, 'Bluesky connected.');
   }
 
+  /// One click: the hub registers itself on the server, then the user signs
+  /// in there. An access token is the fallback.
   Future<void> _addMastodon(BuildContext context, WidgetRef ref) async {
+    final instance = TextEditingController();
+    var useToken = false;
+    final ok = await showFormDialog(
+      context,
+      title: 'Add Mastodon',
+      action: 'Sign in',
+      fields: (_) => [
+        const Text('Enter your server, then sign in there. Vani registers itself on the server for you.'),
+        const SizedBox(height: 16),
+        Field(instance, 'Server', hint: 'mastodon.social'),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: () {
+              useToken = true;
+              Navigator.pop(context, false);
+            },
+            child: const Text('Use an access token instead'),
+          ),
+        ),
+      ],
+      onSave: () async => _host(instance.text).isEmpty ? 'Enter your server.' : null,
+    );
+    if (!context.mounted) return;
+    if (useToken) return _addMastodonToken(context, ref);
+    if (ok) await signIn(context, ref, 'Mastodon', (h) => h.connectMastodon(_host(instance.text)));
+  }
+
+  static String _host(String text) =>
+      text.trim().replaceFirst(RegExp(r'^https?://'), '').replaceAll(RegExp(r'/+$'), '').replaceFirst(RegExp(r'^@?[^@]*@'), '');
+
+  Future<void> _addMastodonToken(BuildContext context, WidgetRef ref) async {
     final instance = TextEditingController();
     final token = TextEditingController();
     final ok = await showFormDialog(
       context,
-      title: 'Add Mastodon',
+      title: 'Add Mastodon with a token',
       action: 'Add',
       fields: (_) => [
         const Text(
@@ -361,11 +413,7 @@ class _FormCard extends ConsumerWidget {
       ],
       onSave: () async {
         if (instance.text.trim().isEmpty || token.text.trim().isEmpty) return 'Enter the server and token.';
-        final host = instance.text
-            .trim()
-            .replaceFirst(RegExp(r'^https?://'), '')
-            .replaceAll(RegExp(r'/+$'), '');
-        await ref.hub((h) => h.addMastodon(instance: host, accessToken: token.text.trim()));
+        await ref.hub((h) => h.addMastodon(instance: _host(instance.text), accessToken: token.text.trim()));
         return null;
       },
     );
@@ -401,20 +449,22 @@ class _FormCard extends ConsumerWidget {
   }
 }
 
-/// Starts an OAuth sign-in: opens the platform's page in the browser, then
-/// watches the hub for the new accounts its callback stores.
+/// Starts an OAuth sign-in. Without the app credentials it opens the guided
+/// setup of the user's own app instead, which ends here.
 Future<void> connectProvider(BuildContext context, WidgetRef ref, OAuthProvider p) async {
   final creds = await ref.read(credentialsProvider.future).catchError((_) => const <CredentialStatus>[]);
   if (!context.mounted) return;
-  if (!creds.any((c) => c.provider == p.name && c.set)) {
-    showMessage(context, 'Add your ${p.label} app credentials first.');
-    await editCredential(context, ref, CredentialProvider.values.byName(p.name));
-    return;
-  }
+  if (!creds.any((c) => c.provider == p.name && c.set)) return openAppWizard(context, p);
+  await signIn(context, ref, p.label, (h) => h.connect(p));
+}
+
+/// Opens the sign-in page [start] gets from the hub in the browser, then
+/// watches the hub for the new accounts its callback stores.
+Future<void> signIn(BuildContext context, WidgetRef ref, String label, Future<String> Function(HubClient h) start) async {
   final before = {for (final a in await ref.read(accountsProvider.future)) a.id};
   final String url;
   try {
-    url = await ref.hub((h) => h.connect(p), refresh: false);
+    url = await ref.hub(start, refresh: false);
   } catch (e) {
     if (context.mounted) showError(context, e);
     return;
@@ -431,7 +481,7 @@ Future<void> connectProvider(BuildContext context, WidgetRef ref, OAuthProvider 
   final found = await showDialog<int>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => _Waiting(provider: p, before: before),
+    builder: (_) => _Waiting(label: label, before: before),
   );
   ref.read(hubRevisionProvider.notifier).bump();
   if (found != null && found > 0 && context.mounted) {
@@ -441,8 +491,8 @@ Future<void> connectProvider(BuildContext context, WidgetRef ref, OAuthProvider 
 
 /// Polls the hub's accounts until new ones appear (up to five minutes).
 class _Waiting extends ConsumerStatefulWidget {
-  const _Waiting({required this.provider, required this.before});
-  final OAuthProvider provider;
+  const _Waiting({required this.label, required this.before});
+  final String label;
   final Set<String> before;
 
   @override
@@ -484,7 +534,7 @@ class _WaitingState extends ConsumerState<_Waiting> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text('Signing in to ${widget.provider.label}'),
+    title: Text('Signing in to ${widget.label}'),
     content: const Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -581,11 +631,60 @@ final _creds = {
     'API key',
     'https://console.anthropic.com/settings/keys',
     [
-      'Create an API key. The hub uses it for captions, reply suggestions, ideas and discovery matching.',
-      'You pay Anthropic for what you use.',
+      'Sign in to the Claude Console (a separate account from a Claude.ai subscription) and add credit under Billing.',
+      'Create an API key and paste it below. You pay Anthropic for what you use.',
+    ],
+  ),
+  CredentialProvider.openai: _CredInfo(
+    'OpenAI (GPT)',
+    Icons.auto_awesome_rounded,
+    null,
+    'API key',
+    'https://platform.openai.com/api-keys',
+    [
+      'Sign in to the OpenAI Platform (separate from a ChatGPT plan) and add credit under Billing.',
+      'Create a secret key and paste it below. You pay OpenAI for what you use.',
+    ],
+  ),
+  CredentialProvider.gemini: _CredInfo(
+    'Google Gemini',
+    FontAwesomeIcons.google.data,
+    null,
+    'API key',
+    'https://aistudio.google.com/apikey',
+    [
+      'Sign in to Google AI Studio with your Google account.',
+      'Create an API key and paste it below. The free tier needs no card; Google may use free-tier requests to '
+          'improve its products.',
+    ],
+  ),
+  CredentialProvider.openrouter: _CredInfo(
+    'OpenRouter',
+    Icons.hub_rounded,
+    null,
+    'API key',
+    'https://openrouter.ai/settings/keys',
+    [
+      'OpenRouter reaches many AI models (some free) with one key.',
+      'Create a key and paste it below, then pick a model.',
+    ],
+  ),
+  CredentialProvider.compatible: _CredInfo(
+    'Other AI service',
+    Icons.dns_rounded,
+    'API address (https, ending in /v1)',
+    'API key',
+    'https://platform.openai.com/docs/api-reference/chat',
+    [
+      'Any service with an OpenAI-compatible API (Groq, Mistral, Together, DeepSeek...).',
+      'The hub runs on the internet, so the address must be public https. Ollama on this computer is set up '
+          'under "On this computer" instead.',
     ],
   ),
 };
+
+String credentialTitle(CredentialProvider p) => _creds[p]!.title;
+IconData credentialIcon(CredentialProvider p) => _creds[p]!.icon;
 
 class _Credentials extends ConsumerWidget {
   const _Credentials();
@@ -608,7 +707,7 @@ class _Credentials extends ConsumerWidget {
             style: t.bodyMedium?.copyWith(color: tone.muted),
           ),
           const SizedBox(height: 12),
-          for (final p in CredentialProvider.values)
+          for (final p in CredentialProvider.values.where((p) => !p.ai))
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
               leading: Container(
@@ -680,14 +779,14 @@ Future<void> editCredential(BuildContext context, WidgetRef ref, CredentialProvi
         child: TextButton.icon(
           onPressed: () => openLink(context, info.console),
           icon: const Icon(Icons.open_in_new_rounded, size: 18),
-          label: const Text('Open the developer console'),
+          label: Text(p.ai ? 'Get a key' : 'Open the developer console'),
         ),
       ),
       if (redirect != null && redirect.isNotEmpty)
-        _Copyable('Redirect URI', redirect, hint: 'credentials.redirect'),
+        Copyable('Redirect URI', redirect, hint: 'credentials.redirect'),
       if (webhook.isNotEmpty) ...[
-        _Copyable('Webhook callback URL', webhook),
-        _Copyable('Webhook verify token', meta.verifyToken),
+        Copyable('Webhook callback URL', webhook),
+        Copyable('Webhook verify token', meta.verifyToken),
       ],
       const SizedBox(height: 8),
       if (info.publicLabel != null) Field(publicId, info.publicLabel!),
@@ -705,7 +804,9 @@ Future<void> editCredential(BuildContext context, WidgetRef ref, CredentialProvi
               final ok = await confirm(
                 context,
                 title: 'Remove ${info.title} credentials?',
-                message: 'Accounts connected through them keep working until their tokens expire.',
+                message: p.ai
+                    ? 'The hub stops using ${info.title} for AI.'
+                    : 'Accounts connected through them keep working until their tokens expire.',
                 action: 'Remove',
                 destructive: true,
               );
@@ -734,39 +835,4 @@ Future<void> editCredential(BuildContext context, WidgetRef ref, CredentialProvi
     },
   );
   if (saved && context.mounted) showMessage(context, '${info.title} saved.');
-}
-
-class _Copyable extends StatelessWidget {
-  const _Copyable(this.label, this.value, {this.hint});
-  final String label, value;
-  final String? hint;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = Tone.of(context);
-    final row = Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.fromLTRB(14, 8, 4, 8),
-      decoration: BoxDecoration(color: tone.cardHigh, borderRadius: BorderRadius.circular(14)),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tone.muted)),
-                SelectableText(value, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
-              ],
-            ),
-          ),
-          IconButton(
-            tooltip: 'Copy $label',
-            onPressed: () => copyText(context, value, what: '$label copied.'),
-            icon: const Icon(Icons.copy_rounded, size: 18),
-          ),
-        ],
-      ),
-    );
-    return hint == null ? row : Hint(hint!, child: row);
-  }
 }

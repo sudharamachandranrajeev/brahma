@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:http/http.dart' as http;
 
+import '../domain/cloudflare.dart';
+import '../domain/device_ai.dart';
 import '../domain/hub.dart';
 import '../domain/models.dart';
 import '../ui/hints.dart';
@@ -76,7 +80,72 @@ final hubProvider = FutureProvider<HubClient?>((ref) async {
   final link = await ref.watch(hubLinkProvider.future);
   if (!link.ready) return null;
   final profile = await ref.watch(profileProvider.future);
-  return HubClient(link.url, link.token, profile: profile, client: ref.watch(httpClientProvider));
+  final ai = await ref.watch(deviceAiProvider.future);
+  return HubClient(
+    link.url,
+    link.token,
+    profile: profile,
+    deviceAi: ai?.answer,
+    client: ref.watch(httpClientProvider),
+  );
+});
+
+/// This computer's AI (the user's own CLI or Ollama), or null when the hub's
+/// key does the AI work; device-only.
+class DeviceAiNotifier extends AsyncNotifier<DeviceAi?> {
+  @override
+  Future<DeviceAi?> build() async {
+    if (!deviceAiSupported) return null;
+    final v = await ref.watch(sessionProvider).db.localSetting(DeviceAiChoice.localKey);
+    final choice = v == null || v.isEmpty ? null : DeviceAiChoice.fromJson(obj(jsonDecode(v)));
+    return choice == null ? null : ref.watch(deviceAiFactoryProvider)(choice);
+  }
+
+  Future<void> set(DeviceAiChoice? choice) async {
+    await ref
+        .read(sessionProvider)
+        .db
+        .setLocalSetting(DeviceAiChoice.localKey, choice == null ? '' : jsonEncode(choice.toJson()));
+    state = AsyncData(choice == null ? null : ref.read(deviceAiFactoryProvider)(choice));
+  }
+}
+
+final deviceAiProvider = AsyncNotifierProvider<DeviceAiNotifier, DeviceAi?>(DeviceAiNotifier.new);
+
+/// Makes the [DeviceAi] for a choice; tests swap in a fake.
+final deviceAiFactoryProvider = Provider<DeviceAi Function(DeviceAiChoice)>(
+  (ref) => (choice) => DeviceAi(choice, client: ref.watch(httpClientProvider)),
+);
+
+/// The hub build this version of Vani ships (assets/hub).
+final hubBundleProvider = FutureProvider<HubBundle>((ref) async {
+  final manifest = obj(jsonDecode(await rootBundle.loadString('assets/hub/manifest.json')));
+  return HubBundle(manifest: manifest, code: await rootBundle.loadString('assets/hub/worker.js'));
+});
+
+/// The hub this device deployed (its Cloudflare key and a copy of the hub's
+/// secrets), or null; device-only.
+class HubDeploymentNotifier extends AsyncNotifier<HubDeployment?> {
+  @override
+  Future<HubDeployment?> build() async {
+    final v = await ref.watch(sessionProvider).db.localSetting(HubDeployment.localKey);
+    return v == null || v.isEmpty ? null : HubDeployment.fromJson(obj(jsonDecode(v)));
+  }
+
+  Future<void> save(HubDeployment d) async {
+    await ref.read(sessionProvider).db.setLocalSetting(HubDeployment.localKey, jsonEncode(d.toJson()));
+    state = AsyncData(d);
+  }
+}
+
+final hubDeploymentProvider = AsyncNotifierProvider<HubDeploymentNotifier, HubDeployment?>(
+  HubDeploymentNotifier.new,
+);
+
+/// The connected hub's version: null for one from before versions.
+final hubVersionProvider = FutureProvider<String?>((ref) async {
+  final hub = await ref.watch(hubProvider.future);
+  return hub?.version();
 });
 
 /// Bumped after every hub change and every minute, so hub screens reload.

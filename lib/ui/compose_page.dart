@@ -276,7 +276,7 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     CaptionResult? result;
     await showFormDialog(
       context,
-      title: 'Write with Claude',
+      title: 'Write with AI',
       action: 'Draft captions',
       fields: (setState) => [
         Field(
@@ -297,8 +297,8 @@ class _ComposePageState extends ConsumerState<ComposePage> {
           onChanged: (v) => tone = v,
         ),
         Text(
-          'Drafts one caption per platform (${platforms.map((p) => p.label).join(', ')}) using the Anthropic key '
-          'stored on your hub.',
+          'Drafts one caption per platform (${platforms.map((p) => p.label).join(', ')}) using the AI '
+          'you set up in Settings.',
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],

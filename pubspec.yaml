@@ -20,6 +20,7 @@ dependencies:
   flutter_riverpod: ^3.4.3
   font_awesome_flutter: ^11.0.0
   http: ^1.6.0
+  http_parser: ^4.1.2
   intl: ^0.20.3
   url_launcher: ^6.3.2
 
@@ -32,6 +33,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # The hub Worker that Settings > Set up a hub deploys; made by
+  # `npm run bundle` in hub/.
+  assets:
+    - assets/hub/
   # Inter for reading (built for screens, sharp at small sizes); Plus Jakarta
   # Sans for headings. Both SIL OFL 1.1, bundled so no font is fetched.
   fonts:

@@ -43,8 +43,24 @@ enum OAuthProvider {
   final String brings;
 }
 
-/// Providers whose app credentials the hub stores.
-enum CredentialProvider { meta, threads, google, linkedin, ebay, anthropic }
+/// Providers whose app credentials or keys the hub stores.
+enum CredentialProvider {
+  meta,
+  threads,
+  google,
+  linkedin,
+  ebay,
+  anthropic,
+  openai,
+  gemini,
+  openrouter,
+  compatible;
+
+  /// An AI service, whose key lets the hub write and judge on its own.
+  bool get ai => index >= anthropic.index;
+
+  static List<CredentialProvider> get aiServices => values.where((p) => p.ai).toList();
+}
 
 const formats = ['post', 'carousel', 'reel', 'story', 'video', 'short'];
 
@@ -995,7 +1011,8 @@ class SavedReply {
   Json toJson() => {'id': id, 'title': title, 'text': text};
 }
 
-const aiModels = {
+/// Claude models offered before the hub lists them (and on a subscription).
+const claudeModels = {
   'claude-opus-5-5': 'Claude Opus 5.5 (best)',
   'claude-sonnet-5-5': 'Claude Sonnet 5.5 (faster)',
   'claude-haiku-5-5': 'Claude Haiku 5.5 (cheapest)',
@@ -1006,14 +1023,21 @@ class HubSettings {
     this.timezone = 'Europe/London',
     this.queue = const [],
     this.savedReplies = const [],
-    this.model = 'claude-opus-5-5',
+    this.aiProvider,
+    this.aiModels = const {},
     this.language = 'English',
   });
 
   /// [language]: what inbox items are translated into.
-  final String timezone, model, language;
+  final String timezone, language;
   final List<QueueSlot> queue;
   final List<SavedReply> savedReplies;
+
+  /// The AI service the hub uses; null = the first one with a key.
+  final CredentialProvider? aiProvider;
+
+  /// The model picked per AI service (by provider name).
+  final Map<String, String> aiModels;
 
   factory HubSettings.fromJson(Json j) => HubSettings(
     timezone: str(j['timezone'], 'Europe/London'),
@@ -1022,7 +1046,8 @@ class HubSettings {
       for (final r in objs(j['savedReplies']))
         SavedReply(id: str(r['id']), title: str(r['title']), text: str(r['text'])),
     ],
-    model: str(j['model'], 'claude-opus-5-5'),
+    aiProvider: CredentialProvider.aiServices.where((p) => p.name == j['aiProvider']).firstOrNull,
+    aiModels: {for (final e in obj(j['aiModels']).entries) e.key: str(e.value)},
     language: str(j['language'], 'English'),
   );
 
@@ -1030,21 +1055,33 @@ class HubSettings {
     String? timezone,
     List<QueueSlot>? queue,
     List<SavedReply>? savedReplies,
-    String? model,
+    Map<String, String>? aiModels,
     String? language,
   }) => HubSettings(
     timezone: timezone ?? this.timezone,
     queue: queue ?? this.queue,
     savedReplies: savedReplies ?? this.savedReplies,
-    model: model ?? this.model,
+    aiProvider: aiProvider,
+    aiModels: aiModels ?? this.aiModels,
     language: language ?? this.language,
+  );
+
+  /// With [p] as the AI service (null = the first with a key).
+  HubSettings withAiProvider(CredentialProvider? p) => HubSettings(
+    timezone: timezone,
+    queue: queue,
+    savedReplies: savedReplies,
+    aiProvider: p,
+    aiModels: aiModels,
+    language: language,
   );
 
   Json toJson() => {
     'timezone': timezone,
     'queue': [for (final q in queue) q.toJson()],
     'savedReplies': [for (final r in savedReplies) r.toJson()],
-    'model': model,
+    'aiProvider': aiProvider?.name,
+    'aiModels': aiModels,
     'language': language,
   };
 }
@@ -1089,7 +1126,7 @@ class HubMeta {
   final Map<String, String> redirectUris;
   final String webhookUrl, threadsWebhookUrl, verifyToken;
 
-  /// Whether the hub has an Anthropic key, so the AI features work.
+  /// Whether the AI features work: a key on the hub, or this device's AI.
   final bool ai;
 
   PlatformInfo info(Platform p) => platforms[p] ?? PlatformInfo(name: p.label);

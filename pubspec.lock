@@ -52,11 +52,9 @@ packages:
   brahma_core:
     dependency: "direct main"
     description:
-      path: core
-      ref: HEAD
-      resolved-ref: "7db659cd09890190b8e5fb07e6d1dfb9e48d2a7f"
-      url: "https://github.com/sudharamachandranrajeev/brahma.git"
-    source: git
+      path: "../brahma/core"
+      relative: true
+    source: path
     version: "0.1.0"
   build:
     dependency: transitive
@@ -442,7 +440,7 @@ packages:
     source: hosted
     version: "3.2.3"
   http_parser:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: http_parser
       sha256: "178d74305e7866013777bab2c3d8726205dc5a4dd935297175b19a23a2e66571"

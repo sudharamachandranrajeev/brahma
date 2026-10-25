@@ -1,0 +1,33 @@
+# For local development (`npx wrangler dev --test-scheduled`). Users never
+# deploy with this: Vani deploys the hub to their account through Cloudflare's
+# API from the bundle in ../assets/hub (`npm run bundle`), creating the
+# resources below by name and filling in their ids itself.
+name = "vani-hub"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# Every minute: scheduled posts go out on time. The inbox and discovery run
+# on every tenth minute; account checks daily at 03:05 UTC.
+[triggers]
+crons = ["* * * * *"]
+
+# Outbound requests one run may make. The Workers free plan allows 50; on
+# Workers Paid ($5/month, recommended with several accounts) raise this to 900.
+[vars]
+SUBREQUEST_BUDGET = "45"
+
+# Short-lived state: OAuth sign-ins in progress, cached lookups.
+[[kv_namespaces]]
+binding = "KV"
+id = "00000000000000000000000000000000"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vani-hub"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# Media library for scheduled posts.
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "vani-hub-media"

@@ -10,7 +10,7 @@ const hubToken = 'test-token';
 typedef Json = Map<String, Object?>;
 
 /// An in-memory social hub behind a [MockClient], answering the routes of
-/// watch/SOCIAL.md. Seeded with made-up data dated relative to now; tests
+/// hub/README.md. Seeded with made-up data dated relative to now; tests
 /// never use real people's data and nothing leaves the machine.
 class FakeHub {
   FakeHub({bool seeded = true, this.ai = true}) {
@@ -19,6 +19,10 @@ class FakeHub {
 
   /// Whether the hub "has" an Anthropic key.
   bool ai;
+
+  /// How often the hub asked the device for an AI answer, and the answers it got.
+  int deviceRequests = 0;
+  List<Object?> deviceAnswers = const [];
 
   final accounts = <Json>[];
   final posts = <Json>[];
@@ -39,7 +43,8 @@ class FakeHub {
     'savedReplies': [
       {'id': 'r1', 'title': 'Opening hours', 'text': 'Hi {name}! We are open 9 to 5, Monday to Saturday.'},
     ],
-    'model': 'claude-opus-5-5',
+    'aiProvider': null,
+    'aiModels': <String, Object?>{},
     'language': 'English',
   };
 
@@ -126,18 +131,23 @@ class FakeHub {
         return _json({'ok': true});
       case ('GET', ['social', 'credentials']):
         return _json([
-          for (final p in ['meta', 'threads', 'google', 'linkedin', 'ebay', 'anthropic'])
+          for (final p in ['meta', 'threads', 'google', 'linkedin', 'ebay', 'anthropic', 'openai', 'gemini', 'openrouter', 'compatible'])
             credentials[p] ?? {'provider': p, 'set': false, 'publicId': null, 'updatedAt': null},
         ]);
       case ('PUT', ['social', 'credentials', final p]):
         credentials[p] = {'provider': p, 'set': true, 'publicId': b()['publicId'], 'updatedAt': iso(now)};
-        if (p == 'anthropic') ai = true;
+        if (const ['anthropic', 'openai', 'gemini', 'openrouter', 'compatible'].contains(p)) ai = true;
         return _json({'ok': true});
       case ('DELETE', ['social', 'credentials', final p]):
         credentials.remove(p);
         return _json({'ok': true});
       case ('GET', ['social', 'accounts']):
         return _json(accounts);
+      case ('POST', ['social', 'credentials', final p, 'check']):
+        if (b()['secret'] == 'wrong') return _json({'error': '$p did not accept the app ID and secret.'}, 422);
+        return _json({'detail': '$p accepted the app ID and secret.'});
+      case ('POST', ['social', 'connect', 'mastodon']):
+        return _json({'url': 'https://${b()['instance']}/oauth/authorize?client_id=vani'});
       case ('POST', ['social', 'connect', final p]):
         if (credentials[p]?['set'] != true) {
           return _json({'error': 'Add the $p app credentials first.'}, 412);
@@ -335,8 +345,31 @@ class FakeHub {
           'variants': {for (final p in b()['platforms'] as List) '$p': 'New glaze, new mugs. Out Friday.'},
           'hashtags': ['ceramics', 'handmade'],
         });
+      case ('GET', ['social', 'ai', 'models']):
+        return _json({
+          'models': ['${q['provider']}-small', '${q['provider']}-big'],
+        });
       case ('POST', ['social', 'ai', 'translate']):
-        if (!ai) return _json({'error': 'Add your Anthropic API key first.'}, 412);
+        // With x-vani-ai: device and no key, the hub hands the prompt to the device.
+        if (!ai) {
+          if (req.headers['x-vani-ai'] != 'device') return _json({'error': 'Add an AI key first.'}, 412);
+          final given = req.headers['x-vani-ai-answers'];
+          if (given == null) {
+            deviceRequests++;
+            return _json({
+              'error': 'needs the device AI',
+              'needsAi': {
+                'system': 'Translate the text into ${b()['to']}.',
+                'prompt': '${b()['text']}',
+                'images': <String>[],
+                'schema': {'type': 'object'},
+                'effort': 'low',
+              },
+            }, 409);
+          }
+          deviceAnswers = jsonDecode(utf8.decode(base64Url.decode(base64Url.normalize(given)))) as List;
+          return _json(deviceAnswers.first);
+        }
         return _json({'lang': b()['to'], 'text': '[${b()['to']}] ${b()['text']}'});
       case ('POST', ['social', 'ai', 'weekly']):
         if (!ai) return _json({'error': 'Add your Anthropic API key first.'}, 412);

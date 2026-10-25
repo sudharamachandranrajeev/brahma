@@ -2,6 +2,7 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../ui/hub_setup.dart';
 import '../ui/look.dart';
 import 'providers.dart';
 import 'shell.dart';
@@ -19,6 +20,6 @@ class VaniApp extends ConsumerWidget {
     themeAnimationDuration: const Duration(milliseconds: 350),
     builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
     // There is no onboarding: without a hub every page offers to connect one.
-    home: const LinkHandler(child: VaniShell()),
+    home: LinkHandler(onAppLink: (context, link) => openHubLink(context, ref, link), child: const VaniShell()),
   );
 }

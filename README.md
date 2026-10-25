@@ -31,9 +31,10 @@
 
 Vani ("voice") is the Brahma social media manager for Instagram, Facebook, YouTube, LinkedIn, Threads,
 Bluesky, Mastodon and Telegram. It is a Flutter app built on `brahma_core`. The work that has to happen
-while your devices are off runs on your own hub, Brahma Watch (`brahma/watch`, a Cloudflare Worker): it
+while your devices are off runs on your own hub (`hub/`, a Cloudflare Worker on your account): it
 holds the platform tokens, publishes on schedule, collects comments, messages, mentions and live chat,
-runs discovery watches and pushes alerts to your phone. The API is described in `brahma/watch/SOCIAL.md`.
+runs discovery watches and pushes alerts to your phone. Vani sets it up and updates it; the API is described
+in `hub/README.md`.
 
 ## Key Features
 
@@ -110,7 +111,15 @@ $ flutter pub get
 $ flutter run -d linux
 ```
 
-Then point *Settings* at your Brahma Watch hub (address and token).
+Then set up your hub: *Settings > Social hub > Set up a hub* (on a computer, once). Vani walks you
+through a free Cloudflare account, switching on R2 and making a key, then deploys the hub itself and
+shows a QR code for your phone. *Connect hub* takes an existing hub's address and token instead.
+
+Vani ships the hub's code in `assets/hub`. After changing `hub/`, bump `hub/src/version.ts` and rebuild it:
+
+```bash
+$ (cd hub && npm ci && npm test && npm run bundle)
+```
 
 ```bash
 # Check and test
@@ -151,12 +160,12 @@ This software uses the following open source packages and services:
 - [Inter](https://rsms.me/inter/) and [Plus Jakarta Sans](https://github.com/tokotype/PlusJakartaSans)
   fonts (SIL Open Font License)
 - [Claude](https://www.anthropic.com/claude) by Anthropic for the AI features
-- [Cloudflare Workers](https://workers.cloudflare.com) (D1, R2) for the Brahma Watch hub
+- [Cloudflare Workers](https://workers.cloudflare.com) (D1, R2) for the hub
 
 ## Related
 
 * [brahma](https://github.com/sudharamachandranrajeev/brahma) – the shared core of the Brahma apps and
-  the Brahma Watch hub Vani talks to
+  the hub Vani talks to
 * [artha](https://github.com/sudharamachandranrajeev/artha) – personal finance, accounting and investments
 * [graha-anveshana](https://github.com/sudharamachandranrajeev/graha-anveshana) – property search
 * [vahana-anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana) – car search

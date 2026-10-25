@@ -551,7 +551,7 @@ class _Ideas extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
-                'Post ideas from Claude appear here each morning once your Anthropic key is set on the hub.',
+                'Post ideas appear here each morning once a key for an AI service is set on the hub (Settings > AI).',
                 style: t.bodyMedium?.copyWith(color: tone.muted),
               ),
             ),

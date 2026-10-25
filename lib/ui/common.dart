@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../app/providers.dart';
 import '../domain/hub.dart';
+import 'hub_setup.dart';
 import 'look.dart';
 
 /// A hub time (ISO, UTC) in the device's time zone, or null.
@@ -244,13 +245,25 @@ class ConnectHub extends ConsumerWidget {
           icon: Icons.hub_rounded,
           title: 'Connect your social hub',
           message:
-              'Vani talks to your own hub, a Cloudflare Worker (Brahma Watch) that holds your account tokens, '
-              'publishes on schedule and collects replies while this device is off. Enter its address and '
-              'API token to start.',
-          action: FilledButton.icon(
-            onPressed: () => editHub(context, ref),
-            icon: const Icon(Icons.link_rounded),
-            label: const Text('Connect hub'),
+              'Vani works through your own hub: a small program on your free Cloudflare account that keeps '
+              'your accounts signed in, posts on schedule and collects replies while this device is off. '
+              'Set one up (about 15 minutes, once, on a computer), or connect the one you have.',
+          action: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: [
+              FilledButton.icon(
+                onPressed: () => setUpHub(context, ref),
+                icon: const Icon(Icons.rocket_launch_rounded),
+                label: const Text('Set up a hub'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => editHub(context, ref),
+                icon: const Icon(Icons.link_rounded),
+                label: const Text('Connect hub'),
+              ),
+            ],
           ),
         ),
       ),
@@ -311,22 +324,23 @@ Future<void> editHub(BuildContext context, WidgetRef ref) async {
     action: 'Connect',
     fields: (_) => [
       const Text(
-        'Your Brahma Watch Worker\'s address and its API_TOKEN secret. They are stored encrypted and '
-        'synced to your other devices.',
+        'Your hub\'s address and API token, or paste the phone link (vani://hub…) that its setup showed. '
+        'They are stored encrypted and synced to your other devices.',
       ),
       const SizedBox(height: 16),
-      Field(url, 'Hub address', hint: 'https://brahma-watch.you.workers.dev'),
+      Field(url, 'Hub address', hint: 'https://vani-hub.you.workers.dev'),
       Field(token, 'API token', obscure: true),
     ],
     onSave: () async {
-      final problem = HubLink.checkUrl(url.text);
-      if (problem != null) return problem;
-      if (token.text.trim().isEmpty) return 'Enter the API token.';
-      final link = HubLink(url: url.text.trim().replaceAll(RegExp(r'/+$'), ''), token: token.text.trim());
+      var link = HubLink.fromPairingLink(url.text);
+      if (link == null) {
+        final problem = HubLink.checkUrl(url.text);
+        if (problem != null) return problem;
+        if (token.text.trim().isEmpty) return 'Enter the API token.';
+        link = HubLink(url: url.text.trim().replaceAll(RegExp(r'/+$'), ''), token: token.text.trim());
+      }
       // A real call, so a typo shows here and not on every page.
-      await HubClient(link.url, link.token, client: ref.read(httpClientProvider)).meta();
-      await ref.mutate((s) => s.prefs.saveHub(link));
-      ref.read(hubRevisionProvider.notifier).bump();
+      await saveHubLink(ref, link);
       return null;
     },
   );
@@ -334,7 +348,7 @@ Future<void> editHub(BuildContext context, WidgetRef ref) async {
 }
 
 /// A button for an AI feature. Greyed out, with a hint saying where to add
-/// the key, while the hub has no Anthropic key.
+/// the key, while no AI is set up.
 class AiButton extends ConsumerWidget {
   const AiButton({
     super.key,
@@ -347,7 +361,7 @@ class AiButton extends ConsumerWidget {
   final VoidCallback? onPressed;
   final bool filled, busy;
 
-  static const _noKey = 'Add your Anthropic API key in Accounts > App credentials to use the AI features.';
+  static const _noKey = 'Set up AI in Settings > AI (an API key, or your own plan on a computer) to use the AI features.';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -379,5 +393,41 @@ class AiButton extends ConsumerWidget {
             label: Text(label),
           );
     return ready ? button : Tooltip(message: _noKey, child: button);
+  }
+}
+
+/// A labelled value to paste somewhere else, with a Copy button.
+class Copyable extends StatelessWidget {
+  const Copyable(this.label, this.value, {super.key, this.hint});
+  final String label, value;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final tone = Tone.of(context);
+    final row = Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(14, 8, 4, 8),
+      decoration: BoxDecoration(color: tone.cardHigh, borderRadius: BorderRadius.circular(14)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tone.muted)),
+                SelectableText(value, style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Copy $label',
+            onPressed: () => copyText(context, value, what: '$label copied.'),
+            icon: const Icon(Icons.copy_rounded, size: 18),
+          ),
+        ],
+      ),
+    );
+    return hint == null ? row : Hint(hint!, child: row);
   }
 }
