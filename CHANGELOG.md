@@ -7,6 +7,10 @@ changelog in `apps/<name>`.
 
 - Anveshana splits in two: Graha Anveshana (property, still `apps/anveshana`) and the new
   Vahana Anveshana (cars, `apps/vahana`), each with its own card, look and database.
+- Every app's phone navigation is a scrolling dock plus a side panel (swipe right on any page);
+  the bottom bar and its More sheet are gone. Vani keeps its own bar for now.
+- Apps updated: Graha Anveshana 0.4.1 (postcode lookups fixed), Vahana Anveshana 0.2.1,
+  Artha 0.2.0-beta.15, Udyoga 0.3.1, Vidya 0.2.1.
 
 ## 0.1.0 (2026-10-24)
 
