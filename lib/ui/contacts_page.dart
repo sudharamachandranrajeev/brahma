@@ -11,6 +11,7 @@ import '../domain/json.dart';
 import '../domain/pipeline.dart';
 import 'applications_page.dart';
 import 'common.dart';
+import 'linkedin_page.dart';
 import 'look.dart';
 
 const _kindIcons = {
@@ -259,6 +260,12 @@ class LeadTile extends ConsumerWidget {
                     icon: const Icon(Icons.edit_note),
                     label: const Text('Draft a message'),
                   ),
+                if (ref.read(advisorProvider).value != null)
+                  OutlinedButton.icon(
+                    onPressed: () => _linkedInNote(context, ref, l),
+                    icon: const Icon(Icons.person_add_alt),
+                    label: const Text('LinkedIn note'),
+                  ),
               ],
             ),
             const Divider(height: 24),
@@ -314,6 +321,13 @@ class LeadTile extends ConsumerWidget {
       ),
     ),
   );
+
+  Future<void> _linkedInNote(BuildContext context, WidgetRef ref, Lead l) async {
+    final job = l.jobId == null
+        ? null
+        : (await ref.read(jobsProvider.future)).where((j) => j.id == l.jobId).firstOrNull;
+    if (context.mounted) await linkedInNoteFor(context, ref, l, job: job);
+  }
 
   Future<void> _draft(BuildContext context, WidgetRef ref, Lead l) async {
     final p = await ref.read(profileProvider.future);

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/book.dart';
 import '../domain/ai.dart';
+import '../domain/claude_code.dart';
 import '../domain/feeds.dart';
 import '../domain/gemini.dart';
 import '../domain/n8n.dart';
@@ -50,12 +51,15 @@ class SettingsPage extends ConsumerWidget {
             children: [
               Text(
                 model == null
-                    ? 'The AI features (CV reading, assessments, career map, job search, tailored CVs and '
-                          'interview reviews) need a key. The quickest is a free Gemini key: sign in to Google '
-                          'AI Studio with your Google account, press Create API key and paste it here. A '
-                          'Claude API key from console.anthropic.com works too; Anthropic bills you for use.'
+                    ? 'The AI features (CV reading, assessments, career map, job search, tailored CVs, '
+                          'interview reviews and the LinkedIn studio) need a key. The quickest is a free Gemini '
+                          'key: sign in to Google AI Studio with your Google account, press Create API key and '
+                          'paste it here. A Claude API key from console.anthropic.com works too; Anthropic bills '
+                          'you for use.${ClaudeCodeCli.supported ? ' With a Claude Pro or Max plan, connect it '
+                                    'through Claude Code instead.' : ''}'
                     : 'Spent about \$${(s?.spend ?? 0).toStringAsFixed(2)} this month on this device at '
-                          'list prices; a Gemini key on the free tier costs nothing.',
+                          'list prices; a Gemini key on the free tier and your Claude subscription cost nothing '
+                          'more.',
               ),
               if (model == null) ...[
                 const SizedBox(height: 12),
@@ -88,6 +92,7 @@ class SettingsPage extends ConsumerWidget {
                     ),
                   ],
                 ),
+              if (ClaudeCodeCli.supported) const _SubscriptionRow(),
               if (s != null && model != null) ...[
                 const SizedBox(height: 12),
                 Choice<String>(
@@ -292,6 +297,12 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 
+/// Whether Udyoga looks for a new version at start, on this device.
+final _updateOnStartProvider = FutureProvider<bool>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).book.updateOnStart();
+});
+
 /// This version, and a newer one when GitHub has it, installed from here.
 class _UpdateCard extends ConsumerWidget {
   const _UpdateCard(this.updater);
@@ -301,11 +312,18 @@ class _UpdateCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final update = ref.watch(updateProvider);
     final release = update.value;
+    final onStart = ref.watch(_updateOnStartProvider).value ?? true;
+    final asked = ref.watch(updateAskedProvider);
     return SectionCard(
       title: 'Updates',
       trailing: TextButton(
-        onPressed: update.isLoading ? null : () => ref.invalidate(updateProvider),
-        child: const Text('Check again'),
+        onPressed: update.isLoading
+            ? null
+            : () {
+                ref.read(updateAskedProvider.notifier).ask();
+                ref.invalidate(updateProvider);
+              },
+        child: Text(asked || onStart ? 'Check again' : 'Check now'),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -313,21 +331,28 @@ class _UpdateCard extends ConsumerWidget {
           Text(switch (update) {
             AsyncLoading() => 'Udyoga ${updater.current}. Looking for a newer version…',
             AsyncError(:final error) => 'Udyoga ${updater.current}. Could not check: $error',
+            _ when release == null && !asked && !onStart => 'Udyoga ${updater.current}.',
             _ when release == null => 'Udyoga ${updater.current} is the newest version.',
             _ => 'Udyoga ${release.version} is out (this is ${updater.current}).',
           }),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Look for updates when Udyoga starts'),
+            subtitle: const Text('Asks before anything is downloaded.'),
+            value: onStart,
+            onChanged: (v) => ref.mutate((s) => s.book.setUpdateOnStart(v)),
+          ),
           if (release != null && !update.isLoading) ...[
             if (release.notes.isNotEmpty) ...[
-              const SizedBox(height: 8),
               Text(release.notes, maxLines: 8, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 12),
             ],
-            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
                 FilledButton.icon(
-                  onPressed: () => _install(context, release),
+                  onPressed: () => installUpdate(context, updater, release),
                   icon: const Icon(Icons.system_update_outlined),
                   label: const Text('Update now'),
                 ),
@@ -343,34 +368,192 @@ class _UpdateCard extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Future<void> _install(BuildContext context, Release release) async {
-    final said = await runAi(
-      context,
-      title: 'Updating to ${release.version}',
-      status: 'Downloading…',
-      task: (progress) async {
-        final file = await updater.download(
-          release,
-          onProgress: (d) => progress('Downloading… ${(d * 100).round()}%'),
-        );
-        progress('Installing…');
-        return updater.install(file);
-      },
+/// Asks whether to install [release] now; installs it on yes.
+Future<void> offerUpdate(BuildContext context, Updater updater, Release release) async {
+  final go = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Udyoga ${release.version} is out'),
+      scrollable: true,
+      content: SizedBox(
+        width: 480,
+        child: Text(
+          [
+            'You have ${updater.current}. Update now? Your data stays as it is.',
+            if (release.notes.isNotEmpty) release.notes,
+          ].join('\n\n'),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Later')),
+        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Update now')),
+      ],
+    ),
+  );
+  if (go == true && context.mounted) await installUpdate(context, updater, release);
+}
+
+/// Downloads, checks and installs [release], then offers a restart on Linux.
+Future<void> installUpdate(BuildContext context, Updater updater, Release release) async {
+  final said = await runAi(
+    context,
+    title: 'Updating to ${release.version}',
+    status: 'Downloading…',
+    task: (progress) async {
+      final file = await updater.download(
+        release,
+        onProgress: (d) => progress('Downloading… ${(d * 100).round()}%'),
+      );
+      progress('Installing…');
+      return updater.install(file);
+    },
+  );
+  if (said == null || !context.mounted) return;
+  if (updater.os != 'linux') return showMessage(context, said);
+  final restart = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Udyoga ${release.version} is installed'),
+      content: const Text('Restart Udyoga to use it. Your data stays as it is.'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Later')),
+        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Restart now')),
+      ],
+    ),
+  );
+  if (restart == true) await Updater.restartLinux();
+}
+
+/// The Claude subscription in the AI card: who it is signed in as and for
+/// how long Udyoga may use it.
+class _SubscriptionRow extends ConsumerWidget {
+  const _SubscriptionRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final grant = ref.watch(claudeCodeGrantProvider).value;
+    final active = grant != null && grant.activeAt(DateTime.now());
+    return Row(
+      children: [
+        Expanded(
+          child: Text(switch (grant) {
+            null => 'Claude subscription: not connected',
+            _ when active =>
+              'Claude subscription: ${grant.account.isEmpty ? 'connected' : grant.account} through Claude Code, '
+                  'until ${niceDateTime(grant.expires.toLocal().toIso8601String())}',
+            _ => 'Claude subscription: the 24 hours are up',
+          }),
+        ),
+        if (grant != null)
+          TextButton(
+            onPressed: () => ref.mutate((s) => s.book.setClaudeCodeGrant(null)),
+            child: const Text('Disconnect'),
+          ),
+        if (!active)
+          TextButton(
+            onPressed: () => connectClaudeCode(context, ref),
+            child: Text(grant == null ? 'Connect' : 'Reconnect'),
+          ),
+      ],
     );
-    if (said == null || !context.mounted) return;
-    if (updater.os != 'linux') return showMessage(context, said);
-    final restart = await showDialog<bool>(
+  }
+}
+
+/// Lets Udyoga use the Claude subscription that this device's Claude Code
+/// is signed in to, for 24 hours. Signing in happens in Claude Code's own
+/// flow, in a terminal; Udyoga only asks Claude Code who is signed in.
+/// Returns whether access was given.
+Future<bool> connectClaudeCode(BuildContext context, WidgetRef ref) async {
+  final exe = ClaudeCodeCli.locate();
+  if (exe == null) {
+    await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Udyoga ${release.version} is installed'),
-        content: const Text('Restart Udyoga to use it. Your data stays as it is.'),
+        title: const Text('Claude Code is not installed'),
+        content: const Text(
+          'Udyoga uses your Claude subscription through Claude Code, Anthropic\'s own app, so your Claude '
+          'password and sign-in never pass through Udyoga. Install Claude Code, then connect again.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Later')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Restart now')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          FilledButton.icon(
+            onPressed: () => openLink(context, claudeCodeInstallPage),
+            icon: const Icon(Icons.open_in_new, size: 18),
+            label: const Text('How to install it'),
+          ),
         ],
       ),
     );
-    if (restart == true) await Updater.restartLinux();
+    return false;
+  }
+  while (true) {
+    if (!context.mounted) return false;
+    final auth = await runAi(
+      context,
+      title: 'Claude subscription',
+      status: 'Asking Claude Code who is signed in…',
+      task: (_) => ClaudeCodeCli.status(exe),
+    );
+    if (auth == null || !context.mounted) return false;
+    if (auth.loggedIn && auth.subscription) {
+      final allow = await confirm(
+        context,
+        title: 'Use your Claude subscription?',
+        message:
+            'Udyoga will run Claude Code, signed in as ${auth.account.isEmpty ? 'your Claude account' : auth.account}, '
+            'for its AI features for the next 24 hours. Requests count towards your plan\'s usage limits. After 24 '
+            'hours Udyoga stops and asks again when it starts.',
+        action: 'Allow for 24 hours',
+      );
+      if (!allow) return false;
+      final first = await ref.read(sessionProvider).book.claudeCodeGrant() == null;
+      await ref.mutate((s) async {
+        await s.book.setClaudeCodeGrant(
+          ClaudeCodeGrant(at: DateTime.now().toUtc(), account: auth.account, exe: exe),
+        );
+        // A first connection switches the AI to the subscription; the model
+        // can be changed below.
+        if (first) await s.book.setPref(PrefKeys.aiModel, AiProvider.claudeCode.defaultModel);
+      });
+      if (context.mounted) showMessage(context, 'Connected for 24 hours.');
+      return true;
+    }
+    final next = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign in to Claude Code'),
+        content: Text(
+          '${auth.loggedIn ? 'Claude Code is signed in with an API key, not a Claude plan.' : 'Claude Code is not signed in.'} '
+          'Udyoga opens Claude Code\'s own sign-in in a terminal: choose your Claude account there and finish in '
+          'the browser. Then come back and press "I have signed in".\n\n'
+          'Or run this yourself:\n${ClaudeCodeCli.signInCommand(exe)}',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, 'check'), child: const Text('I have signed in')),
+          FilledButton(onPressed: () => Navigator.pop(context, 'open'), child: const Text('Open sign-in')),
+        ],
+      ),
+    );
+    if (next == null || !context.mounted) return false;
+    if (next == 'open') {
+      if (!await ClaudeCodeCli.openSignIn(exe) && context.mounted) {
+        await copyText(
+          context,
+          ClaudeCodeCli.signInCommand(exe),
+          what: 'No terminal found. The command is copied.',
+        );
+      }
+      if (!context.mounted) return false;
+      final done = await confirm(
+        context,
+        title: 'Finish signing in',
+        message: 'Complete the sign-in in the terminal and your browser, then continue.',
+        action: 'I have signed in',
+      );
+      if (!done) return false;
+    }
   }
 }

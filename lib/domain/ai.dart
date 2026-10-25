@@ -16,11 +16,15 @@ class AiException implements Exception, UserFacingError {
 }
 
 /// Shown wherever an AI feature runs without a key.
-const needsAiKey = 'Add a free Gemini key or a Claude API key in Settings to use the AI features.';
+const needsAiKey =
+    'Add a free Gemini key or a Claude API key, or connect your Claude subscription, in Settings to use the AI '
+    'features.';
 
 /// The services Udyoga can ask, in the order one is picked when the chosen
-/// model's service has no key.
+/// model's service has no key. The subscription comes first: it costs the
+/// user nothing more.
 enum AiProvider {
+  claudeCode('Claude subscription', '${ClaudeCodeModels.prefix}claude-opus-5-5'),
   claude('Claude', 'claude-opus-5-5'),
   gemini('Gemini', 'gemini-3.8-flash');
 
@@ -28,11 +32,24 @@ enum AiProvider {
   final String label;
   final String defaultModel;
 
-  static AiProvider of(String model) => model.startsWith('gemini') ? gemini : claude;
+  static AiProvider of(String model) => model.startsWith(ClaudeCodeModels.prefix)
+      ? claudeCode
+      : model.startsWith('gemini')
+      ? gemini
+      : claude;
+}
+
+/// Models run through the user's own Claude Code are named with this prefix,
+/// so they never mix with the same model on an API key.
+abstract final class ClaudeCodeModels {
+  static const prefix = 'claude-code:';
 }
 
 /// Models the user can choose in Settings, best first within each service.
 const aiModels = {
+  '${ClaudeCodeModels.prefix}claude-opus-5-5': 'Claude Opus 5.5 on your subscription (most thorough)',
+  '${ClaudeCodeModels.prefix}claude-sonnet-5-5': 'Claude Sonnet 5.5 on your subscription (faster)',
+  '${ClaudeCodeModels.prefix}claude-haiku-5-5': 'Claude Haiku 5.5 on your subscription (quickest)',
   'gemini-3.8-flash': 'Gemini 3.8 Flash (free tier, thorough)',
   'gemini-3.5-flash-lite': 'Gemini 3.5 Flash-Lite (free tier, quickest)',
   'claude-opus-5-5': 'Claude Opus 5.5 (most thorough)',

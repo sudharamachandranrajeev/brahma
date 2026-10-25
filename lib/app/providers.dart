@@ -11,6 +11,7 @@ import '../domain/advisor.dart';
 import '../domain/book.dart';
 import '../domain/ai.dart';
 import '../domain/claude.dart';
+import '../domain/claude_code.dart';
 import '../domain/gemini.dart';
 import '../domain/profile.dart';
 import '../domain/refresh.dart';
@@ -29,9 +30,31 @@ final httpClientProvider = Provider<http.Client>((ref) => http.Client());
 /// Null in the Brahma suite (which updates itself) and in tests.
 final updaterProvider = Provider<Updater?>((ref) => null);
 
-/// A newer release for this device, looked for once a run; null when this
-/// is the newest or there is no updater.
-final updateProvider = FutureProvider<Release?>((ref) async => ref.watch(updaterProvider)?.check());
+/// Set when the user asks for an update check, so one runs even with the
+/// start-up check turned off.
+class UpdateAsked extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void ask() => state = true;
+}
+
+final updateAskedProvider = NotifierProvider<UpdateAsked, bool>(UpdateAsked.new);
+
+/// A newer release for this device, looked for once a run (at start unless
+/// the user turned that off in Settings); null when this is the newest,
+/// there is no updater, or nobody asked.
+final updateProvider = FutureProvider<Release?>((ref) async {
+  final updater = ref.watch(updaterProvider);
+  if (updater == null) return null;
+  if (!ref.watch(updateAskedProvider) && !await ref.read(sessionProvider).book.updateOnStart()) return null;
+  return updater.check();
+});
+
+/// Permission to use this device's Claude Code, or null when never given.
+final claudeCodeGrantProvider = FutureProvider<ClaudeCodeGrant?>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).book.claudeCodeGrant();
+});
 
 /// What main() and the tests override: the session, under both its Udyoga
 /// and its shared type, and the app's identity and hints.
@@ -142,6 +165,7 @@ final advisorProvider = FutureProvider<Advisor?>((ref) async {
   final client = ref.watch(httpClientProvider);
   void onUsage(AiUsage u) => s.book.addSpend(u, month: today().substring(0, 7)).ignore();
   return Advisor(switch (AiProvider.of(model)) {
+    AiProvider.claudeCode => ClaudeCode(grant: (await s.book.claudeCodeGrant())!, model: model),
     AiProvider.claude => Claude(apiKey: key, model: model, client: client, onUsage: onUsage),
     AiProvider.gemini => Gemini(apiKey: key, model: model, client: client, onUsage: onUsage),
   }, today: today());
