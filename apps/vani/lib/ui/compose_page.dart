@@ -684,11 +684,56 @@ class _ComposePageState extends ConsumerState<ComposePage> {
               hint: 'Empty uses the main text',
               lines: 4,
             ),
-            Field(_ctl(_comments, a.id), 'First comment for ${a.platform.label}', lines: 2),
+            if (a.platform != Platform.telegram)
+              Field(_ctl(_comments, a.id), 'First comment for ${a.platform.label}', lines: 2),
           ],
         ],
       ),
     );
+  }
+
+  /// Alt text for one file: typed, or drafted by Claude from the image and the post's text.
+  Future<void> _editAlt(MediaItem m) async {
+    final alt = TextEditingController(text: m.alt ?? '');
+    var drafting = false;
+    MediaItem? saved;
+    await showFormDialog(
+      context,
+      title: 'Alt text',
+      fields: (setState) => [
+        const Text(
+          'Describe the picture for people using screen readers. It goes out on Instagram, Facebook, Threads, '
+          'Bluesky, Mastodon and LinkedIn.',
+        ),
+        const SizedBox(height: 16),
+        Field(alt, 'Alt text', hint: 'A ginger cat asleep on a sunny windowsill', lines: 3, autofocus: true),
+        if (m.isImage)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AiButton(
+              label: 'Describe',
+              busy: drafting,
+              onPressed: drafting
+                  ? null
+                  : () async {
+                      setState(() => drafting = true);
+                      final text = _text.text.trim();
+                      await guarded(context, () async {
+                        saved = await ref.hub((h) => h.describeMedia(m.id, context: text), refresh: false);
+                        alt.text = saved!.alt ?? '';
+                      });
+                      setState(() => drafting = false);
+                    },
+            ),
+          ),
+      ],
+      onSave: () async {
+        saved = await ref.hub((h) => h.setAlt(m.id, alt.text.trim()));
+        return null;
+      },
+    );
+    alt.dispose();
+    if (saved != null && mounted) setState(() => _known[m.id] = saved!);
   }
 
   Widget _mediaPanel() {
@@ -726,7 +771,12 @@ class _ComposePageState extends ConsumerState<ComposePage> {
                   Padding(
                     key: ValueKey(id),
                     padding: const EdgeInsets.only(right: 10),
-                    child: _MediaTile(id: id, media: m, onRemove: () => setState(() => _mediaIds.remove(id))),
+                    child: _MediaTile(
+                      id: id,
+                      media: m,
+                      onRemove: () => setState(() => _mediaIds.remove(id)),
+                      onAlt: m == null ? null : () => _editAlt(m),
+                    ),
                   ),
               ],
             ),
@@ -838,10 +888,11 @@ class _Counter extends StatelessWidget {
 }
 
 class _MediaTile extends StatelessWidget {
-  const _MediaTile({required this.id, required this.media, required this.onRemove});
+  const _MediaTile({required this.id, required this.media, required this.onRemove, this.onAlt});
   final String id;
   final MediaItem? media;
   final VoidCallback onRemove;
+  final VoidCallback? onAlt;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -871,6 +922,34 @@ class _MediaTile extends StatelessWidget {
             icon: const Icon(Icons.close_rounded),
           ),
         ),
+        if (onAlt != null)
+          Positioned(
+            left: 6,
+            bottom: 6,
+            child: Tooltip(
+              message: (media?.alt ?? '').isEmpty ? 'Add alt text' : media!.alt!,
+              child: Material(
+                color: (media?.alt ?? '').isEmpty ? Colors.black54 : growth,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: onAlt,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    child: Text(
+                      'ALT',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     ),
   );

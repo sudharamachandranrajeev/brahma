@@ -61,12 +61,20 @@ typedef DiscoveryRun = ({List<Find> finds, List<Alert> alerts, List<String> erro
 
 /// Every call of the social hub's HTTP API (watch/SOCIAL.md).
 class HubClient {
-  HubClient(String url, this.token, {http.Client? client, this.timeout = const Duration(seconds: 30)})
-    : base = Uri.parse(url.trim().replaceAll(RegExp(r'/+$'), '')),
-      _http = client ?? http.Client();
+  HubClient(
+    String url,
+    this.token, {
+    this.profile = Profile.main,
+    http.Client? client,
+    this.timeout = const Duration(seconds: 30),
+  }) : base = Uri.parse(url.trim().replaceAll(RegExp(r'/+$'), '')),
+       _http = client ?? http.Client();
 
   final Uri base;
   final String token;
+
+  /// The profile every call works in (profile management is hub-wide).
+  final String profile;
   final Duration timeout;
   final http.Client _http;
 
@@ -78,7 +86,11 @@ class HubClient {
     return base.replace(path: '${base.path}$path', queryParameters: q.isEmpty ? null : q);
   }
 
-  Map<String, String> get _headers => {'authorization': 'Bearer $token', 'accept': 'application/json'};
+  Map<String, String> get _headers => {
+    'authorization': 'Bearer $token',
+    'accept': 'application/json',
+    if (profile != Profile.main) 'x-vani-profile': profile,
+  };
 
   Future<Object?> _send(
     String method,
@@ -151,6 +163,21 @@ class HubClient {
 
   Future<void> deleteCredential(CredentialProvider p) => _send('DELETE', '/social/credentials/${p.name}');
 
+  // ---- profiles ----
+
+  Future<List<Profile>> profiles() async => [
+    for (final j in await _list('/social/profiles')) Profile.fromJson(j),
+  ];
+
+  Future<Profile> addProfile(String name) async =>
+      Profile.fromJson(await _obj('POST', '/social/profiles', body: {'name': name}));
+
+  Future<Profile> renameProfile(String id, String name) async =>
+      Profile.fromJson(await _obj('PATCH', '/social/profiles/$id', body: {'name': name}));
+
+  /// Refused while the profile has accounts.
+  Future<void> deleteProfile(String id) => _send('DELETE', '/social/profiles/$id');
+
   // ---- accounts ----
 
   Future<List<Account>> accounts() async => [
@@ -179,6 +206,11 @@ class HubClient {
         ),
       );
 
+  /// [chat]: @channel, a t.me link or a chat id.
+  Future<Account> addTelegram({required String botToken, required String chat}) async => Account.fromJson(
+    await _obj('POST', '/social/accounts/telegram', body: {'botToken': botToken, 'chat': chat}),
+  );
+
   Future<Account> checkAccount(String id) async =>
       Account.fromJson(await _obj('POST', '/social/accounts/$id/check'));
 
@@ -189,6 +221,18 @@ class HubClient {
   Future<List<MediaItem>> media() async => [
     for (final m in await _list('/social/media')) MediaItem.fromJson(m),
   ];
+
+  Future<MediaItem> setAlt(String id, String alt) async =>
+      MediaItem.fromJson(await _obj('PATCH', '/social/media/$id', body: {'alt': alt}));
+
+  /// Claude drafts alt text (saved on the hub); [context] is the post's text.
+  Future<MediaItem> describeMedia(String id, {String? context}) async => MediaItem.fromJson(
+    await _obj(
+      'POST',
+      '/social/media/$id/alt',
+      body: {if (context != null && context.isNotEmpty) 'context': context},
+    ),
+  );
 
   Future<void> deleteMedia(String id) => _send('DELETE', '/social/media/$id');
 
@@ -288,6 +332,7 @@ class HubClient {
     Platform? platform,
     String? kind,
     String? accountId,
+    String? triage,
     String? before,
     int? limit,
   }) async {
@@ -299,6 +344,7 @@ class HubClient {
         'platform': platform?.name,
         'kind': kind,
         'accountId': accountId,
+        'triage': triage,
         'before': before,
         'limit': limit?.toString(),
       },
@@ -320,6 +366,13 @@ class HubClient {
 
   Future<List<String>> suggestReplies(String id) async =>
       strs((await _obj('POST', '/social/inbox/$id/suggest'))['suggestions']);
+
+  Future<InboxItem> translateItem(String id) async =>
+      InboxItem.fromJson(await _obj('POST', '/social/inbox/$id/translate'));
+
+  /// [action]: hide | unhide | delete.
+  Future<InboxItem> moderate(String id, String action) async =>
+      InboxItem.fromJson(await _obj('POST', '/social/inbox/$id/moderate', body: {'action': action}));
 
   Future<int> refreshInbox() async => integer((await _obj('POST', '/social/inbox/refresh'))['items']);
 
@@ -408,6 +461,13 @@ class HubClient {
         if (Platform.values.any((p) => p.name == e.key)) Platform.parse(e.key): str(e.value),
     }, strs(j['hashtags']));
   }
+
+  /// Translates [text] into [to] (a language name).
+  Future<String> translate(String text, String to) async =>
+      str((await _obj('POST', '/social/ai/translate', body: {'text': text, 'to': to}))['text']);
+
+  /// Makes the weekly summary now; it also arrives as a push.
+  Future<Alert> weeklySummary() async => Alert.fromJson(await _obj('POST', '/social/ai/weekly'));
 
   Future<List<Idea>> ideas() async => parseIdeas(await _obj('GET', '/social/ai/ideas'));
 

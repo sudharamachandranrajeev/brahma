@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:vani/app/app.dart';
 import 'package:vani/app/providers.dart';
 
 import 'app_harness.dart';
@@ -69,6 +71,64 @@ void main() {
     await app.close();
   });
 
+  testWidgets('a new profile switches the whole app; switching back brings the data back', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    expect(find.text('Connect your first account'), findsNothing);
+    await app.tap(find.byTooltip('Profile: Main'));
+    await app.tapText('New profile');
+    await app.enter('Name', 'Pottery shop');
+    await app.tapText('Create');
+    expect(find.byTooltip('Profile: Pottery shop'), findsOneWidget);
+    expect(find.text('Connect your first account'), findsOneWidget);
+    final shop = app.hub.profileHubs.keys.single;
+    expect(app.hub.profileHubs[shop]!.log, contains('GET /social/overview'));
+
+    // Every page now works in the new, empty profile.
+    for (final label in pages) {
+      await app.go(label);
+      expect(tester.takeException(), isNull, reason: label);
+    }
+
+    await app.tap(find.byTooltip('Profile: Pottery shop'));
+    await app.tapText('Main');
+    expect(find.byTooltip('Profile: Main'), findsOneWidget);
+    await app.go('Accounts');
+    expect(
+      find.text('No accounts yet. Add your developer app credentials below, then connect.'),
+      findsNothing,
+    );
+
+    // Delete it from Settings (once the "Now managing" message has gone from over the rail).
+    await tester.pump(const Duration(seconds: 6));
+    await app.settle();
+    await app.go('Settings');
+    await app.tap(find.byTooltip('Delete Pottery shop'));
+    await app.tapText('Delete');
+    expect(app.hub.profiles.map((p) => p['name']), ['Main']);
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
+
+  testWidgets('a profile deleted elsewhere falls back to the main one', (tester) async {
+    final hub = FakeHub();
+    hub.profiles.add({'id': 'gone', 'name': 'Gone', 'createdAt': '2026-01-02T00:00:00.000Z'});
+    hub.profileHubs['gone'] = FakeHub(seeded: false);
+    final app = AppHarness(tester, hub: hub)..desktop();
+    await app.open();
+    await app.run();
+    await app.tap(find.byTooltip('Profile: Main'));
+    await app.tapText('Gone');
+    expect(find.byTooltip('Profile: Gone'), findsOneWidget);
+    hub.profiles.removeLast();
+    hub.profileHubs.remove('gone');
+    ProviderScope.containerOf(tester.element(find.byType(VaniApp))).read(hubRevisionProvider.notifier).bump();
+    await app.settle();
+    expect(find.byTooltip('Profile: Main'), findsOneWidget);
+    await app.close();
+  });
+
   testWidgets('compose and post now', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open();
@@ -100,6 +160,41 @@ void main() {
     await app.tap(find.byTooltip('Send'));
     expect(app.hub.bodies['POST /social/inbox/i1/reply'], {'text': 'A buff stoneware with iron.'});
     expect(app.hub.inbox[1]['status'], 'done');
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
+
+  testWidgets('translate a comment, reply in its language and hide it', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    (app.hub.inbox[1]['triage']! as Map)['lang'] = 'es';
+    await app.open();
+    await app.run();
+    await app.go('Inbox');
+    await app.tapText('What clay body do you use for the speckled ones?');
+    await app.tapText('Translate');
+    expect(find.text('Translated: What clay body do you use for the speckled ones?'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Reply to Jordan Sample'), 'Buff stoneware.');
+    await app.tapText('Reply in Spanish');
+    expect(find.text('[Spanish] Buff stoneware.'), findsOneWidget);
+    await app.tap(find.byTooltip('Moderate'));
+    await app.tapText('Hide from the public');
+    expect(app.hub.bodies['POST /social/inbox/i1/moderate'], {'action': 'hide'});
+    expect(app.hub.inbox[1]['moderation'], 'hidden');
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
+
+  testWidgets('deleting a comment asks first', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    await app.go('Inbox');
+    await app.tapText('These are gorgeous! Do you ship to Ireland?');
+    await app.tap(find.byTooltip('Moderate'));
+    await app.tapText('Delete');
+    expect(find.text('Delete this comment?'), findsOneWidget);
+    await app.tapText('Delete');
+    expect(app.hub.inbox[0]['moderation'], 'deleted');
     expect(tester.takeException(), isNull);
     await app.close();
   });
@@ -170,6 +265,36 @@ void main() {
       'appPassword': 'abcd-efgh-ijkl-mnop',
     });
     expect(app.hub.accounts, hasLength(6));
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
+
+  testWidgets('add a Telegram channel', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    await app.go('Accounts');
+    await app.tapText('Telegram');
+    await app.enter('Bot token', '123456789:AAexample-token-for-the-test-only');
+    await app.enter('Channel or group', '@studio');
+    await app.tapText('Add');
+    expect(app.hub.bodies['POST /social/accounts/telegram'], {
+      'botToken': '123456789:AAexample-token-for-the-test-only',
+      'chat': '@studio',
+    });
+    expect(app.hub.accounts.last['platform'], 'telegram');
+    expect(tester.takeException(), isNull);
+    await app.close();
+  });
+
+  testWidgets('send the weekly summary from Settings', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open();
+    await app.run();
+    await app.go('Settings');
+    await app.tapText('Send this week\'s summary now');
+    expect(app.hub.log, contains('POST /social/ai/weekly'));
+    expect(app.hub.alerts.first['kind'], 'summary');
     expect(tester.takeException(), isNull);
     await app.close();
   });
