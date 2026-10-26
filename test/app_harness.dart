@@ -24,6 +24,8 @@ class AppHarness {
     await tester.runAsync(() async {
       final store = await Store.open(memoryDatabase());
       session = AppSession(KeyVault(MemorySecretStore(), vaniIdentity), store, VaniPrefs(store));
+      // Past the first-run choice between this device only and sync.
+      await session.db.setLocalSetting('onboarding.sync', 'done');
       if (connected) await session.prefs.saveHub(const HubLink(url: hubUrl, token: hubToken));
       if (name.isNotEmpty) await session.prefs.saveName(name);
       await session.db.setLocalSetting('vani.theme', theme.name);

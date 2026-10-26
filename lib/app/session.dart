@@ -4,7 +4,12 @@ import '../db/database.dart';
 import '../domain/prefs.dart';
 
 /// Vani in Brahma's terms: the app's id, name and Android package.
-const vaniIdentity = AppIdentity(id: 'vani', name: 'Vani', androidPackage: 'dev.brahma.vani');
+const vaniIdentity = AppIdentity(
+  id: 'vani',
+  name: 'Vani',
+  androidPackage: 'dev.brahma.vani',
+  releases: 'sudharamachandranrajeev/vani',
+);
 
 /// Everything a running app needs: keys, the encrypted database and the
 /// prefs on top of it. Opened once at start-up.
