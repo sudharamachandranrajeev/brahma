@@ -17,7 +17,7 @@ class UdyogaApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: udyogaTheme(Brightness.light),
     darkTheme: udyogaTheme(Brightness.dark),
-    builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
+    builder: (context, child) => AppLockGate(child: Backdrop(child: child ?? const SizedBox.shrink())),
     home: home,
   );
 }

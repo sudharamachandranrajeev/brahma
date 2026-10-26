@@ -612,6 +612,13 @@ void main() {
         'udyoga.n8n.http',
         'udyoga.n8n.secret',
       ]);
+      final c = ProviderContainer(
+        overrides: [
+          n8nLinkProvider.overrideWithValue(const AsyncData(N8nLink(url: 'https://n8n.example.com/x'))),
+        ],
+      );
+      addTearDown(c.dispose);
+      expect((await c.read(n8nCheck.findings.future)).single.fix?.label, 'Make a secret');
     });
   });
 

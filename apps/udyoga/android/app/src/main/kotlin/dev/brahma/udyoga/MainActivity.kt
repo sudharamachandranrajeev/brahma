@@ -1,9 +1,12 @@
 package dev.brahma.udyoga
 
+import android.app.KeyguardManager
+import android.app.admin.DevicePolicyManager
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.content.FileProvider
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
@@ -12,15 +15,20 @@ import java.io.File
  * Hands udyoga:// links to Dart (lib/app/links.dart): the camera app opens
  * them when it scans a pairing QR code. Also tells Dart the device's name
  * for the pairing request, and hands an update's APK to the system's
- * installer (lib/domain/update.dart).
+ * installer (lib/domain/update.dart), and answers what Sentinel asks
+ * about the device. A fragment activity, which local_auth needs for the
+ * app lock's fingerprint and face prompt.
  */
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private var channel: MethodChannel? = null
     private var pending: String? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         pending = linkOf(intent)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.brahma.udyoga/device").setMethodCallHandler { call, result ->
+            if (call.method == "security") result.success(securityFacts()) else result.notImplemented()
+        }
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dev.brahma.udyoga/links").apply {
             setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -54,6 +62,22 @@ class MainActivity : FlutterActivity() {
                     result.error("install_failed", error.message, null)
                 }
             }
+    }
+
+    /**
+     * What Sentinel reads about the device (core's device_checks.dart): whether
+     * a screen lock is set, storage is encrypted, and the newest security patch.
+     */
+    private fun securityFacts(): Map<String, Any?> {
+        val keyguard = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val policy = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val status = policy.storageEncryptionStatus
+        return mapOf(
+            "screenLock" to keyguard.isDeviceSecure,
+            "encrypted" to (status == DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE ||
+                status == DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER),
+            "patched" to Build.VERSION.SECURITY_PATCH.takeIf { it.isNotEmpty() },
+        )
     }
 
     override fun onNewIntent(intent: Intent) {

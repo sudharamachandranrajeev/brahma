@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Sync with the user's own server, Claude and the job sites. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- App lock: fingerprint, face or the device PIN (local_auth). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <!-- The in-app updater hands a downloaded, checksum-checked APK to the
          system's installer (lib/domain/update.dart). -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
