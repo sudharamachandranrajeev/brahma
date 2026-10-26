@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../app/modules.dart';
 import '../app/providers.dart';
 import '../help/ask_ai_ui.dart';
+import '../help/report.dart';
 import 'hints.dart';
 import 'theme.dart';
 
@@ -50,6 +51,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    AppErrors.watch();
     // Start the sync controller.
     ref.read(syncProvider);
     widget.onStart?.call(ref);

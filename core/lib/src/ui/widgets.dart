@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
+import '../help/report.dart';
 import 'format.dart';
 import 'hints.dart';
 import 'theme.dart';
@@ -415,13 +416,22 @@ class Amount extends StatelessWidget {
 void showMessage(BuildContext context, String message) =>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
-void showError(BuildContext context, Object error) => ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    content: Text(describeError(error)),
-    backgroundColor: Theme.of(context).colorScheme.errorContainer,
-    showCloseIcon: true,
-  ),
-);
+void showError(BuildContext context, Object error) {
+  AppErrors.record(describeError(error));
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(describeError(error)),
+      backgroundColor: Theme.of(context).colorScheme.errorContainer,
+      showCloseIcon: true,
+      action: SnackBarAction(
+        label: 'Report',
+        onPressed: () {
+          if (context.mounted) showReport(context, error: describeError(error));
+        },
+      ),
+    ),
+  );
+}
 
 Future<bool> confirm(
   BuildContext context, {

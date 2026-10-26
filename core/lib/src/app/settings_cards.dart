@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../help/ask_ai.dart';
 import '../help/ask_ai_ui.dart';
+import '../help/report.dart';
 import '../sync/account_api.dart';
 import '../sync/server_check.dart';
 import '../ui/format.dart';
@@ -134,11 +135,26 @@ class AboutCard extends ConsumerWidget {
     return SectionCard(
       title: 'About',
       padding: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(name),
-        subtitle: Text('$description Part of Brahma. Open-source licences of included software.'),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => showLicensePage(context: context, applicationName: name),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(name),
+            subtitle: Text('$description Part of Brahma. Open-source licences of included software.'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showLicensePage(context: context, applicationName: name),
+          ),
+          for (final (kind, icon, about) in [
+            (ReportKind.bug, Icons.bug_report_outlined, 'Something broke or did not work as expected.'),
+            (ReportKind.feature, Icons.lightbulb_outline, 'Something you wish $name did.'),
+          ])
+            ListTile(
+              leading: Icon(icon),
+              title: Text(kind.label),
+              subtitle: Text('$about Opens a GitHub issue for you to check and submit.'),
+              trailing: const Icon(Icons.open_in_new),
+              onTap: () => showReport(context, kind: kind),
+            ),
+        ],
       ),
     );
   }

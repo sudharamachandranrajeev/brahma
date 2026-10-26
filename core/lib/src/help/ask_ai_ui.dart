@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app/providers.dart';
 import '../ui/widgets.dart';
 import 'ask_ai.dart';
+import 'report.dart';
 
 /// "Ask AI" for help where the user is: [screen] names the screen, [topic]
 /// is what it shows (a page tip, a Sentinel finding, a wizard step).
@@ -226,7 +227,13 @@ class _AskAiDialogState extends ConsumerState<_AskAiDialog> {
                   style: theme.textTheme.bodySmall,
                 ),
               ],
-              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () => showReport(context),
+                  child: const Text('Still stuck, or found a bug? Report it'),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: Text(
