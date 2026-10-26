@@ -2,6 +2,7 @@
 // a data key or plaintext: clients send a login secret derived from the
 // password, wrapped keys and encrypted change batches.
 
+import { rules } from "./rules.ts";
 import { threats } from "./threats.ts";
 
 export interface Env {
@@ -272,6 +273,14 @@ async function route(req: Request, env: Env, url: URL, ip: string): Promise<Resp
       return json(await threats());
     } catch {
       throw new HttpError(503, "Could not fetch the threat list");
+    }
+  }
+
+  if (is("GET", "/api/rules")) {
+    try {
+      return json(await rules());
+    } catch {
+      throw new HttpError(503, "Could not fetch the rules file");
     }
   }
 

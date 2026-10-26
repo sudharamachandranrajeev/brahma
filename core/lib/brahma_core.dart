@@ -26,6 +26,7 @@ export 'src/security/crypto.dart';
 export 'src/security/key_vault.dart';
 export 'src/sentinel/core_checks.dart';
 export 'src/sentinel/device_checks.dart';
+export 'src/sentinel/rules.dart';
 export 'src/sentinel/sentinel.dart';
 export 'src/sentinel/threats.dart';
 export 'src/sync/account_api.dart';

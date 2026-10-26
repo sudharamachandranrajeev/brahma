@@ -140,6 +140,10 @@ abstract interface class AccountApi {
   /// JSON); null when this server keeps none (PocketBase, older servers).
   Future<Map<String, Object?>?> threats();
 
+  /// Sentinel's signed rules file as the server relays it (`/api/rules`:
+  /// `rules` text and `sig`); null when this server does not relay it.
+  Future<Map<String, Object?>?> rules();
+
   /// Whether this login may invite people (the Worker's first account).
   Future<bool> isOwner();
 

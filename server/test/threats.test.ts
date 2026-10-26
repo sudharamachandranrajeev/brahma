@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { handle, type Env } from "../src/app.ts";
 import { memoryD1 } from "../src/sqlite.ts";
+import { forgetRules, RULES_URL, rules } from "../src/rules.ts";
 import { forgetThreats, KEV_URL, threats, trimKev } from "../src/threats.ts";
 
 const kev = {
@@ -78,4 +79,17 @@ test("only signed-in devices get the list", async (t) => {
   assert.equal(res.status, 200);
   const list = (await res.json()) as { threats: unknown[] };
   assert.ok(list.threats.length > 0);
+});
+
+test("the rules file is relayed as fetched, and kept when GitHub is down", async () => {
+  forgetRules();
+  const files: Record<string, string> = { [RULES_URL]: '{"advisories":[]}\n', [`${RULES_URL}.sig`]: "c2ln\n" };
+  const ok = (async (url: string) => new Response(files[url])) as unknown as typeof fetch;
+  const down = (async () => new Response("", { status: 500 })) as unknown as typeof fetch;
+  await assert.rejects(rules(new Date(), down));
+  const r = await rules(new Date("2026-10-26T00:00:00Z"), ok);
+  assert.equal(r.rules, files[RULES_URL]);
+  assert.equal(r.sig, "c2ln\n");
+  assert.equal((await rules(new Date("2026-10-28T00:00:00Z"), down)).sig, "c2ln\n");
+  forgetRules();
 });

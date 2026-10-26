@@ -55,6 +55,7 @@ void main() {
           updateCheck.findings.overrideWith((_) async => updates),
           startupUpdateProvider.overrideWith((_) async => null),
           deviceFactsProvider.overrideWith((_) async => const DeviceFacts()),
+          sentinelRulesProvider.overrideWith((_) async => SentinelRules(DateTime.now(), null, const [])),
           threatFeedProvider.overrideWith((_) async {
             feedCalls++;
             return ThreatList(DateTime.now(), threats);

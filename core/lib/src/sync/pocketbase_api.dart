@@ -158,6 +158,9 @@ class PocketBaseApi implements AccountApi {
   Future<Map<String, Object?>?> threats() async => null;
 
   @override
+  Future<Map<String, Object?>?> rules() async => null;
+
+  @override
   Future<bool> isOwner() async => false;
 
   @override

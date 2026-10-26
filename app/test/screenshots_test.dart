@@ -102,6 +102,9 @@ void main() {
                 updateCheck.findings.overrideWith((_) async => const []),
                 startupUpdateProvider.overrideWith((_) async => null),
                 deviceFactsProvider.overrideWith((_) async => const DeviceFacts()),
+                sentinelRulesProvider.overrideWith(
+                  (_) async => SentinelRules(DateTime.now(), null, const []),
+                ),
                 threatFeedProvider.overrideWith((_) async => ThreatList(DateTime.now(), const [])),
               ],
               retry: (_, _) => null,

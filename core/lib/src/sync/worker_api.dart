@@ -162,6 +162,12 @@ class WorkerApi implements AccountApi {
   }
 
   @override
+  Future<Map<String, Object?>?> rules() async {
+    final r = await _call('GET', '/api/rules', allow: {404});
+    return r['_status'] == 404 ? null : r;
+  }
+
+  @override
   Future<bool> isOwner() async => (await _call('GET', '/api/me'))['owner'] == true;
 
   @override
