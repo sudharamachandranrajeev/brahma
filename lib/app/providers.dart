@@ -19,6 +19,7 @@ List<Override> vahanaOverrides(AppSession session) => [
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(vahanaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...vahanaHints}),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, lockCheck]),
 ];
 
 extension Mutate on WidgetRef {

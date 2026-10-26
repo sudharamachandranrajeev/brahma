@@ -9,6 +9,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => const PageScaffold(
     title: 'Settings',
     children: [
+      AppLockCard(),
       HintsCard(),
       SyncCard(),
       SecurityCard(
