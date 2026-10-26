@@ -100,6 +100,7 @@ void main() {
                 udyoga.refreshTickerProvider.overrideWithValue(null),
                 // No GitHub: the panel reads "All clear".
                 updateCheck.findings.overrideWith((_) async => const []),
+                startupUpdateProvider.overrideWith((_) async => null),
                 deviceFactsProvider.overrideWith((_) async => const DeviceFacts()),
               ],
               retry: (_, _) => null,

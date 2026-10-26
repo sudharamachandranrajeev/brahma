@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import '../security/crypto.dart' show minPasswordLength;
 import '../sync/account_api.dart';
 import '../sync/account_service.dart';
 import '../sync/pairing.dart';
+import '../sync/server_check.dart';
 import '../ui/widgets.dart';
 import 'pairing_dialogs.dart';
 import 'providers.dart';
@@ -58,11 +61,14 @@ class _FirstRunSetupState extends ConsumerState<FirstRunSetup> {
   };
 }
 
-enum _Step { welcome, server, account, done }
+enum _Step { welcome, where, guide, server, account, done }
 
-/// Guided sync setup: what sync is, which server, an account (or joining from
-/// a device already set up), the recovery key. Every step can be skipped and
-/// redone later from Settings.
+/// The Brahma repository people get the server from.
+const serverRepository = 'https://github.com/sudharamachandranrajeev/brahma';
+
+/// Guided first setup: keep data on this device, or sync through the user's
+/// own server, at home or in the cloud, with step-by-step help for setting
+/// that server up. Every step can be skipped and redone later from Settings.
 class SyncSetupWizard extends ConsumerStatefulWidget {
   const SyncSetupWizard({super.key, required this.onFinished});
 
@@ -76,18 +82,23 @@ class SyncSetupWizard extends ConsumerStatefulWidget {
 class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
   final _serverForm = GlobalKey<FormState>();
   final _accountForm = GlobalKey<FormState>();
-  final _server = TextEditingController(text: 'https://');
+  final _server = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
   final _code = TextEditingController();
   _Step _step = _Step.welcome;
+  ServerPlace _place = ServerPlace.unknown;
   ServerInfo? _info;
-  bool _checking = false, _busy = false, _create = true, _show = false, _showSteps = false;
+  ServerCheck? _problem;
+  List<FoundServer>? _found;
+  StreamSubscription<FoundServer>? _search;
+  bool _checking = false, _busy = false, _create = true, _show = false;
   String? _error;
 
   @override
   void dispose() {
+    _search?.cancel();
     for (final c in [_server, _email, _password, _confirm, _code]) {
       c.dispose();
     }
@@ -99,13 +110,23 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
     _error = null;
   });
 
+  void _pick(ServerPlace place) {
+    _place = place;
+    _info = null;
+    _problem = null;
+    _go(place == ServerPlace.unknown ? _Step.server : _Step.guide);
+  }
+
   /// The address field also takes a pasted setup or pairing link.
   void _serverChanged(String text) {
-    final scheme = RegExp(r'^([a-z0-9]+)://').firstMatch(text.trim())?.group(1);
-    if (scheme == null || !isBrahmaScheme(scheme)) {
-      if (_info != null) setState(() => _info = null);
-      return;
+    if (_info != null || _problem != null) {
+      setState(() {
+        _info = null;
+        _problem = null;
+      });
     }
+    final scheme = RegExp(r'^([a-z0-9]+)://').firstMatch(text.trim())?.group(1);
+    if (scheme == null || !isBrahmaScheme(scheme)) return;
     try {
       switch (BrahmaLink.parse(text)) {
         case SetupLink() && final link:
@@ -113,7 +134,7 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
           _code.text = link.invite;
           _check();
         case PairingLink() && final link:
-          _server.text = 'https://';
+          _server.clear();
           _joinWith(link);
       }
     } catch (e) {
@@ -127,23 +148,40 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
       _checking = true;
       _error = null;
       _info = null;
+      _problem = null;
     });
-    try {
-      final api = await AccountApi.connect(_server.text.trim());
-      if (!mounted) return;
-      setState(() {
-        _info = api.info;
-        _checking = false;
-        _create = api.info.needsSetup || _code.text.isNotEmpty;
-      });
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _checking = false;
-          _error = describeError(e);
-        });
+    final result = await checkServer(_server.text, place: _place);
+    if (!mounted) return;
+    setState(() {
+      _checking = false;
+      if (result.ok) {
+        _server.text = '${result.url}';
+        _info = result.info;
+        _create = result.info!.needsSetup || _code.text.isNotEmpty;
+      } else {
+        _problem = result;
       }
-    }
+    });
+  }
+
+  void _findServers() {
+    _search?.cancel();
+    setState(() => _found = []);
+    _search = findHomeServers().listen(
+      (s) => setState(() => _found = [...?_found, s]),
+      onDone: () => setState(() => _search = null),
+    );
+  }
+
+  void _useFound(FoundServer s) {
+    _search?.cancel();
+    setState(() {
+      _search = null;
+      _server.text = '${s.url}';
+      _info = s.info;
+      _problem = null;
+      _create = s.info.needsSetup || _code.text.isNotEmpty;
+    });
   }
 
   Future<void> _joinWith(PairingLink? link) async {
@@ -201,21 +239,22 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
   @override
   Widget build(BuildContext context) {
     final name = ref.watch(appIdentityProvider).name;
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
+              constraints: const BoxConstraints(maxWidth: 560),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Dots(_step.index, _Step.values.length),
                   const SizedBox(height: 24),
                   ...switch (_step) {
-                    _Step.welcome => _welcome(name, scheme),
+                    _Step.welcome => _welcome(name),
+                    _Step.where => _whereStep(name),
+                    _Step.guide => _place == ServerPlace.home ? _homeGuide(name) : _cloudGuide(name),
                     _Step.server => _serverStep(name),
                     _Step.account => _accountStep(name),
                     _Step.done => _done(name),
@@ -229,57 +268,181 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
     );
   }
 
-  List<Widget> _welcome(String name, ColorScheme scheme) {
-    final type = Theme.of(context).textTheme;
-    return [
-      Icon(Icons.devices_outlined, size: 48, color: scheme.primary),
-      const SizedBox(height: 16),
-      Text('Welcome to $name', style: type.headlineSmall, textAlign: TextAlign.center),
-      const SizedBox(height: 12),
-      Text(
-        'Everything is stored encrypted on this device and works without an account. '
-        'To use $name on your phone, computer and the web too, connect it to your own sync server.',
-        textAlign: TextAlign.center,
+  Widget _title(String text) =>
+      Text(text, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center);
+
+  Widget _back(_Step to) => Align(
+    alignment: Alignment.centerLeft,
+    child: TextButton(onPressed: () => _go(to), child: const Text('Back')),
+  );
+
+  List<Widget> _welcome(String name) => [
+    Icon(Icons.waving_hand_outlined, size: 48, color: Theme.of(context).colorScheme.primary),
+    const SizedBox(height: 16),
+    _title('Welcome to $name'),
+    const SizedBox(height: 8),
+    const Text(
+      'First, where should your data live? You can change this later in Settings.',
+      textAlign: TextAlign.center,
+    ),
+    const SizedBox(height: 20),
+    _Choice(
+      icon: Icons.smartphone_outlined,
+      title: 'Keep everything on this device',
+      body:
+          'Nothing leaves this device and there is no account. Works offline. Best if you use $name on '
+          'one device only.',
+      tip: 'If this device is lost or reset, its data goes with it, unless you export a backup.',
+      onTap: () => widget.onFinished(false),
+    ),
+    const SizedBox(height: 12),
+    _Choice(
+      icon: Icons.devices_outlined,
+      title: 'Sync across my devices',
+      body:
+          'Use $name on your phone and computers, all kept in step through a server that you own. '
+          'Every Brahma app shares the same account.',
+      tip: 'Your data is locked (encrypted) on this device before it is sent, so the server cannot read it.',
+      onTap: () => _go(_Step.where),
+    ),
+  ];
+
+  List<Widget> _whereStep(String name) => [
+    _title('Where will your server run?'),
+    const SizedBox(height: 8),
+    const Text(
+      'A server is a small program that passes your locked data between your devices. Pick what suits you.',
+      textAlign: TextAlign.center,
+    ),
+    const SizedBox(height: 20),
+    _Choice(
+      icon: Icons.home_outlined,
+      title: 'Home server',
+      body:
+          'A computer at home that stays switched on, like an old laptop or a mini PC with Linux. Free, '
+          'and your data never leaves your home.',
+      tip: 'Away from home too? Add Tailscale (free); the guide shows how.',
+      onTap: () => _pick(ServerPlace.home),
+    ),
+    const SizedBox(height: 12),
+    _Choice(
+      icon: Icons.cloud_outlined,
+      title: 'Cloud server',
+      body:
+          "Runs on Cloudflare's free plan, so there is no computer to leave on and it works anywhere. "
+          'You need a free Cloudflare account and about 10 minutes.',
+      tip: 'Cloudflare only ever holds locked data it cannot read.',
+      onTap: () => _pick(ServerPlace.cloud),
+    ),
+    const SizedBox(height: 12),
+    _Choice(
+      icon: Icons.link,
+      title: 'I already have a server',
+      body: 'You have its address or a setup link, or someone invited you to theirs.',
+      onTap: () => _pick(ServerPlace.unknown),
+    ),
+    const SizedBox(height: 8),
+    OutlinedButton.icon(
+      onPressed: () => _joinWith(null),
+      icon: const Icon(Icons.qr_code_scanner),
+      label: const Text('Join from a device I already use'),
+    ),
+    _back(_Step.welcome),
+  ];
+
+  List<Widget> _homeGuide(String name) => [
+    _title('Set up your home server'),
+    const SizedBox(height: 8),
+    const Text('Do these steps on the computer that will be the server. It takes about 5 minutes.'),
+    const SizedBox(height: 16),
+    const _Steps([
+      (
+        'Pick the computer',
+        'Any computer running Linux (Ubuntu, Fedora, Debian, Arch...) that can stay on. An old laptop is '
+            'perfect. Keep it plugged in and set it never to sleep, also with the lid closed.',
+        null,
       ),
-      const SizedBox(height: 16),
-      for (final (icon, text) in [
-        (Icons.dns_outlined, 'Your server: one you deploy yourself, so your data never sits with us.'),
-        (Icons.enhanced_encryption_outlined, 'End-to-end encrypted: the server only ever holds ciphertext.'),
-        (Icons.key_outlined, 'A recovery key, shown once, is the only way back if you forget your password.'),
-      ])
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20),
-              const SizedBox(width: 12),
-              Expanded(child: Text(text)),
-            ],
-          ),
-        ),
-      const SizedBox(height: 24),
-      FilledButton(onPressed: () => _go(_Step.server), child: const Text('Set up sync')),
-      TextButton(
-        onPressed: () => widget.onFinished(false),
-        child: const Text('Not now, use this device only'),
+      (
+        'Install the two tools it needs',
+        'Git (to download the server) and Node.js version 24 or newer (to run it). On Ubuntu or Debian, '
+            'get Node from nodejs.org, because their own is too old. Check with "node --version".',
+        'sudo apt install git        # Ubuntu, Debian\nsudo dnf install git nodejs # Fedora\nsudo pacman -S git nodejs   # Arch',
       ),
-      const Text(
-        'You can set this up later in Settings.',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 12),
+      (
+        'Download and install the server',
+        'Open a terminal on that computer and paste these lines. The installer explains each step and '
+            'asks before it changes anything, such as the firewall.',
+        'git clone $serverRepository.git\ncd brahma/server/home\n./install.sh',
       ),
-    ];
-  }
+      (
+        'Copy the setup link',
+        'At the end it prints a setup link starting with brahma://setup and a QR code. Paste the link on '
+            'the next screen, or scan the code with your phone camera.',
+        null,
+      ),
+    ]),
+    const SizedBox(height: 8),
+    const _Tips([
+      'Same Wi-Fi: your devices reach a home server when they are on your home network.',
+      'Away from home: install Tailscale (tailscale.com/download, free) on the server and on each device, '
+          'then run "./install.sh --link" again for an address that works anywhere.',
+      'Fixed address: in your router, give the server computer a fixed address (called "DHCP reservation"), '
+          'so the address in your apps keeps working.',
+      'Lost the link? Run "./install.sh --link" on the server. "./install.sh --status" shows if all is well.',
+    ]),
+    const SizedBox(height: 16),
+    FilledButton(onPressed: () => _go(_Step.server), child: const Text("I've done this, connect")),
+    _back(_Step.where),
+  ];
+
+  List<Widget> _cloudGuide(String name) => [
+    _title('Set up your cloud server'),
+    const SizedBox(height: 8),
+    const Text('Do these steps once, on any computer. It takes about 10 minutes and costs nothing.'),
+    const SizedBox(height: 16),
+    const _Steps([
+      (
+        'Make a free Cloudflare account',
+        'Go to dash.cloudflare.com/sign-up. The free plan is plenty for a household.',
+        null,
+      ),
+      (
+        'Install the two tools it needs',
+        'Git (to download the server) and Node.js version 24 or newer, from nodejs.org. Windows, Mac and '
+            'Linux all work.',
+        null,
+      ),
+      (
+        'Download and deploy the server',
+        'Open a terminal (on Windows: PowerShell) and paste these lines. "wrangler login" opens your '
+            'browser once so you can allow it to use your Cloudflare account.',
+        'git clone $serverRepository.git\ncd brahma/server\nnpm install\nnpx wrangler login\nnpm run setup',
+      ),
+      (
+        'Copy the setup link',
+        'It prints your server address, like https://brahma-sync.your-name.workers.dev, and a setup '
+            'link starting with brahma://setup. Paste the link on the next screen.',
+        null,
+      ),
+    ]),
+    const SizedBox(height: 8),
+    const _Tips([
+      'The setup link is shown once and works once: it makes you the owner of the server.',
+      'Later, invite family from Settings, Sync, Invite someone. Each person gets their own private account.',
+      'Running "npm run setup" again updates the server and keeps everyone\'s data.',
+    ]),
+    const SizedBox(height: 16),
+    FilledButton(onPressed: () => _go(_Step.server), child: const Text("I've done this, connect")),
+    _back(_Step.where),
+  ];
 
   List<Widget> _serverStep(String name) {
-    final info = _info;
+    final info = _info, problem = _problem, found = _found;
+    final home = _place != ServerPlace.cloud;
     return [
-      Text('Your sync server', style: Theme.of(context).textTheme.headlineSmall),
+      _title('Connect to your server'),
       const SizedBox(height: 8),
-      const Text(
-        'Enter the address of your server, or paste the setup link it printed when you deployed it.',
-      ),
+      const Text('Paste the setup link, or type the server address.'),
       const SizedBox(height: 16),
       Form(
         key: _serverForm,
@@ -289,21 +452,68 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
           autocorrect: false,
           onChanged: _serverChanged,
           onFieldSubmitted: (_) => _check(),
-          decoration: const InputDecoration(
-            labelText: 'Server address or setup link',
-            hintText: 'https://bhojana.your-name.workers.dev',
+          decoration: InputDecoration(
+            labelText: 'Setup link or server address',
+            hintText: switch (_place) {
+              ServerPlace.home => 'http://192.168.1.20:8090',
+              ServerPlace.cloud => 'https://brahma-sync.your-name.workers.dev',
+              ServerPlace.unknown => 'brahma://setup?... or https://...',
+            },
+            helperText: home
+                ? 'For a home server, the number address alone is enough, like 192.168.1.20'
+                : null,
           ),
-          validator: (v) => (v ?? '').trim().length < 10 ? 'Enter the server address' : null,
+          validator: (v) => (v ?? '').trim().length < 4 ? 'Paste the link or type the address' : null,
         ),
       ),
+      if (home) ...[
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _search != null ? null : _findServers,
+            icon: _search != null
+                ? const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.wifi_find_outlined),
+            label: Text(_search != null ? 'Looking on your Wi-Fi…' : 'Find my home server'),
+          ),
+        ),
+        if (found != null && found.isEmpty && _search == null)
+          const _Problem(
+            problem: 'No home server found on this Wi-Fi.',
+            fix:
+                'Check the server computer is on and this device is on the same Wi-Fi. Servers on another '
+                'port, or reached through Tailscale, need their address typed in.',
+          ),
+        if (found != null && found.isNotEmpty)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: Text(
+              'Only pick a server you recognise: anyone on this Wi-Fi can run one. Away from your own home '
+              'network, use the setup link or the Tailscale address instead.',
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
+        for (final s in found ?? const <FoundServer>[])
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.dns_outlined),
+              title: Text(s.info.describe),
+              subtitle: Text('${s.url}'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _useFound(s),
+            ),
+          ),
+      ],
       const SizedBox(height: 12),
-      if (_error != null) StatusLabel(Status.critical, _error!),
+      if (_error != null) _Problem(problem: _error!, fix: 'Copy the whole link again and paste it.'),
+      if (problem != null) _Problem(problem: problem.problem!, fix: problem.fix!),
       if (info != null)
         StatusLabel(
           Status.good,
           info.needsSetup
-              ? 'Server found. No one has signed up yet: you will create the owner account.'
-              : 'Server found. Sign in, or create an account with an invite code from the owner.',
+              ? 'Found: ${info.describe}. You will create its owner account.'
+              : 'Found: ${info.describe}. Sign in, or join with an invite code.',
         ),
       const SizedBox(height: 12),
       FilledButton(
@@ -316,36 +526,7 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
             ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
             : Text(info == null ? 'Check server' : 'Continue'),
       ),
-      const SizedBox(height: 8),
-      OutlinedButton.icon(
-        onPressed: () => _joinWith(null),
-        icon: const Icon(Icons.qr_code_scanner),
-        label: const Text('Join from a device I already use'),
-      ),
-      const SizedBox(height: 8),
-      ExpansionTile(
-        title: const Text("I don't have a server yet"),
-        initiallyExpanded: _showSteps,
-        onExpansionChanged: (v) => _showSteps = v,
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Your server is a small Cloudflare Worker (free plan is enough). From the server folder of the '
-            '$name repository, with Node installed:',
-          ),
-          const SizedBox(height: 8),
-          const _Command('npx wrangler login\nnpm install\nnpm run setup'),
-          const SizedBox(height: 8),
-          const Text(
-            'It prints a server address and a setup link. Paste the link above to create your account.',
-          ),
-        ],
-      ),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton(onPressed: () => _go(_Step.welcome), child: const Text('Back')),
-      ),
+      _back(_place == ServerPlace.unknown ? _Step.where : _Step.guide),
     ];
   }
 
@@ -492,6 +673,155 @@ class _Dots extends StatelessWidget {
           ),
         ),
     ],
+  );
+}
+
+/// A big tappable option: what it is, why pick it, and a hint.
+class _Choice extends StatelessWidget {
+  const _Choice({required this.icon, required this.title, required this.body, this.tip, required this.onTap});
+  final IconData icon;
+  final String title, body;
+  final String? tip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 28, color: scheme.primary),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    Text(body),
+                    if (tip != null) ...[
+                      const SizedBox(height: 6),
+                      Text(tip!, style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                    ],
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Numbered how-to steps: a title, plain words, and lines to copy.
+class _Steps extends StatelessWidget {
+  const _Steps(this.steps);
+  final List<(String, String, String?)> steps;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, (title, body, command)) in steps.indexed)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 13,
+                  backgroundColor: scheme.primaryContainer,
+                  child: Text('${i + 1}', style: TextStyle(fontSize: 13, color: scheme.onPrimaryContainer)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(title, style: Theme.of(context).textTheme.titleSmall),
+                      const SizedBox(height: 4),
+                      Text(body),
+                      if (command != null) ...[const SizedBox(height: 8), _Command(command)],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Good-to-know hints under a guide.
+class _Tips extends StatelessWidget {
+  const _Tips(this.tips);
+  final List<String> tips;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.lightbulb_outline, size: 18),
+            const SizedBox(width: 6),
+            Text('Good to know', style: Theme.of(context).textTheme.titleSmall),
+          ],
+        ),
+        for (final t in tips) Padding(padding: const EdgeInsets.only(top: 8), child: Text('• $t')),
+      ],
+    ),
+  );
+}
+
+/// What went wrong, in everyday words, and what to try.
+class _Problem extends StatelessWidget {
+  const _Problem({required this.problem, required this.fix});
+  final String problem, fix;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(top: 4, bottom: 4),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      border: Border.all(color: Status.critical.color.withValues(alpha: 0.5)),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Status.critical.icon, size: 20, color: Status.critical.color),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(problem, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 4),
+              Text(fix),
+            ],
+          ),
+        ),
+      ],
+    ),
   );
 }
 

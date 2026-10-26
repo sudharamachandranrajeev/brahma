@@ -24,15 +24,51 @@ class PairingState {
 
 /// What a sync server is, from its health check.
 class ServerInfo {
-  const ServerInfo({required this.worker, this.needsSetup = false});
+  const ServerInfo({
+    required this.worker,
+    this.needsSetup = false,
+    this.kind,
+    this.name = '',
+    this.version = '',
+  });
 
-  /// A Bhojana/Brahma Worker server (true) or a PocketBase one (false).
+  /// From the health check's JSON; null when it is not a Brahma sync server.
+  static ServerInfo? fromHealth(Object? body) {
+    if (body is! Map || body['service'] != 'brahma-sync') return null;
+    final kind = body['kind'];
+    return ServerInfo(
+      worker: true,
+      needsSetup: body['needsSetup'] == true,
+      kind: kind == 'home' ? ServerKind.home : ServerKind.cloud,
+      name: '${body['name'] ?? ''}',
+      version: '${body['version'] ?? ''}',
+    );
+  }
+
+  /// A Brahma sync server (true; brahma/server, at home or on Cloudflare) or
+  /// a PocketBase one (false).
   final bool worker;
 
-  /// A Worker no one has signed up on yet: the first account is the owner's
+  /// A server no one has signed up on yet: the first account is the owner's
   /// and needs the setup code.
   final bool needsSetup;
+
+  /// Where a Brahma sync server runs; null for PocketBase.
+  final ServerKind? kind;
+
+  /// The home computer's name (home servers), and the server's version.
+  final String name, version;
+
+  /// "Home server "den-laptop", version 1.0.0", for people.
+  String get describe => switch (kind) {
+    ServerKind.home =>
+      'Home server${name.isEmpty ? '' : ' "$name"'}${version.isEmpty ? '' : ', version $version'}',
+    ServerKind.cloud => 'Cloud server${version.isEmpty ? '' : ', version $version'}',
+    null => 'PocketBase server',
+  };
 }
+
+enum ServerKind { home, cloud }
 
 /// The pairing record is gone: it expired, was used, or was cancelled.
 class PairingClosed extends SyncException {
@@ -51,9 +87,8 @@ abstract interface class AccountApi {
     try {
       final res = await c.get(url.resolve('/api/health')).timeout(const Duration(seconds: 20));
       final body = res.statusCode == 200 ? jsonDecode(res.body) : null;
-      if (body is Map && body['service'] == 'brahma-sync') {
-        return WorkerApi(url, client: c, needsSetup: body['needsSetup'] == true);
-      }
+      final info = ServerInfo.fromHealth(body);
+      if (info != null) return WorkerApi(url, client: c, info: info);
     } on FormatException {
       // Not JSON: treat as PocketBase below.
     } on Exception {
@@ -96,6 +131,10 @@ abstract interface class AccountApi {
   Future<void> closePairing(String id);
 
   SyncRemote remote(String ownerId);
+
+  /// When the server last made a backup of itself; null when unknown (cloud
+  /// and PocketBase servers keep their own history).
+  Future<DateTime?> lastBackup();
 
   /// Whether this login may invite people (the Worker's first account).
   Future<bool> isOwner();

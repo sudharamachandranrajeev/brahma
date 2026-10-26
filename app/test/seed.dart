@@ -29,6 +29,8 @@ Future<void> seedSuite(SuiteSession suite, String today) async {
   for (final s in [suite.hub, ...suite.sessions]) {
     // Tip banners would cover the content in the shots.
     await s.db.setLocalSetting('ui.hints', 'off');
+    // Past the first-run choice between this device only and sync.
+    await s.db.setLocalSetting('onboarding.sync', 'done');
     switch (s) {
       case artha.AppSession():
         await _artha(s.ledger, today);

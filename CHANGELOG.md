@@ -3,6 +3,19 @@
 Releases of Brahma, the suite app in `app/`. Each app keeps its own
 changelog in `apps/<name>`.
 
+## Unreleased
+
+- One sync server for every Brahma app (`server/`): at home on any Linux computer that stays on
+  (`server/home/install.sh` sets up the service, daily backups, the firewall and prints a setup
+  link and QR code), or on Cloudflare's free plan (`npm run setup`). Same protocol, owner and
+  invites in both.
+- First start asks where your data lives: on this device only, or synced through a home or cloud
+  server, with step-by-step guides in plain words.
+- "Find my home server" looks for a home server on your Wi-Fi; connection problems are explained
+  in everyday words with what to try; Settings, Sync shows the server's health and last backup.
+- At start-up, once a day, each app says when a newer version is out, with What's new, a one-tap
+  download (Android APK, Windows setup) and Later.
+
 ## 0.2.0 (2026-10-25)
 
 - New app: Bhojana (shopping, `apps/bhojana`), with UK shopping lists, price comparison across

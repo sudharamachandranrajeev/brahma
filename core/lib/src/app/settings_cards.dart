@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../sync/account_api.dart';
+import '../sync/server_check.dart';
 import '../ui/format.dart';
 import '../ui/hints.dart';
 import '../ui/widgets.dart';
@@ -179,6 +181,7 @@ class SyncCard extends ConsumerWidget {
                   title: Text(sync.email ?? 'Signed in'),
                   subtitle: Text(sync.server ?? ''),
                 ),
+                const _ServerHealth(),
                 ListTile(
                   leading: const Icon(Icons.qr_code_2),
                   title: const Text('Add a device'),
@@ -244,10 +247,69 @@ class SyncCard extends ConsumerWidget {
     );
   }
 
+  static String when(String iso) => _when(iso);
+
   static String _when(String iso) {
     final t = DateTime.tryParse(iso)?.toLocal();
     if (t == null) return iso;
     final hm = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
     return '${niceDate(t.toIso8601String().substring(0, 10))} at $hm';
+  }
+}
+
+/// How the sync server is doing: reachable or not (and why, in plain words),
+/// what it is, and when it last backed itself up.
+final serverHealthProvider = FutureProvider.autoDispose<({ServerCheck check, DateTime? backup})?>((
+  ref,
+) async {
+  final server = ref.watch(syncProvider.select((s) => s.server));
+  if (server == null) return null;
+  final check = await checkServer(server);
+  DateTime? backup;
+  if (check.ok && check.info!.kind == ServerKind.home) {
+    try {
+      backup = await (await ref.read(coreSessionProvider).account.api()).lastBackup();
+    } catch (_) {
+      // Signed out meanwhile, or the server is older: no backup time to show.
+    }
+  }
+  return (check: check, backup: backup);
+});
+
+class _ServerHealth extends ConsumerWidget {
+  const _ServerHealth();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final health = ref.watch(serverHealthProvider);
+    final refresh = IconButton(
+      tooltip: 'Check the server again',
+      icon: const Icon(Icons.refresh),
+      onPressed: () => ref.invalidate(serverHealthProvider),
+    );
+    return switch (health) {
+      AsyncData(value: final h?) when h.check.ok => ListTile(
+        leading: Icon(Status.good.icon, color: Status.good.color),
+        title: Text(h.check.info!.describe),
+        subtitle: Text(switch (h.check.info!.kind) {
+          ServerKind.home =>
+            'Reachable. ${h.backup == null ? 'No backup yet' : 'Last backup ${SyncCard.when(h.backup!.toIso8601String())}'}',
+          ServerKind.cloud => 'Reachable. Cloudflare keeps the recent history of its database (Time Travel).',
+          null => 'Reachable.',
+        }),
+        trailing: refresh,
+      ),
+      AsyncData(value: final h?) => ListTile(
+        leading: Icon(Status.critical.icon, color: Status.critical.color),
+        title: Text(h.check.problem!),
+        subtitle: Text(h.check.fix!),
+        trailing: refresh,
+      ),
+      AsyncLoading() => const ListTile(
+        leading: SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+        title: Text('Checking the server…'),
+      ),
+      _ => const SizedBox.shrink(),
+    };
   }
 }

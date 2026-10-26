@@ -41,12 +41,15 @@ void main() {
   Future<void> start(WidgetTester tester) async {
     await tester.runAsync(() async {
       suite = await SuiteSession.open(KeyVault(secrets, brahmaIdentity), suiteApps);
+      // Past the first-run choice between this device only and sync.
+      await suite.hub.db.setLocalSetting('onboarding.sync', 'done');
     });
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           ...suiteOverrides(suite),
           updateCheck.findings.overrideWith((_) async => updates),
+          startupUpdateProvider.overrideWith((_) async => null),
           deviceFactsProvider.overrideWith((_) async => const DeviceFacts()),
         ],
         retry: (_, _) => null,

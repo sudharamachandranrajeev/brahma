@@ -43,8 +43,15 @@ here as a git subtree.
   keeps its own encrypted database.
 * **Encrypted at rest** – local databases use drift over SQLite3MultipleCiphers, with the key in the
   system keychain.
-* **End-to-end encrypted sync** through your own PocketBase server: the server only sees
-  ciphertext (Argon2id, HKDF, XChaCha20-Poly1305); rows carry hybrid-logical-clock stamps.
+* **Your data, your choice** – on first start each app asks: keep everything on this device, or
+  sync across your devices through your own server, with a guided setup in plain words.
+* **End-to-end encrypted sync** through your own [Brahma sync server](server/README.md), at home
+  (any Linux computer that stays on, one installer) or on Cloudflare's free plan: the server only
+  sees ciphertext (Argon2id, HKDF, XChaCha20-Poly1305); rows carry hybrid-logical-clock stamps.
+  The app finds a home server on your Wi-Fi, explains connection problems in everyday words, and
+  shows the server's health and last backup in Settings. Existing PocketBase servers keep working.
+* **Update notice** – at start-up, once a day, an app tells you when a newer version is out, with
+  its release notes and a one-tap download.
 * **Pairing** – add a device from a QR code or link.
 * **Standalone apps keep working** – the suite keeps its databases in its own data folder, so the
   separate apps run side by side with it.

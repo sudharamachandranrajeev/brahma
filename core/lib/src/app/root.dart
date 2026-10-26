@@ -5,9 +5,13 @@ import '../ui/widgets.dart';
 import 'links.dart';
 import 'pairing_dialogs.dart';
 import 'providers.dart';
+import 'sync_wizard.dart';
+import 'update_notice.dart';
 
-/// Wraps an app's home and opens the setup and pairing links the platform
-/// hands over (a scanned pairing code).
+/// Wraps an app's home: the first-run choice between keeping data on this
+/// device and syncing ([FirstRunSetup]), the new-version banner
+/// ([UpdateNotice]), and the setup and pairing links the platform hands
+/// over (a scanned pairing code). Every app gets these without code of its own.
 class LinkHandler extends ConsumerStatefulWidget {
   const LinkHandler({super.key, required this.child, this.onAppLink});
   final Widget child;
@@ -46,7 +50,7 @@ class _LinkHandlerState extends ConsumerState<LinkHandler> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) => UpdateNotice(child: FirstRunSetup(child: widget.child));
 }
 
 /// Shown when the app cannot open its keys or database. Nothing is deleted:

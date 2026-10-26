@@ -70,6 +70,34 @@ void main() {
     expect(newestInList('not a list'), isNull);
   });
 
+  test('the update banner offers the installer for this platform, from GitHub only', () {
+    final assets = [
+      for (final n in [
+        'Brahma-0.3.0-android.apk',
+        'Brahma-0.3.0-windows-x64-setup.exe',
+        'Brahma-0.3.0-linux-x64.tar.gz',
+      ])
+        {'name': n, 'browser_download_url': 'https://github.com/o/brahma/releases/download/v0.3.0/$n'},
+      {'name': 'evil-setup.exe', 'browser_download_url': 'https://evil.example/evil-setup.exe'},
+    ];
+    final list = [
+      {..._release('v0.3.0'), 'body': 'Faster sync', 'assets': assets},
+    ];
+    expect(newestInList(list, os: 'android')!.download!.path, endsWith('android.apk'));
+    expect(newestInList(list, os: 'windows')!.download!.path, endsWith('windows-x64-setup.exe'));
+    expect(newestInList(list, os: 'linux')!.download, isNull);
+    expect(newestInList(list, os: 'linux')!.notes, 'Faster sync');
+    final onlyEvil = [
+      {..._release('v0.3.0'), 'assets': assets.sublist(3)},
+    ];
+    expect(newestInList(onlyEvil, os: 'windows')!.download, isNull);
+    final otherRepo = [
+      {..._release('v0.3.0'), 'html_url': 'https://github.com/someone/else/releases/tag/v0.3.0'},
+    ];
+    expect(newestInList(otherRepo, repo: 'o/brahma'), isNull);
+    expect(newestInList(list, os: 'android', repo: 'O/Brahma')!.download, isNotNull);
+  });
+
   test('only plain http outside this machine and Tailscale is in clear', () {
     for (final (url, clear) in [
       ('https://sync.example.com', false),

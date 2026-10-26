@@ -5,11 +5,11 @@ import 'package:http/http.dart' as http;
 import 'account_api.dart';
 import 'sync_engine.dart';
 
-/// [AccountApi] over the HTTP API of Bhojana's Cloudflare Worker (server/).
+/// [AccountApi] over the HTTP API of the Brahma sync server (brahma/server:
+/// at home on Node, or the Cloudflare Worker).
 class WorkerApi implements AccountApi {
-  WorkerApi(this.server, {http.Client? client, bool needsSetup = false})
-    : info = ServerInfo(worker: true, needsSetup: needsSetup),
-      _client = client ?? http.Client();
+  WorkerApi(this.server, {http.Client? client, this.info = const ServerInfo(worker: true)})
+    : _client = client ?? http.Client();
 
   @override
   final ServerInfo info;
@@ -150,6 +150,10 @@ class WorkerApi implements AccountApi {
 
   @override
   SyncRemote remote(String ownerId) => WorkerRemote(this);
+
+  @override
+  Future<DateTime?> lastBackup() async =>
+      DateTime.tryParse('${(await _call('GET', '/api/me'))['lastBackup'] ?? ''}');
 
   @override
   Future<bool> isOwner() async => (await _call('GET', '/api/me'))['owner'] == true;

@@ -1,0 +1,12 @@
+name = "brahma-sync"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+[vars]
+KIND = "cloud"
+
+# `npm run setup` creates the database and fills in its id.
+[[d1_databases]]
+binding = "DB"
+database_name = "brahma-sync"
+database_id = "REPLACE_WITH_D1_ID"

@@ -152,6 +152,9 @@ class PocketBaseApi implements AccountApi {
   SyncRemote remote(String ownerId) => PocketBaseRemote(pb, ownerId);
 
   @override
+  Future<DateTime?> lastBackup() async => null;
+
+  @override
   Future<bool> isOwner() async => false;
 
   @override

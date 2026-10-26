@@ -14,14 +14,14 @@ Uri validateServerUrl(String input) {
     throw SyncException('Enter a server address like https://sync.example.com');
   }
   if (uri.scheme == 'https') return uri;
-  if (uri.scheme == 'http' && _isLocalHost(uri.host)) return uri;
+  if (uri.scheme == 'http' && isLocalServerHost(uri.host)) return uri;
   throw SyncException('Use https:// for servers outside your own network');
 }
 
 /// Loopback, link-local, RFC 1918, CGNAT/Tailscale (100.64/10), IPv6 ULA,
 /// `localhost` and mDNS `.local` names. Only literal addresses count, so
 /// `192.168.1.5.example.com` is not local.
-bool _isLocalHost(String host) {
+bool isLocalServerHost(String host) {
   if (host == 'localhost' || host.endsWith('.local')) return true;
   final ip = InternetAddress.tryParse(host);
   if (ip == null) return false;
