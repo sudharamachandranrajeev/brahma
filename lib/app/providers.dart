@@ -64,7 +64,7 @@ List<Override> udyogaOverrides(AppSession session, {http.Client? client, Updater
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(udyogaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...udyogaHints}),
-  sentinelChecksProvider.overrideWithValue([...coreChecks, ...udyogaChecks]),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, lockCheck, ...udyogaChecks]),
   if (client != null) httpClientProvider.overrideWithValue(client),
   if (updater != null) updaterProvider.overrideWithValue(updater),
 ];

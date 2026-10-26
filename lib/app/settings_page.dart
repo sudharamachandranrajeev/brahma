@@ -170,6 +170,7 @@ class SettingsPage extends ConsumerWidget {
           ),
         ),
         if (ref.watch(updaterProvider) case final updater?) _UpdateCard(updater),
+        const AppLockCard(),
         const HintsCard(),
         const SyncCard(),
         const SecurityCard(
