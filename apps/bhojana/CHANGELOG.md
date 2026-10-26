@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0
+
+Lists price themselves, and baskets fill themselves.
+
+- Each item added to a list is searched at every starred shop, and the best match at each is kept, in
+  the same pack size across shops where they sell it. *Check prices* re-runs it for the whole list.
+- *Where to shop* names the cheapest shop for the list (whole list, or like for like on the items every
+  shop has) and what it saves over the next cheapest.
+- *Fill a basket* adds the whole list to the shop's basket: it finds the priced product on each search
+  page and presses Add, and the plus button for quantities. Items it could not add are listed.
+- A product picked by hand replaces the automatic pick for that shop that day.
+- Linux: the in-app browser (sign-in, live prices, baskets) works in builds on a system with WPE WebKit.
+
 ## 0.3.0
 
 Bhojana on the web, and a browser extension for live prices.

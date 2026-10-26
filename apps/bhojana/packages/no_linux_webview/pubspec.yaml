@@ -1,5 +1,5 @@
 name: bhojana_no_linux_webview
-description: "Stands in for flutter_inappwebview on Linux so its WPE WebKit plugin is not built. Bhojana opens shops in the system browser there."
+description: "Stands in for flutter_inappwebview on Linux so its WPE WebKit plugin is not built. The release workflow adds it for the portable tarball, which opens shops in the system browser."
 publish_to: 'none'
 version: 1.0.0
 

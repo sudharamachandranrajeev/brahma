@@ -49,7 +49,8 @@ class FoodPrices extends Table with SyncedRow {
   /// The day it was seen.
   TextColumn get day => text()();
 
-  /// signed-in (read from the user's own shop session) | web | typed
+  /// signed-in (read from the user's own shop session) | auto (picked by the
+  /// automatic list pricing) | web | typed
   TextColumn get source => text().withDefault(const Constant('web'))();
 }
 

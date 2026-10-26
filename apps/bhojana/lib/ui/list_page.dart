@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../app/pricing.dart';
 import '../app/providers.dart';
 import '../db/database.dart';
 import '../domain/book.dart';
@@ -131,7 +134,11 @@ class _ItemsState extends ConsumerState<_Items> {
     final text = _add.text.trim();
     if (list == null || text.isEmpty) return;
     _add.clear();
-    await ref.mutate((s) => s.book.addItem(list.id, text, today: today()));
+    final id = await ref.mutate((s) => s.book.addItem(list.id, text, today: today()));
+    // Price it at every compared shop straight away.
+    final item = (await ref.read(sessionProvider).book.items(list.id)).where((i) => i.id == id);
+    final mine = await ref.read(myShopsProvider.future);
+    unawaited(ref.read(pricerProvider.notifier).price(item.toList(), mine));
   }
 
   @override
@@ -177,16 +184,33 @@ class _ItemRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final done = item.done;
+    final searching = ref.watch(
+      pricerProvider.select(
+        (m) => m.entries.where((e) => e.key.$1 == item.id && e.value == Lookup.searching).length,
+      ),
+    );
     return ListTile(
       leading: Checkbox(value: done, onChanged: (v) => ref.mutate((s) => s.book.tick(item, v ?? false))),
       title: Text(
         '${item.qty > 1 ? '${item.qty} × ' : ''}${item.name}',
         style: done ? TextStyle(decoration: TextDecoration.lineThrough, color: muted(context)) : null,
       ),
-      subtitle: best == null
+      subtitle: searching > 0 && best == null
+          ? Text(
+              'Searching $searching ${searching == 1 ? 'shop' : 'shops'}…',
+              style: TextStyle(color: muted(context)),
+            )
+          : best == null
           ? (item.note.isEmpty ? null : Text(item.note))
           : Text(
-              '${pounds(best!.pence)} at ${shopName(best!.shop)}${best!.offer.isEmpty ? '' : ' · ${best!.offer}'}',
+              [
+                '${pounds(best!.pence)} at ${shopName(best!.shop)}',
+                if (best!.offer.isNotEmpty) best!.offer,
+                if (best!.source == 'auto') best!.title,
+                if (searching > 0) 'searching $searching more',
+              ].join(' · '),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: tomato),
             ),
       trailing: PopupMenuButton<String>(
@@ -236,7 +260,8 @@ Future<void> _editItem(BuildContext context, WidgetRef ref, Item item) async {
   );
 }
 
-/// What the rest of the list costs at each shop, and the way to its basket.
+/// What the rest of the list costs at each compared shop, which one is
+/// cheapest, and the way to fill its basket.
 class _Costs extends ConsumerWidget {
   const _Costs(this.left, this.prices);
   final List<Item> left;
@@ -244,24 +269,75 @@ class _Costs extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final costs = costByShop(left, prices);
     final mine = ref.watch(myShopsProvider).value ?? const <Shop>[];
+    final ids = {for (final s in mine) s.id};
+    final costs = [
+      for (final c in costByShop(left, prices))
+        if (ids.contains(c.shop)) c,
+    ];
+    final verdict = cheapestShop(left, prices, costs);
+    final lookups = ref.watch(pricerProvider);
+    final searching = lookups.values.where((l) => l == Lookup.searching).length;
+    final available = ref.watch(searcherProvider).available;
     final fillable = [
       for (final s in mine)
         if (s.searchable && s.selling != Selling.browse) s,
     ];
+    final text = Theme.of(context).textTheme;
     return SectionCard(
       title: 'Where to shop',
       hint: 'action.basket',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (costs.isEmpty)
+          if (verdict != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: 'Cheapest at ${shopName(verdict.best)}: ', style: text.titleMedium),
+                    TextSpan(
+                      text: pounds(verdict.pence),
+                      style: text.titleMedium?.copyWith(color: tomato, fontWeight: FontWeight.w700),
+                    ),
+                    TextSpan(
+                      text: [
+                        verdict.items == left.length
+                            ? ' for all ${left.length} ${left.length == 1 ? 'item' : 'items'}'
+                            : ' for the ${verdict.items} items every shop has',
+                        if (verdict.runnerUp != null)
+                          verdict.saving > 0
+                              ? ', ${pounds(verdict.saving)} less than ${shopName(verdict.runnerUp!)}.'
+                              : ', the same as ${shopName(verdict.runnerUp!)}.',
+                      ].join(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (costs.isEmpty && searching == 0)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Text(
-                'No prices yet. Compare an item from its menu to cost the list.',
+                available
+                    ? 'No prices yet. Check prices to search your shops for every item.'
+                    : 'No prices yet. Compare an item from its menu to cost the list.',
                 style: TextStyle(color: muted(context)),
+              ),
+            ),
+          if (searching > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                  const SizedBox(width: 12),
+                  Text(
+                    '$searching ${searching == 1 ? 'search' : 'searches'} to go',
+                    style: TextStyle(color: muted(context)),
+                  ),
+                ],
               ),
             ),
           for (final c in costs)
@@ -269,44 +345,57 @@ class _Costs extends ConsumerWidget {
               contentPadding: EdgeInsets.zero,
               title: Text(shopName(c.shop)),
               subtitle: Text(c.complete ? 'Every item priced' : '${c.priced} of ${c.items} items priced'),
-              trailing: Text(pounds(c.pence), style: Theme.of(context).textTheme.titleMedium),
-            ),
-          if (fillable.isNotEmpty)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.icon(
-                icon: const Icon(Icons.shopping_cart_checkout),
-                label: const Text('Fill a basket'),
-                onPressed: () async {
-                  final shop = await _pickShop(context, fillable, costs);
-                  if (shop != null && context.mounted) await openShop(context, shop, basket: left);
-                },
+              trailing: Text(
+                pounds(c.pence),
+                style: text.titleMedium?.copyWith(color: c.shop == verdict?.best ? tomato : null),
               ),
             ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (available)
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.travel_explore),
+                  label: const Text('Check prices'),
+                  onPressed: searching > 0 ? null : () => ref.read(pricerProvider.notifier).price(left, mine),
+                ),
+              if (fillable.isNotEmpty)
+                FilledButton.icon(
+                  icon: const Icon(Icons.shopping_cart_checkout),
+                  label: const Text('Fill a basket'),
+                  onPressed: () async {
+                    final shop = await _pickShop(context, fillable, costs, verdict?.best);
+                    if (shop != null && context.mounted) await openShop(context, shop, basket: left);
+                  },
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-Future<Shop?> _pickShop(BuildContext context, List<Shop> shops, List<ShopCost> costs) => showDialog<Shop>(
-  context: context,
-  builder: (context) => SimpleDialog(
-    title: const Text('Fill which basket?'),
-    children: [
-      for (final s in shops)
-        SimpleDialogOption(
-          onPressed: () => Navigator.pop(context, s),
-          child: Row(
-            children: [
-              Expanded(child: Text(s.name)),
-              Text(switch (costs.where((c) => c.shop == s.id).firstOrNull) {
-                final c? => pounds(c.pence),
-                null => '',
-              }),
-            ],
-          ),
-        ),
-    ],
-  ),
-);
+Future<Shop?> _pickShop(BuildContext context, List<Shop> shops, List<ShopCost> costs, String? best) =>
+    showDialog<Shop>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Fill which basket?'),
+        children: [
+          for (final s in [...shops.where((s) => s.id == best), ...shops.where((s) => s.id != best)])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, s),
+              child: Row(
+                children: [
+                  Expanded(child: Text(s.id == best ? '${s.name} (cheapest)' : s.name)),
+                  Text(switch (costs.where((c) => c.shop == s.id).firstOrNull) {
+                    final c? => pounds(c.pence),
+                    null => '',
+                  }),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );

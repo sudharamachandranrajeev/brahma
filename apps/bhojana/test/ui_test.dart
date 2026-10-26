@@ -35,7 +35,7 @@ void main() {
     await app.close();
   });
 
-  testWidgets('a new list takes items, compares one and costs the list', (tester) async {
+  testWidgets('a new item is priced at every shop by itself and the cheapest shop named', (tester) async {
     final app = AppHarness(tester)..desktop();
     await app.open();
     await app.run(
@@ -55,17 +55,26 @@ void main() {
     await app.settle();
     expect(find.text('2 × free range eggs'), findsOneWidget);
 
+    // Searched and kept without the user comparing.
+    expect(find.text('£2.89 at Aldi · Merevale Free Range Eggs 12'), findsOneWidget);
+    expect(find.text('£5.78'), findsOneWidget);
+    expect(find.text('£6.50'), findsOneWidget);
+    expect(
+      find.text('Cheapest at Aldi: £5.78 for all 1 item, 72p less than Tesco.', findRichText: true),
+      findsOneWidget,
+    );
+
+    // Picking a product by hand replaces the automatic pick at that shop.
     await app.tap(find.byTooltip('Item'));
     await app.tapText('Compare prices');
     await app.tap(find.textContaining('Search 6 shops'));
-    expect(find.text('Merevale Free Range Eggs 12'), findsOneWidget);
     expect(find.text('Chocolate'), findsNothing);
+    expect(find.text('Merevale Free Range Eggs 12'), findsNWidgets(2));
     await app.tap(find.byTooltip('Keep this price').last);
-    expect(find.text('Prices kept'), findsOneWidget);
+    expect(find.text('Merevale Free Range Eggs 12'), findsNWidgets(2));
     await app.tap(find.byType(BackButton));
 
     expect(find.text('£2.89 at Aldi'), findsOneWidget);
-    expect(find.text('£5.78'), findsOneWidget);
     await app.tap(find.byType(Checkbox).first);
     expect(find.text('0 to buy'), findsOneWidget);
     await app.close();

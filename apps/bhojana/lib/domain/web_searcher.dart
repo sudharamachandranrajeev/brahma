@@ -7,9 +7,16 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'reader.dart';
 import 'shops.dart';
 
-/// Whether this platform has an embedded web view (Linux has none).
+/// Whether this build has an embedded web view. Linux has one (WPE WebKit)
+/// when built with it; the portable release tarball is built without it
+/// (packages/no_linux_webview) and opens shops in the system browser.
 bool get hasWebView =>
-    !kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isWindows || Platform.isMacOS);
+    !kIsWeb &&
+    (Platform.isAndroid ||
+        Platform.isIOS ||
+        Platform.isWindows ||
+        Platform.isMacOS ||
+        (Platform.isLinux && InAppWebViewPlatform.instance != null));
 
 /// Reads shop search pages in a hidden web view. It shares cookies with the
 /// in-app browser, so a shop the user signed in to (and gave a postcode)

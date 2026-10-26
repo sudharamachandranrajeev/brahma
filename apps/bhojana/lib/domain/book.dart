@@ -86,8 +86,21 @@ class ShoppingBook {
 
   // ---- prices ----
 
-  /// Keeps [o] as the price of [itemId] (or of a free search) seen today.
+  /// Keeps [o] as the price of [itemId] (or of a free search) seen today. It
+  /// replaces a price already kept today for the same item at the same shop,
+  /// so the user's own pick wins over an earlier automatic one.
   Future<void> keepOffer(Offer o, {String? itemId, required String query, required String source}) async {
+    if (itemId != null) {
+      final same =
+          await (db.select(db.foodPrices)..where(
+                (t) =>
+                    t.itemId.equals(itemId) & t.shop.equals(o.shop) & t.day.equals(today()) & t.deleted.not(),
+              ))
+              .get();
+      for (final p in same) {
+        await store.remove(db.foodPrices, p.id);
+      }
+    }
     final id = newId();
     await store.save(
       db.foodPrices,
@@ -164,6 +177,65 @@ List<ShopCost> costByShop(List<Item> items, List<Price> prices) {
     return c != 0 ? c : a.pence.compareTo(b.pence);
   });
   return out;
+}
+
+/// Which shop is cheapest for a list, and by how much.
+class Verdict {
+  const Verdict(this.best, this.pence, this.items, {this.runnerUp, this.runnerUpPence = 0});
+
+  /// The cheapest shop and what [items] of the list cost there.
+  final String best;
+  final int pence;
+
+  /// How many items the comparison covers: the whole list when the shops
+  /// price every item, otherwise the ones every compared shop has.
+  final int items;
+
+  /// The next cheapest shop over the same items, if any.
+  final String? runnerUp;
+  final int runnerUpPence;
+
+  int get saving => runnerUp == null ? 0 : runnerUpPence - pence;
+}
+
+/// The cheapest shop for [items] among [costs]. When two or more shops price
+/// the whole list they are compared on it; otherwise every shop is compared
+/// like for like on the items they all price. Null when there is nothing to
+/// compare.
+Verdict? cheapestShop(List<Item> items, List<Price> prices, List<ShopCost> costs) {
+  if (costs.isEmpty) return null;
+  final complete = [
+    for (final c in costs)
+      if (c.complete) c,
+  ];
+  if (complete.length > 1) {
+    complete.sort((a, b) => a.pence.compareTo(b.pence));
+    return Verdict(
+      complete.first.shop,
+      complete.first.pence,
+      items.length,
+      runnerUp: complete[1].shop,
+      runnerUpPence: complete[1].pence,
+    );
+  }
+  final latest = latestPrices(prices);
+  final shops = [for (final c in costs) c.shop];
+  final common = [
+    for (final i in items)
+      if (shops.every((s) => latest.containsKey((i.id, s)))) i,
+  ];
+  if (common.isEmpty) return null;
+  final totals = [
+    for (final s in shops) (s, common.fold(0, (sum, i) => sum + latest[(i.id, s)]!.pence * i.qty)),
+  ]..sort((a, b) => a.$2.compareTo(b.$2));
+  final next = totals.length > 1 ? totals[1] : null;
+  return Verdict(
+    totals.first.$1,
+    totals.first.$2,
+    common.length,
+    runnerUp: next?.$1,
+    runnerUpPence: next?.$2 ?? 0,
+  );
 }
 
 /// The cheapest kept price for one item, at any shop.

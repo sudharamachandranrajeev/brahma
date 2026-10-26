@@ -1,7 +1,7 @@
 name: bhojana
 description: "Bhojana - grocery and shopping: lists, UK price comparison across shops, live prices and basket filling through your own shop logins (Linux, Windows, Android). Part of Brahma."
 publish_to: 'none'
-version: 0.3.0+3
+version: 0.4.0+4
 
 environment:
   sdk: ^3.13.5
@@ -19,21 +19,25 @@ dependencies:
   flutter_riverpod: ^3.4.3
   intl: ^0.20.3
   url_launcher: ^6.3.2
-  # The in-app browser for shop logins, live prices and baskets (Android and
-  # Windows). 6.2 beta: 6.1's Android plugin fails under Android Gradle
-  # Plugin 9 (proguard-android.txt).
+  # The in-app browser for shop logins, live prices and baskets (Android,
+  # Windows, and Linux through WPE WebKit). 6.2 beta: 6.1's Android plugin
+  # fails under Android Gradle Plugin 9 (proguard-android.txt).
   flutter_inappwebview: 6.2.0-beta.3
-  # Takes Linux off flutter_inappwebview, whose Linux plugin needs WPE WebKit
-  # to build and run; Bhojana opens shops in the system browser there.
-  bhojana_no_linux_webview:
-    path: packages/no_linux_webview
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   flutter_lints: ^6.0.0
   drift_dev: ^2.35.1
   build_runner: ^2.16.2
+
+dependency_overrides:
+  # The web view's Linux plugin with libwpe made optional: WPE WebKit 2.52+
+  # (Arch, Fedora) no longer ships it. See packages/flutter_inappwebview_linux.
+  flutter_inappwebview_linux:
+    path: packages/flutter_inappwebview_linux
 
 flutter:
   uses-material-design: true

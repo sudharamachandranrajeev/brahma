@@ -13,14 +13,18 @@ suite. Linux, Windows and Android, plus a web app served by your sync server.
 ## What it does
 
 - **Lists.** Type `2 milk` to add two of milk. Tick items off; untick everything for next week.
-- **Compare.** Search one product across your starred shops. Bhojana reads each shop's own search page
-  and ranks what it finds by match, then price. Keep the prices you want; the list then shows what it
-  costs at each shop.
+- **Priced as you type.** Each item you add is searched at every starred shop. Bhojana keeps the best
+  match at each, in the same pack size everywhere it can (4 pints against 4 pints), and *Where to shop*
+  names the cheapest shop for the list and what it saves over the next one. Put a size in the item
+  (`milk 4 pints`) to choose it yourself.
+- **Compare.** Search one product across your starred shops and keep a different product than the one
+  Bhojana picked. Your pick replaces its pick for that shop.
 - **Live prices with your login.** Sign in to a shop and set your postcode inside the in-app browser.
   Searches share that browser's cookies, so you see your Clubcard, Nectar or Lidl Plus prices, stock and
   local prices. Bhojana never sees your password and never stores card details.
-- **Fill a basket.** Pick a shop and Bhojana walks your list in its site, one item at a time. Press
-  the shop's own Add button, or let *Add first* press it. You check out yourself.
+- **Fill a basket.** Pick a shop (the cheapest comes first) and *Add all*: Bhojana searches each item in
+  the shop's site, finds the product it priced and presses its Add button, then its plus button for each
+  extra one. Anything it could not add is listed to add by hand. You check out yourself.
 - **Delivery slots.** One tap opens a grocer's slot page, signed in.
 - **22 shops:** Tesco, Sainsbury's, Asda, Morrisons, Ocado, Waitrose, Iceland, Co-op, Aldi, Lidl, Poundland,
   Poundstretcher, Home Bargains, B&M, HomeSense, TK Maxx, Matalan, Primark, Boots, Superdrug, The Body Shop
@@ -29,8 +33,9 @@ suite. Linux, Windows and Android, plus a web app served by your sync server.
 ## Platform notes
 
 - Android and Windows have the in-app browser and search for you.
-- Linux has no embedded web view for Flutter: shops open in your normal browser and you type in the
-  prices you find.
+- Linux: a build from source on a system with WPE WebKit (`pacman -S wpewebkit` on Arch, `wpewebkit` on
+  Fedora) has the in-app browser too. The release tarball is built without it, because Ubuntu ships no
+  WPE WebKit: there shops open in your normal browser and you type in the prices you find.
 - Big supermarkets block automated browsers. Reading a page you are signed in to usually works. When a
   search comes back empty, open the shop, accept its cookie banner or sign in, and search again.
 - Shop sites change. The search addresses live in `lib/domain/shops.dart`, and the price reader is one
@@ -59,7 +64,8 @@ Bhojana contacts shop websites only when you search or open one.
 
 ```sh
 flutter pub get
-flutter test                       # reader_test runs the price reader in headless Chromium if installed
+flutter test                       # reader_test runs the page scripts in headless Chromium if installed
+flutter test integration_test/live_app_test.dart -d linux   # the whole flow against the real shops
 BHOJANA_SHOTS=/tmp/shots FLUTTER_ROOT=... flutter test test/screenshots_test.dart
 flutter build linux --release && scripts/install-linux.sh
 (cd server && npm ci && npm test)  # sync server; sync_worker_test.dart also needs Node 24
