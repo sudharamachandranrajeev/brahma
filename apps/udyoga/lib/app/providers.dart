@@ -18,6 +18,7 @@ import '../domain/refresh.dart';
 import '../domain/n8n.dart';
 import '../domain/update.dart';
 import '../ui/hints.dart';
+import 'security_checks.dart';
 import 'session.dart';
 
 /// The open session; main() overrides this before the first frame.
@@ -63,6 +64,7 @@ List<Override> udyogaOverrides(AppSession session, {http.Client? client, Updater
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(udyogaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...udyogaHints}),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, ...udyogaChecks]),
   if (client != null) httpClientProvider.overrideWithValue(client),
   if (updater != null) updaterProvider.overrideWithValue(updater),
 ];
