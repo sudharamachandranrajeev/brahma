@@ -63,6 +63,7 @@ class SettingsPage extends ConsumerWidget {
                 : 'Connected to ${Uri.parse(watch.url).host}. New listings are brought into the hunt when the app starts.',
           ),
         ),
+        const AppLockCard(),
         const HintsCard(),
         const SyncCard(),
         const SecurityCard(

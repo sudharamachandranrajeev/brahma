@@ -22,7 +22,7 @@ List<Override> anveshanaOverrides(AppSession session) => [
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(anveshanaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...anveshanaHints}),
-  sentinelChecksProvider.overrideWithValue([...coreChecks, ...anveshanaChecks]),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, lockCheck, ...anveshanaChecks]),
 ];
 
 extension Mutate on WidgetRef {

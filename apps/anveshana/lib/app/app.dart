@@ -18,7 +18,7 @@ class AnveshanaApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: anveshanaTheme(Brightness.light),
     darkTheme: anveshanaTheme(Brightness.dark),
-    builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
+    builder: (context, child) => AppLockGate(child: Backdrop(child: child ?? const SizedBox.shrink())),
     home: home,
   );
 }
