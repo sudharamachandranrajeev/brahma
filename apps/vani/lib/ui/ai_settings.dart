@@ -50,7 +50,9 @@ class AiSettings extends ConsumerWidget {
     };
     final services = CredentialProvider.aiServices;
     final withKey = services.where((p) => keyed.contains(p.name)).toList();
-    final active = s.aiProvider != null && keyed.contains(s.aiProvider!.name) ? s.aiProvider : withKey.firstOrNull;
+    final active = s.aiProvider != null && keyed.contains(s.aiProvider!.name)
+        ? s.aiProvider
+        : withKey.firstOrNull;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -123,7 +125,8 @@ class _HubModel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current =
-        settings.aiModels[provider.name] ?? (provider == CredentialProvider.anthropic ? claudeModels.keys.first : '');
+        settings.aiModels[provider.name] ??
+        (provider == CredentialProvider.anthropic ? claudeModels.keys.first : '');
     final listed = ref.watch(aiModelsProvider(provider));
     if (listed.hasError && !listed.isLoading) {
       return Padding(
@@ -134,7 +137,8 @@ class _HubModel extends ConsumerWidget {
         ),
       );
     }
-    final models = listed.value ?? (provider == CredentialProvider.anthropic ? claudeModels.keys.toList() : const []);
+    final models =
+        listed.value ?? (provider == CredentialProvider.anthropic ? claudeModels.keys.toList() : const []);
     if (models.isEmpty && current.isEmpty) return const LinearProgressIndicator();
     return Choice<String>(
       key: ValueKey(('ai.model', provider, current, models.length)),
@@ -184,7 +188,11 @@ class _DeviceAi extends ConsumerWidget {
         ),
         if (ai != null && choice != null) ...[
           switch (status) {
-            AsyncData(:final value) => _Status(icon: Icons.check_circle_rounded, color: growth, text: value ?? ''),
+            AsyncData(:final value) => _Status(
+              icon: Icons.check_circle_rounded,
+              color: growth,
+              text: value ?? '',
+            ),
             AsyncError(:final error) => _Status(
               icon: Icons.error_outline_rounded,
               color: Theme.of(context).colorScheme.error,
@@ -207,7 +215,10 @@ class _DeviceAi extends ConsumerWidget {
                 key: ValueKey(('ai.ollama', choice.model)),
                 label: 'Model',
                 value: choice.model,
-                options: {if (!value.contains(choice.model)) choice.model: 'Pick a model', for (final m in value) m: m},
+                options: {
+                  if (!value.contains(choice.model)) choice.model: 'Pick a model',
+                  for (final m in value) m: m,
+                },
                 onChanged: (m) {
                   if (m.isNotEmpty) set(DeviceAiChoice(tool: choice.tool, model: m));
                 },
@@ -310,7 +321,10 @@ class _ModelFieldState extends State<_ModelField> {
     padding: const EdgeInsets.only(bottom: 12),
     child: TextField(
       controller: _c,
-      decoration: const InputDecoration(labelText: 'Model', helperText: 'Leave blank for the tool\'s default.'),
+      decoration: const InputDecoration(
+        labelText: 'Model',
+        helperText: 'Leave blank for the tool\'s default.',
+      ),
       onSubmitted: (_) => _save(),
       onTapOutside: (_) => _save(),
     ),

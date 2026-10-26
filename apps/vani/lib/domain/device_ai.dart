@@ -83,11 +83,19 @@ class DeviceAiChoice {
 /// Whether this platform can run the AI tools (desktop only).
 bool get deviceAiSupported => Platform.isLinux || Platform.isWindows;
 
-typedef StartProcess =
-    Future<Process> Function(String exe, List<String> args, {String? workingDirectory, bool runInShell});
+typedef StartProcess = Future<Process> Function(
+  String exe,
+  List<String> args, {
+  String? workingDirectory,
+  bool runInShell,
+});
 
-Future<Process> _startProcess(String exe, List<String> args, {String? workingDirectory, bool runInShell = false}) =>
-    Process.start(exe, args, workingDirectory: workingDirectory, runInShell: runInShell);
+Future<Process> _startProcess(
+  String exe,
+  List<String> args, {
+  String? workingDirectory,
+  bool runInShell = false,
+}) => Process.start(exe, args, workingDirectory: workingDirectory, runInShell: runInShell);
 
 const ollamaBase = 'http://127.0.0.1:11434';
 
@@ -139,14 +147,18 @@ class DeviceAi {
 
   String _exe() =>
       locate() ??
-      (throw DeviceAiException('${choice.tool.label} is not installed on this computer. Install it, then try again.'));
+      (throw DeviceAiException(
+        '${choice.tool.label} is not installed on this computer. Install it, then try again.',
+      ));
 
   /// A line about the tool's state for Settings, e.g. who it is signed in as.
   /// Throws when it cannot be used.
   Future<String> check() async {
     if (choice.tool == DeviceAiTool.ollama) {
       final models = await ollamaModels();
-      if (models.isEmpty) throw DeviceAiException('Ollama is running but has no models. Run: ollama pull gemma3');
+      if (models.isEmpty) {
+        throw DeviceAiException('Ollama is running but has no models. Run: ollama pull gemma3');
+      }
       return 'Ollama is running with ${models.length} model${models.length == 1 ? '' : 's'}.';
     }
     final exe = _exe();
@@ -226,9 +238,7 @@ class DeviceAi {
     final exe = _exe();
     final dir = await Directory.systemTemp.createTemp('vani-ai-');
     try {
-      final images = [
-        for (final (i, url) in r.images.indexed) await _download(url, dir, i + 1),
-      ];
+      final images = [for (final (i, url) in r.images.indexed) await _download(url, dir, i + 1)];
       return switch (choice.tool) {
         DeviceAiTool.claude => await _claude(exe, dir, r, images),
         DeviceAiTool.codex => await _codex(exe, dir, r, images),
@@ -281,7 +291,8 @@ class DeviceAi {
 
   /// `codex exec`, read-only and ephemeral, with the schema as a file.
   Future<Object?> _codex(String exe, Directory dir, DeviceRequest r, List<String> images) async {
-    final schema = File('${dir.path}${Platform.pathSeparator}schema.json')..writeAsStringSync(jsonEncode(r.schema));
+    final schema = File('${dir.path}${Platform.pathSeparator}schema.json')
+      ..writeAsStringSync(jsonEncode(r.schema));
     final answer = File('${dir.path}${Platform.pathSeparator}answer.json');
     final out = await _run(
       exe,
@@ -363,13 +374,17 @@ class DeviceAi {
       throw DeviceAiException('Ollama is not running on this computer. Start it, then try again.');
     }
     final j = _decode(res.body);
-    if (res.statusCode != 200) throw DeviceAiException('Ollama: ${str(j['error'], 'answered ${res.statusCode}')}');
+    if (res.statusCode != 200) {
+      throw DeviceAiException('Ollama: ${str(j['error'], 'answered ${res.statusCode}')}');
+    }
     return _parse(str(obj(j['message'])['content']), 'Ollama');
   }
 
   Future<List<int>> _fetch(String url) async {
     final res = await _http.get(Uri.parse(url)).timeout(const Duration(seconds: 30));
-    if (res.statusCode != 200) throw DeviceAiException('Could not fetch the image from the hub (${res.statusCode}).');
+    if (res.statusCode != 200) {
+      throw DeviceAiException('Could not fetch the image from the hub (${res.statusCode}).');
+    }
     return res.bodyBytes;
   }
 
@@ -418,13 +433,18 @@ class DeviceAi {
     if (RegExp(r'log ?in|sign ?in|auth', caseSensitive: false).hasMatch(why)) {
       return DeviceAiException('$name is not signed in. Sign in from Settings > AI.');
     }
-    return DeviceAiException(why.isEmpty ? '$name stopped without an answer. Try again.' : '$name stopped: $why');
+    return DeviceAiException(
+      why.isEmpty ? '$name stopped without an answer. Try again.' : '$name stopped: $why',
+    );
   }
 }
 
 /// A model's text answer as JSON (some wrap it in a code fence).
 Object? _parse(String text, String name) {
-  final t = text.trim().replaceFirst(RegExp(r'^```(?:json)?\s*', caseSensitive: false), '').replaceFirst(RegExp(r'```$'), '');
+  final t = text
+      .trim()
+      .replaceFirst(RegExp(r'^```(?:json)?\s*', caseSensitive: false), '')
+      .replaceFirst(RegExp(r'```$'), '');
   try {
     return jsonDecode(t.trim());
   } on FormatException {

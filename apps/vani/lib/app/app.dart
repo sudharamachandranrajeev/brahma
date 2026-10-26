@@ -20,6 +20,9 @@ class VaniApp extends ConsumerWidget {
     themeAnimationDuration: const Duration(milliseconds: 350),
     builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
     // There is no onboarding: without a hub every page offers to connect one.
-    home: LinkHandler(onAppLink: (context, link) => openHubLink(context, ref, link), child: const VaniShell()),
+    home: LinkHandler(
+      onAppLink: (context, link) => openHubLink(context, ref, link),
+      child: const VaniShell(),
+    ),
   );
 }

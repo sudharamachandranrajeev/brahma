@@ -43,9 +43,8 @@ Future<void> setUpHub(BuildContext context, WidgetRef ref) async {
     );
     return;
   }
-  await Navigator.of(context).push(
-    MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const HubSetupPage()),
-  );
+  await Navigator.of(context)
+      .push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => const HubSetupPage()));
 }
 
 /// Asks before connecting this device to the hub in a scanned or pasted
@@ -85,7 +84,8 @@ Future<void> showPhoneLink(BuildContext context, HubLink link) => showDialog<voi
     ),
     actions: [
       TextButton(
-        onPressed: () => copyText(context, link.toPairingLink(), what: 'Link copied. Send it only to yourself.'),
+        onPressed: () =>
+            copyText(context, link.toPairingLink(), what: 'Link copied. Send it only to yourself.'),
         child: const Text('Copy link'),
       ),
       FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Done')),
@@ -192,7 +192,12 @@ class _HubSetupPageState extends ConsumerState<HubSetupPage> {
     final link = await ref.read(hubLinkProvider.future);
     final name = (await ref.read(hubBundleProvider.future)).name;
     if (!link.ready || link.url != 'https://$name.$subdomain.workers.dev') return mine;
-    return HubDeployment(cloudflareToken: _key.text.trim(), accountId: account, url: link.url, apiToken: link.token);
+    return HubDeployment(
+      cloudflareToken: _key.text.trim(),
+      accountId: account,
+      url: link.url,
+      apiToken: link.token,
+    );
   }
 
   Future<void> _deploy() async {
@@ -272,86 +277,83 @@ class _HubSetupPageState extends ConsumerState<HubSetupPage> {
           Stepper(
             physics: const NeverScrollableScrollPhysics(),
             currentStep: _stage.index,
-            onStepTapped: _deploying || _stage == _Stage.done ? null : (i) => setState(() => _stage = _Stage.values[i]),
+            onStepTapped: _deploying || _stage == _Stage.done
+                ? null
+                : (i) => setState(() => _stage = _Stage.values[i]),
             controlsBuilder: (_, _) => const SizedBox.shrink(),
             steps: [
-              _step(
-                _Stage.account,
-                'Make a free Cloudflare account',
-                [
-                  const Text(
-                    'Cloudflare runs your hub. The free plan is enough for a few accounts. Sign up with your '
-                    'email, confirm it, then come back here. Already have an account? Skip ahead.',
+              _step(_Stage.account, 'Make a free Cloudflare account', [
+                const Text(
+                  'Cloudflare runs your hub. The free plan is enough for a few accounts. Sign up with your '
+                  'email, confirm it, then come back here. Already have an account? Skip ahead.',
+                ),
+                _buttons([
+                  FilledButton.icon(
+                    onPressed: () => openLink(context, 'https://dash.cloudflare.com/sign-up'),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                    label: const Text('Open Cloudflare sign-up'),
                   ),
-                  _buttons([
-                    FilledButton.icon(
-                      onPressed: () => openLink(context, 'https://dash.cloudflare.com/sign-up'),
-                      icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                      label: const Text('Open Cloudflare sign-up'),
-                    ),
-                    TextButton(onPressed: () => setState(() => _stage = _Stage.r2), child: const Text('Next')),
-                  ]),
-                ],
-              ),
-              _step(
-                _Stage.r2,
-                'Switch on R2 storage',
-                [
-                  const Text(
-                    'R2 keeps the photos and videos you schedule. In the Cloudflare dashboard, open '
-                    'R2 Object Storage in the menu on the left and tap Enable (or Purchase R2). The free '
-                    'tier costs nothing, but Cloudflare may ask for a card to turn it on.',
+                  TextButton(onPressed: () => setState(() => _stage = _Stage.r2), child: const Text('Next')),
+                ]),
+              ]),
+              _step(_Stage.r2, 'Switch on R2 storage', [
+                const Text(
+                  'R2 keeps the photos and videos you schedule. In the Cloudflare dashboard, open '
+                  'R2 Object Storage in the menu on the left and tap Enable (or Purchase R2). The free '
+                  'tier costs nothing, but Cloudflare may ask for a card to turn it on.',
+                ),
+                _buttons([
+                  FilledButton.icon(
+                    onPressed: () =>
+                        openLink(context, 'https://dash.cloudflare.com/?to=/:account/r2/overview'),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                    label: const Text('Open R2'),
                   ),
-                  _buttons([
-                    FilledButton.icon(
-                      onPressed: () => openLink(context, 'https://dash.cloudflare.com/?to=/:account/r2/overview'),
-                      icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                      label: const Text('Open R2'),
-                    ),
-                    TextButton(onPressed: () => setState(() => _stage = _Stage.key), child: const Text('Done, next')),
-                  ]),
-                ],
-              ),
-              _step(
-                _Stage.key,
-                'Make a key for Vani',
-                [
-                  const Text(
-                    'The key lets Vani build the hub on your account. The button opens Cloudflare\'s key page '
-                    'with the right permissions filled in: scroll down, tap Continue to summary, then '
-                    'Create Token, and copy the key it shows.',
+                  TextButton(
+                    onPressed: () => setState(() => _stage = _Stage.key),
+                    child: const Text('Done, next'),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'If the page opens empty: Create Token > "Edit Cloudflare Workers" template > Use template, '
-                    'then Add more: Account / D1 / Edit. It needs Workers Scripts, Workers KV Storage, '
-                    'Workers R2 Storage and D1 set to Edit, and Account Settings to Read.',
-                    style: TextStyle(color: Tone.of(context).muted),
+                ]),
+              ]),
+              _step(_Stage.key, 'Make a key for Vani', [
+                const Text(
+                  'The key lets Vani build the hub on your account. The button opens Cloudflare\'s key page '
+                  'with the right permissions filled in: scroll down, tap Continue to summary, then '
+                  'Create Token, and copy the key it shows.',
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'If the page opens empty: Create Token > "Edit Cloudflare Workers" template > Use template, '
+                  'then Add more: Account / D1 / Edit. It needs Workers Scripts, Workers KV Storage, '
+                  'Workers R2 Storage and D1 set to Edit, and Account Settings to Read.',
+                  style: TextStyle(color: Tone.of(context).muted),
+                ),
+                _buttons([
+                  OutlinedButton.icon(
+                    onPressed: () => openLink(context, '${CloudflareClient.tokenPageUrl}'),
+                    icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                    label: const Text('Open the key page'),
                   ),
-                  _buttons([
-                    OutlinedButton.icon(
-                      onPressed: () => openLink(context, '${CloudflareClient.tokenPageUrl}'),
-                      icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                      label: const Text('Open the key page'),
-                    ),
-                  ]),
-                  TextField(
-                    controller: _key,
-                    obscureText: true,
-                    decoration: InputDecoration(labelText: 'Paste the key here', errorText: _keyError),
-                    onSubmitted: (_) => _checkKey(),
+                ]),
+                TextField(
+                  controller: _key,
+                  obscureText: true,
+                  decoration: InputDecoration(labelText: 'Paste the key here', errorText: _keyError),
+                  onSubmitted: (_) => _checkKey(),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'The key stays on this computer, encrypted, so it can update the hub later. You can '
+                  'delete it in Cloudflare any time; the hub keeps running.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Tone.of(context).muted),
+                ),
+                _buttons([
+                  FilledButton(
+                    onPressed: _checking ? null : _checkKey,
+                    child: Text(_checking ? 'Checking…' : 'Check the key'),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'The key stays on this computer, encrypted, so it can update the hub later. You can '
-                    'delete it in Cloudflare any time; the hub keeps running.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Tone.of(context).muted),
-                  ),
-                  _buttons([
-                    FilledButton(onPressed: _checking ? null : _checkKey, child: Text(_checking ? 'Checking…' : 'Check the key')),
-                  ]),
-                ],
-              ),
+                ]),
+              ]),
               _step(_Stage.deploy, updating ? 'Update the hub' : 'Build the hub', _deployBody(context)),
               _step(_Stage.done, 'Connect your phone', _doneBody(context)),
             ],
@@ -427,7 +429,11 @@ class _HubSetupPageState extends ConsumerState<HubSetupPage> {
           icon: const Icon(Icons.rocket_launch_rounded, size: 18),
           label: Text(_deploying ? 'Working… (a minute or two)' : 'Set up'),
         ),
-        if (_r2Off) TextButton(onPressed: () => setState(() => _stage = _Stage.r2), child: const Text('Back to step 2')),
+        if (_r2Off)
+          TextButton(
+            onPressed: () => setState(() => _stage = _Stage.r2),
+            child: const Text('Back to step 2'),
+          ),
       ]),
     ];
   }
@@ -479,13 +485,15 @@ class _HubSetupPageState extends ConsumerState<HubSetupPage> {
       ),
       _buttons([
         OutlinedButton.icon(
-          onPressed: () => copyText(context, r.link.toPairingLink(), what: 'Phone link copied. Send it only to yourself.'),
+          onPressed: () =>
+              copyText(context, r.link.toPairingLink(), what: 'Phone link copied. Send it only to yourself.'),
           icon: const Icon(Icons.copy_rounded, size: 18),
           label: const Text('Copy phone link'),
         ),
         OutlinedButton.icon(
           onPressed: () async {
-            if (await guarded(context, () => ref.hub((h) => h.testNotify(), refresh: false)) && context.mounted) {
+            if (await guarded(context, () => ref.hub((h) => h.testNotify(), refresh: false)) &&
+                context.mounted) {
               showMessage(context, 'Test alert sent.');
             }
           },

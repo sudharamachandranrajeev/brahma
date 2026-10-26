@@ -320,39 +320,40 @@ void main() {
     await app.close();
   });
 
-  testWidgets('connecting without app credentials walks through making the app, checks the keys and saves them', (
-    tester,
-  ) async {
-    final app = AppHarness(tester)..desktop();
-    await app.open();
-    await app.run();
-    await app.go('Accounts');
-    expect(find.text('Set up · 6 steps'), findsWidgets);
-    await app.tapText('Threads profile');
-    expect(app.hub.log.where((l) => l.contains('/connect/')), isEmpty);
-    expect(find.text('Set up Threads'), findsOneWidget);
+  testWidgets(
+    'connecting without app credentials walks through making the app, checks the keys and saves them',
+    (tester) async {
+      final app = AppHarness(tester)..desktop();
+      await app.open();
+      await app.run();
+      await app.go('Accounts');
+      expect(find.text('Set up · 6 steps'), findsWidgets);
+      await app.tapText('Threads profile');
+      expect(app.hub.log.where((l) => l.contains('/connect/')), isEmpty);
+      expect(find.text('Set up Threads'), findsOneWidget);
 
-    await app.tapText('Done, next');
-    expect(find.text('$hubUrl/social/oauth/threads/callback'), findsOneWidget);
-    await app.tapText('Done, next');
-    await app.tapText('Done, next');
-    expect(find.text('$hubUrl/social/webhook/threads'), findsOneWidget);
-    await app.tapText('Done or skip, next');
+      await app.tapText('Done, next');
+      expect(find.text('$hubUrl/social/oauth/threads/callback'), findsOneWidget);
+      await app.tapText('Done, next');
+      await app.tapText('Done, next');
+      expect(find.text('$hubUrl/social/webhook/threads'), findsOneWidget);
+      await app.tapText('Done or skip, next');
 
-    await app.enter('Threads app ID', '1234');
-    await app.enter('Threads app secret', 'wrong');
-    await app.tapText('Check and save');
-    expect(find.textContaining('did not accept'), findsOneWidget);
-    expect(app.hub.credentials['threads'], isNull);
+      await app.enter('Threads app ID', '1234');
+      await app.enter('Threads app secret', 'wrong');
+      await app.tapText('Check and save');
+      expect(find.textContaining('did not accept'), findsOneWidget);
+      expect(app.hub.credentials['threads'], isNull);
 
-    await app.enter('Threads app secret', 'right');
-    await app.tapText('Check and save');
-    expect(find.text('threads accepted the app ID and secret.'), findsOneWidget);
-    expect(app.hub.credentials['threads']?['publicId'], '1234');
-    expect(find.text('Sign in with Threads'), findsWidgets);
-    expect(tester.takeException(), isNull);
-    await app.close();
-  });
+      await app.enter('Threads app secret', 'right');
+      await app.tapText('Check and save');
+      expect(find.text('threads accepted the app ID and secret.'), findsOneWidget);
+      expect(app.hub.credentials['threads']?['publicId'], '1234');
+      expect(find.text('Sign in with Threads'), findsWidgets);
+      expect(tester.takeException(), isNull);
+      await app.close();
+    },
+  );
 
   testWidgets('Mastodon signs in on the server, or takes a token', (tester) async {
     final app = AppHarness(tester)..desktop();

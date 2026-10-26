@@ -158,7 +158,8 @@ const _guides = {
     ],
     idLabel: 'Client ID',
     secretLabel: 'Client secret',
-    keysWhere: 'Google shows the Client ID and Client secret when the client is made (or open it under Clients).',
+    keysWhere:
+        'Google shows the Client ID and Client secret when the client is made (or open it under Clients).',
     signInNote:
         'Google warns that it has not verified the app, because you made it. Tap Advanced, then Go to your app, '
         'and allow the YouTube permissions.',
@@ -198,7 +199,8 @@ const _guides = {
     idLabel: 'Client ID',
     secretLabel: 'Primary Client Secret',
     keysWhere: 'On the Auth tab, copy the Client ID and the Primary Client Secret.',
-    signInNote: 'Reading comments needs LinkedIn\'s Community Management API, which LinkedIn approves per app.',
+    signInNote:
+        'Reading comments needs LinkedIn\'s Community Management API, which LinkedIn approves per app.',
   ),
 };
 
@@ -207,9 +209,9 @@ int appSetupSteps(OAuthProvider p) => _guides[p]!.steps.length + 2;
 
 /// Opens the guided setup of the user's own developer app for [p], which
 /// ends with signing in.
-Future<void> openAppWizard(BuildContext context, OAuthProvider p) => Navigator.of(context).push(
-  MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => AppWizardPage(provider: p)),
-);
+Future<void> openAppWizard(BuildContext context, OAuthProvider p) =>
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(fullscreenDialog: true, builder: (_) => AppWizardPage(provider: p)));
 
 class AppWizardPage extends ConsumerStatefulWidget {
   const AppWizardPage({super.key, required this.provider});
@@ -312,10 +314,7 @@ class _AppWizardPageState extends ConsumerState<AppWizardPage> {
         children: [
           Text(_guide.why, style: Theme.of(context).textTheme.bodyLarge),
           const SizedBox(height: 8),
-          Text(
-            'Takes about 10 minutes, once. Keep this window open beside the browser.',
-            style: muted,
-          ),
+          Text('Takes about 10 minutes, once. Keep this window open beside the browser.', style: muted),
           const SizedBox(height: 16),
           Stepper(
             physics: const NeverScrollableScrollPhysics(),

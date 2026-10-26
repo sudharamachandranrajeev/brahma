@@ -243,7 +243,10 @@ void main() {
   test('credential checks and the Mastodon sign-in', () async {
     final fake = FakeHub();
     final hub = HubClient(hubUrl, hubToken, client: fake.client);
-    expect(await hub.checkCredential(CredentialProvider.google, publicId: 'c', secret: 's'), contains('accepted'));
+    expect(
+      await hub.checkCredential(CredentialProvider.google, publicId: 'c', secret: 's'),
+      contains('accepted'),
+    );
     expect(fake.bodies['POST /social/credentials/google/check'], {'publicId': 'c', 'secret': 's'});
     await expectLater(
       hub.checkCredential(CredentialProvider.google, publicId: 'c', secret: 'wrong'),

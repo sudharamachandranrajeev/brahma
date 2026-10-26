@@ -116,7 +116,8 @@ final deviceAiProvider = AsyncNotifierProvider<DeviceAiNotifier, DeviceAi?>(Devi
 
 /// Makes the [DeviceAi] for a choice; tests swap in a fake.
 final deviceAiFactoryProvider = Provider<DeviceAi Function(DeviceAiChoice)>(
-  (ref) => (choice) => DeviceAi(choice, client: ref.watch(httpClientProvider)),
+  (ref) =>
+      (choice) => DeviceAi(choice, client: ref.watch(httpClientProvider)),
 );
 
 /// The hub build this version of Vani ships (assets/hub).
