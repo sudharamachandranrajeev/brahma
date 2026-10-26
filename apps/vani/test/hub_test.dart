@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:vani/app/providers.dart';
+import 'package:vani/app/security_checks.dart';
 import 'package:vani/domain/device_ai.dart';
 import 'package:vani/domain/hub.dart';
 import 'package:vani/domain/models.dart';
@@ -247,5 +250,18 @@ void main() {
       throwsA(isA<HubException>().having((e) => e.status, 'status', 422)),
     );
     expect(await hub.connectMastodon('social.example'), startsWith('https://social.example/oauth/authorize'));
+  });
+
+  test('Sentinel reports a hub reached in clear on the home network, not over https or Tailscale', () async {
+    Future<List<String>> ids(HubLink link) async {
+      final c = ProviderContainer(overrides: [hubLinkProvider.overrideWithValue(AsyncData(link))]);
+      addTearDown(c.dispose);
+      return [for (final f in await c.read(hubCheck.findings.future)) f.id];
+    }
+
+    expect(await ids(const HubLink()), isEmpty);
+    expect(await ids(const HubLink(url: 'https://hub.example.workers.dev', token: 't')), isEmpty);
+    expect(await ids(const HubLink(url: 'http://hub.tail1234.ts.net:8787', token: 't')), isEmpty);
+    expect(await ids(const HubLink(url: 'http://192.168.1.5:8787', token: 't')), ['vani.hub.http']);
   });
 }
