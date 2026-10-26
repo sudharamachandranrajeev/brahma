@@ -18,7 +18,7 @@ class VaniApp extends ConsumerWidget {
     darkTheme: vaniTheme(Brightness.dark),
     themeMode: ref.watch(themeProvider).value ?? ThemeMode.dark,
     themeAnimationDuration: const Duration(milliseconds: 350),
-    builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
+    builder: (context, child) => AppLockGate(child: Backdrop(child: child ?? const SizedBox.shrink())),
     // There is no onboarding: without a hub every page offers to connect one.
     home: LinkHandler(
       onAppLink: (context, link) => openHubLink(context, ref, link),
