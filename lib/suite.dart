@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/providers.dart';
+import 'app/security_checks.dart';
 import 'app/session.dart';
 import 'app/shell.dart';
 import 'domain/hub.dart';
@@ -22,6 +23,7 @@ final vaniSuite = SuiteApp(
   home: (onHome) => VaniShell(onHome: onHome),
   builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
   summary: (_) => const _Summary(),
+  securityChecks: vaniChecks,
 );
 
 class _Summary extends ConsumerWidget {

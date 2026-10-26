@@ -13,6 +13,7 @@ import '../domain/device_ai.dart';
 import '../domain/hub.dart';
 import '../domain/models.dart';
 import '../ui/hints.dart';
+import 'security_checks.dart';
 import 'session.dart';
 
 /// The open session; main() overrides this before the first frame.
@@ -28,6 +29,7 @@ List<Override> vaniOverrides(AppSession session, {http.Client? client}) => [
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(vaniIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...vaniHints}),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, ...vaniChecks]),
   if (client != null) httpClientProvider.overrideWithValue(client),
 ];
 
