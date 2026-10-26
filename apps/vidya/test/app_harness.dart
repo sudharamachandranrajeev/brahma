@@ -22,6 +22,8 @@ class AppHarness {
     await tester.runAsync(() async {
       final store = await Store.open(memoryDatabase());
       session = AppSession(KeyVault(MemorySecretStore(), vidyaIdentity), store, LearningBook(store));
+      // Past the first-run choice between this device only and sync.
+      await session.db.setLocalSetting('onboarding.sync', 'done');
       await seed?.call(session.book);
     });
   }
