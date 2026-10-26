@@ -29,7 +29,7 @@ List<Override> vaniOverrides(AppSession session, {http.Client? client}) => [
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(vaniIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...vaniHints}),
-  sentinelChecksProvider.overrideWithValue([...coreChecks, ...vaniChecks]),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, lockCheck, ...vaniChecks]),
   if (client != null) httpClientProvider.overrideWithValue(client),
 ];
 

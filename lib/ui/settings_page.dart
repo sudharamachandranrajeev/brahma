@@ -152,6 +152,7 @@ class SettingsPage extends ConsumerWidget {
         ),
         if (link?.ready ?? false)
           HubView(ref.watch(hubSettingsProvider), builder: (s) => _HubSettings(settings: s)),
+        const AppLockCard(),
         const HintsCard(),
         const SyncCard(),
         const SecurityCard(
