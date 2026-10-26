@@ -19,6 +19,7 @@ List<Override> vidyaOverrides(AppSession session) => [
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(vidyaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...vidyaHints}),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, lockCheck]),
 ];
 
 /// Achievements reached by the latest write, waiting to be celebrated.

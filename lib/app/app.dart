@@ -16,7 +16,7 @@ class VidyaApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: vidyaTheme(Brightness.light),
     darkTheme: vidyaTheme(Brightness.dark),
-    builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
+    builder: (context, child) => AppLockGate(child: Backdrop(child: child ?? const SizedBox.shrink())),
     home: home,
   );
 }
