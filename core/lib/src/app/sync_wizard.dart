@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../help/ask_ai_ui.dart';
 import '../identity.dart';
 import '../security/crypto.dart' show minPasswordLength;
 import '../sync/account_api.dart';
@@ -249,7 +250,12 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _Dots(_step.index, _Step.values.length),
+                  Row(
+                    children: [
+                      Expanded(child: _Dots(_step.index, _Step.values.length)),
+                      AskAiButton(screen: 'Sync setup wizard', topic: _topic),
+                    ],
+                  ),
                   const SizedBox(height: 24),
                   ...switch (_step) {
                     _Step.welcome => _welcome(name),
@@ -267,6 +273,23 @@ class _SyncSetupWizardState extends ConsumerState<SyncSetupWizard> {
       ),
     );
   }
+
+  /// Where the user is in the wizard and what went wrong, for Ask AI.
+  String get _topic => [
+    switch (_step) {
+      _Step.welcome => 'Choosing whether data stays on this device or syncs.',
+      _Step.where => 'Choosing where the sync server runs: home server, cloud server, or one I already have.',
+      _Step.guide =>
+        _place == ServerPlace.home
+            ? 'Setting up a home server with install.sh.'
+            : 'Setting up a cloud server on Cloudflare with npm run setup.',
+      _Step.server => 'Typing or pasting the server address or setup link.',
+      _Step.account => 'Creating the account or signing in on the server.',
+      _Step.done => 'Sync is set up.',
+    },
+    if (_problem case ServerCheck(:final problem?, :final fix)) 'Problem: $problem ${fix ?? ''}',
+    ?_error,
+  ].join('\n');
 
   Widget _title(String text) =>
       Text(text, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center);

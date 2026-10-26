@@ -106,6 +106,9 @@ final sentinelProvider = Provider<SentinelReport>((ref) {
           status: Status.info,
           title: 'Could not check: ${check.title}',
           why: describeError(v.error!),
+          steps:
+              'Usually the connection: Sentinel tries again when this page opens. Nothing is wrong '
+              'with your data.',
         ),
       );
     } else {

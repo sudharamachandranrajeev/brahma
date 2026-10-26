@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../help/ask_ai.dart';
+import '../help/ask_ai_ui.dart';
 import '../sync/account_api.dart';
 import '../sync/server_check.dart';
 import '../ui/format.dart';
@@ -23,8 +25,9 @@ class HintsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hints = ref.watch(hintsProvider).value ?? const HintsState();
+    final ai = ref.watch(helpAiProvider).value ?? const HelpAiSetup();
     return SectionCard(
-      title: 'Hints',
+      title: 'Hints and help',
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         children: [
@@ -51,6 +54,13 @@ class HintsCard extends ConsumerWidget {
                 child: const Text('Restore'),
               ),
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.auto_awesome_outlined),
+            title: const Text('Ask AI'),
+            subtitle: Text('Help with any screen, from the Ask AI button. Answers from: ${ai.via.label}.'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showAskAiSetup(context),
           ),
         ],
       ),

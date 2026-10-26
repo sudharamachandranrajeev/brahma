@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../help/ask_ai_ui.dart';
 import '../sentinel/core_checks.dart';
 import '../sentinel/sentinel.dart';
 import '../sentinel/threats.dart';
+import '../ui/hints.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'providers.dart';
@@ -35,7 +37,7 @@ class SentinelTile extends ConsumerWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(sentinelIcon(r.status), color: r.status == Status.good ? null : r.status.color),
-      title: const Text('Sentinel'),
+      title: const Hint('settings.sentinel', child: Text('Sentinel')),
       subtitle: Text(sentinelSummary(r)),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => openSentinel(context),
@@ -157,6 +159,7 @@ class _FindingCard extends ConsumerWidget {
               alignment: MainAxisAlignment.end,
               spacing: 8,
               children: [
+                AskAiButton(screen: 'Sentinel', topic: [f.title, f.why, ?f.steps].join('\n')),
                 TextButton(
                   onPressed: () => ref.read(snoozesProvider.notifier).snooze(f.id),
                   child: const Text('Snooze 30 days'),

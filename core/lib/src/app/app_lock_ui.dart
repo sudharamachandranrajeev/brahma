@@ -198,14 +198,22 @@ class _LockScreenState extends ConsumerState<_LockScreen> {
               onPressed: _busy ? null : _proveWithPassword,
               child: const Text('Check password'),
             ),
-          ] else if (_signedIn == false && !device)
+          ] else if (_signedIn == false && !device) ...[
             Text(
-              'This device has no sync account and no device lock to check, so the PIN cannot be '
-              'reset here. Removing the "${app.id}.lock" entry from the system keychain turns the '
-              'app lock off.',
-              textAlign: TextAlign.center,
+              'This device has no sync account and no screen lock to check it is you. To reset the PIN:\n'
+              '1. Turn on a screen lock in the device\'s settings: a PIN, fingerprint or face '
+              '(Windows: Settings > Accounts > Sign-in options > Windows Hello).\n'
+              '2. Come back here and choose Check again, then Use $deviceUnlockName.\n'
+              'On a computer without either, the keychain entry "${app.id}.lock" (Passwords and Keys, '
+              'or Credential Manager on Windows) holds the lock: removing it turns the app lock off.',
               style: type.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () => ref.invalidate(deviceAuthAvailableProvider),
+              child: const Text('Check again'),
+            ),
+          ],
           const SizedBox(height: 8),
           TextButton(onPressed: _busy ? null : () => _go(_Step.pin), child: const Text('Back')),
         ],
@@ -405,6 +413,7 @@ class AppLockCard extends ConsumerWidget {
     final notifier = ref.read(appLockProvider.notifier);
     return SectionCard(
       title: 'App lock',
+      hint: 'settings.lock',
       padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         children: [

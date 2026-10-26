@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
+import '../help/ask_ai_ui.dart';
 
 /// Hints the shared screens use. Each app adds its own through
 /// [hintTextsProvider].
@@ -11,6 +12,8 @@ const coreHints = <String, String>{
   'settings.restoreHints': 'Turn hints on and show every page explanation again.',
   'settings.sync':
       'Keep devices in step through your own server. Data is encrypted before it leaves the device.',
+  'settings.lock': 'Ask for a PIN, fingerprint or face when the app opens.',
+  'settings.sentinel': 'What needs attention to keep this app and device safe, with the fix for each.',
 };
 
 /// Wraps [child] in a tooltip with hint [id], unless hints are off.
@@ -86,17 +89,29 @@ class _HintBannerState extends ConsumerState<HintBanner> {
                 child: Card(
                   color: scheme.secondaryContainer,
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.lightbulb_outline, color: scheme.onSecondaryContainer),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(text, style: TextStyle(color: scheme.onSecondaryContainer)),
-                        ),
-                        TextButton(
-                          onPressed: _closing ? null : () => setState(() => _closing = true),
-                          child: const Text('Got it'),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(text, style: TextStyle(color: scheme.onSecondaryContainer)),
+                              OverflowBar(
+                                alignment: MainAxisAlignment.end,
+                                children: [
+                                  AskAiButton(topic: text),
+                                  TextButton(
+                                    onPressed: _closing ? null : () => setState(() => _closing = true),
+                                    child: const Text('Got it'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

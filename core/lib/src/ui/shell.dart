@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/modules.dart';
 import '../app/providers.dart';
+import '../help/ask_ai_ui.dart';
 import 'hints.dart';
 import 'theme.dart';
 
@@ -79,6 +80,12 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     if (!Motion.reduced(context)) _fade.forward(from: 0);
   }
 
+  /// Ask AI about the screen on show.
+  void _ask() {
+    final d = _destinations[_index];
+    showAskAi(context, screen: d.label, topic: ref.read(hintTextsProvider)['page.${d.id}']);
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
@@ -115,6 +122,12 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
                     if (widget.onHome != null)
                       IconButton(onPressed: widget.onHome, tooltip: 'All apps', icon: const Icon(Icons.apps)),
                     const _Logo(),
+                    const SizedBox(height: 8),
+                    IconButton(
+                      onPressed: _ask,
+                      tooltip: 'Ask AI for help with this screen',
+                      icon: const Icon(Icons.auto_awesome_outlined),
+                    ),
                   ],
                 ),
               ),
@@ -177,6 +190,10 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
       destinations: _destinations,
       selected: _index,
       onHome: widget.onHome,
+      onAsk: () {
+        _settle(open: false);
+        _ask();
+      },
       onSelect: (i) {
         _select(i);
         _settle(open: false);
@@ -472,10 +489,17 @@ class _DockItem extends StatelessWidget {
 
 /// Every screen with what it is for, under the page as it slides aside.
 class _SidePanel extends ConsumerWidget {
-  const _SidePanel({required this.destinations, required this.selected, required this.onSelect, this.onHome});
+  const _SidePanel({
+    required this.destinations,
+    required this.selected,
+    required this.onSelect,
+    required this.onAsk,
+    this.onHome,
+  });
   final List<Destination> destinations;
   final int selected;
   final ValueChanged<int> onSelect;
+  final VoidCallback onAsk;
   final VoidCallback? onHome;
 
   @override
@@ -542,6 +566,8 @@ class _SidePanel extends ConsumerWidget {
                 () => onSelect(i),
                 selected: i == selected,
               ),
+            const Divider(height: 24),
+            tile(Icons.auto_awesome_outlined, 'Ask AI', 'Stuck? Ask how to do something here.', onAsk),
           ],
         ),
       ),

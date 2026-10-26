@@ -94,6 +94,13 @@ class KeyVault {
   Future<void> setAppLock(Map<String, Object?>? lock) =>
       lock == null ? store.delete(_lock) : store.write(_lock, jsonEncode(lock));
 
+  /// Ask AI's key for one service (`HelpAi.name`); null when none is kept.
+  Future<String?> aiKey(String service) => store.read('${app.id}.ai.$service');
+
+  /// Keeps [key], or removes it when empty.
+  Future<void> setAiKey(String service, String key) =>
+      key.isEmpty ? store.delete('${app.id}.ai.$service') : store.write('${app.id}.ai.$service', key);
+
   Future<void> signOut() async {
     await store.delete(_dataKey);
     await store.delete(_session);

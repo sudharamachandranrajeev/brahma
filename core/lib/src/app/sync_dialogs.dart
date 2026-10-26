@@ -115,8 +115,10 @@ class _SyncDialogState extends ConsumerState<_SyncDialog> {
                     'Use the server address, e-mail and password of your Brahma sync account. The same account '
                         'works in every Brahma app.',
                   SyncMode.reset =>
-                    'The server e-mails you a reset code. Your recovery key is needed too, because only '
-                        'it can unlock your encrypted data without the old password.',
+                    'You need a reset code and your recovery key (only it can unlock your encrypted data '
+                        'without the old password). A Brahma home or cloud server cannot send e-mail: ask '
+                        'the person who runs it to choose Settings > Sync > Reset a member\'s login, then '
+                        'choose "I have a reset code". Other servers e-mail you the code.',
                 }),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -143,7 +145,7 @@ class _SyncDialogState extends ConsumerState<_SyncDialog> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _token,
-                    decoration: const InputDecoration(labelText: 'Code from the e-mail'),
+                    decoration: const InputDecoration(labelText: 'Reset code'),
                     validator: (v) => (v ?? '').trim().length < 20 ? 'Paste the whole code' : null,
                   ),
                 ],
@@ -221,6 +223,16 @@ class _SyncDialogState extends ConsumerState<_SyncDialog> {
                       TextButton(
                         onPressed: _busy ? null : () => setState(() => _mode = SyncMode.reset),
                         child: const Text('Forgot password'),
+                      ),
+                    if (_mode == SyncMode.reset && !_resetSent)
+                      TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () => setState(() {
+                                _resetSent = true;
+                                _error = null;
+                              }),
+                        child: const Text('I have a reset code'),
                       ),
                   ],
                 ),

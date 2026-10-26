@@ -16,6 +16,8 @@ export 'src/app/sync_dialogs.dart';
 export 'src/app/sync_wizard.dart';
 export 'src/app/update_notice.dart';
 export 'src/dates.dart';
+export 'src/help/ask_ai.dart';
+export 'src/help/ask_ai_ui.dart';
 export 'src/db/store.dart';
 export 'src/db/synced_database.dart';
 export 'src/identity.dart';

@@ -92,8 +92,11 @@ abstract interface class AccountApi {
     } on FormatException {
       // Not JSON: treat as PocketBase below.
     } on Exception {
+      if (client == null) c.close();
       throw SyncException('Sync server unreachable');
     }
+    // PocketBase keeps its own client: close the probe's.
+    if (client == null) c.close();
     return PocketBaseApi(url);
   }
 

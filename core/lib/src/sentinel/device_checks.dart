@@ -164,7 +164,10 @@ final deviceCheck = SecurityCheck(
     final steps = switch (Platform.operatingSystem) {
       'android' => 'Settings > Security and privacy > More security settings > Encryption.',
       'windows' => 'Settings > Privacy and security > Device encryption (or BitLocker).',
-      _ => 'Encrypt the disk (LUKS); on most distributions that means reinstalling.',
+      _ =>
+        'Linux encrypts a disk (LUKS) when it is installed: back up your files, reinstall and tick '
+            '"Encrypt the disk" (or similar) in the installer, then restore the files. Synced data comes '
+            'back by signing in again.',
     };
     return [
       if (f.diskEncrypted == false)
@@ -213,7 +216,9 @@ final deviceCheck = SecurityCheck(
           why:
               'Services on this device are open to the network it is on. Behind a home router that is '
               'a small risk.',
-          steps: 'Enable ufw or firewalld.',
+          steps:
+              'Ubuntu, Debian, Arch: run "sudo ufw enable" in a terminal (install ufw first if needed). '
+              'Fedora: "sudo systemctl enable --now firewalld".',
         ),
     ];
   }),

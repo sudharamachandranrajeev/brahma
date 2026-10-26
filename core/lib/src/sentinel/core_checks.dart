@@ -54,7 +54,9 @@ Finding? linkInClear({required String id, required String name, required String 
     why:
         'The token that lets this app into $name crosses the network in clear. Anyone on that network '
         'could copy it and use $name as you.',
-    steps: 'Give $name an https address, or reach it over Tailscale, then change the address in $where.',
+    steps:
+        'Give $name an https address (a Cloudflare Worker has one), or install Tailscale on both '
+        'machines and use the Tailscale address. Then change the address in $where.',
   );
 }
 
@@ -80,8 +82,10 @@ final syncCheck = SecurityCheck(
               'Your data stays end-to-end encrypted, but the sign-in token crosses the network in clear. '
               'Anyone on that network could use it to delete or replace your synced data.',
           steps:
-              'Put the server behind https, or reach it over Tailscale, then sign in again with the new '
-              'address.',
+              'Easiest is Tailscale (free): 1. Install Tailscale on the server and on each device, signed '
+              'in to the same account. 2. On a home server run ./install.sh --link for its Tailscale '
+              'address. 3. Here, Settings > Sync > Sign out, then Sign in with e-mail using that address. '
+              'A cloud server already has https.',
         ),
       if (stale)
         Finding(
@@ -91,6 +95,9 @@ final syncCheck = SecurityCheck(
           why:
               'Changes made here are only on this device until sync runs, so losing it loses them.'
               '${s.error == null ? '' : ' Last error: ${s.error}'}',
+          steps:
+              'Choose Sync now. If it fails, Settings > Sync shows whether the server answers and why '
+              'not; a home server must be switched on and on the same network or Tailscale.',
           fix: QuickFix('Sync now', (_, ref) => ref.read(syncProvider.notifier).run()),
         ),
     ];
