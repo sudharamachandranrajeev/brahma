@@ -8,6 +8,7 @@ const vahanaIdentity = AppIdentity(
   id: 'vahana',
   name: 'Vahana Anveshana',
   androidPackage: 'dev.brahma.vahana',
+  releases: 'sudharamachandranrajeev/vahana-anveshana',
 );
 
 /// Everything a running app needs: keys, the encrypted database and the
