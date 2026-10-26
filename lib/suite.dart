@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/modules.dart';
 import 'app/providers.dart';
+import 'app/security_checks.dart';
 import 'app/session.dart';
 import 'db/database.dart';
 import 'domain/pipeline.dart';
@@ -24,6 +25,7 @@ final udyogaSuite = SuiteApp(
   // The routine refresh, as in the app (it runs only what is due).
   onStart: (ref) => Future.microtask(() => ref.read(refreshTickerProvider)).ignore(),
   summary: (_) => const _Summary(),
+  securityChecks: udyogaChecks,
 );
 
 class _Summary extends ConsumerWidget {

@@ -3,9 +3,12 @@ import 'dart:io';
 
 import 'package:brahma_core/brahma_core.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:udyoga/app/providers.dart';
+import 'package:udyoga/app/security_checks.dart';
 import 'package:udyoga/db/database.dart';
 import 'package:udyoga/domain/answer_metrics.dart';
 import 'package:udyoga/domain/book.dart';
@@ -594,6 +597,21 @@ void main() {
           throwsA(isA<N8nException>().having((e) => e.message, 'message', contains(text))),
         );
       }
+    });
+
+    test('Sentinel reports a workflow on the LAN in clear, and one without a secret', () async {
+      Future<List<String>> ids(N8nLink link) async {
+        final c = ProviderContainer(overrides: [n8nLinkProvider.overrideWithValue(AsyncData(link))]);
+        addTearDown(c.dispose);
+        return [for (final f in await c.read(n8nCheck.findings.future)) f.id];
+      }
+
+      expect(await ids(const N8nLink()), isEmpty);
+      expect(await ids(const N8nLink(url: 'https://n8n.example.com/webhook/x', secret: 's3')), isEmpty);
+      expect(await ids(const N8nLink(url: 'http://192.168.1.20:5678/webhook/x')), [
+        'udyoga.n8n.http',
+        'udyoga.n8n.secret',
+      ]);
     });
   });
 
