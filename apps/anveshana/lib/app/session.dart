@@ -8,6 +8,7 @@ const anveshanaIdentity = AppIdentity(
   id: 'anveshana',
   name: 'Graha Anveshana',
   androidPackage: 'dev.brahma.anveshana',
+  releases: 'sudharamachandranrajeev/anveshana',
 );
 
 /// Everything a running app needs: keys, the encrypted database and the
