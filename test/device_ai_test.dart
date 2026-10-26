@@ -17,7 +17,9 @@ class _Proc implements Process {
   @override
   Stream<List<int>> get stderr => const Stream.empty();
   @override
-  late final IOSink stdin = IOSink(StreamController<List<int>>()..stream.listen((b) => stdinText += utf8.decode(b)));
+  late final IOSink stdin = IOSink(
+    StreamController<List<int>>()..stream.listen((b) => stdinText += utf8.decode(b)),
+  );
   String stdinText = '';
   @override
   Future<int> get exitCode async {
@@ -60,7 +62,12 @@ void main() {
     final ai = make(DeviceAiTool.claude, (exe, a, {workingDirectory, runInShell = false}) async {
       expect(exe, '${bin.path}/claude');
       args = a;
-      return proc = _Proc(jsonEncode({'subtype': 'success', 'structured_output': {'text': 'Hello'}}));
+      return proc = _Proc(
+        jsonEncode({
+          'subtype': 'success',
+          'structured_output': {'text': 'Hello'},
+        }),
+      );
     }, model: 'claude-haiku-5-5');
     expect(await ai.answer(_request), {'text': 'Hello'});
     expect(args, containsAllInOrder(['-p', '--model', 'claude-haiku-5-5', '--system-prompt']));
@@ -79,7 +86,10 @@ void main() {
 
     bin.deleteSync(recursive: true);
     bin.createSync();
-    final missing = make(DeviceAiTool.codex, (_, _, {workingDirectory, runInShell = false}) async => _Proc(''));
+    final missing = make(
+      DeviceAiTool.codex,
+      (_, _, {workingDirectory, runInShell = false}) async => _Proc(''),
+    );
     await expectLater(missing.answer(_request), throwsA(predicate((e) => '$e'.contains('not installed'))));
   });
 
@@ -95,13 +105,10 @@ void main() {
   });
 
   test('Gemini CLI answers in a code fence and Ollama answers over HTTP', () async {
-    final gemini = make(
-      DeviceAiTool.gemini,
-      (_, a, {workingDirectory, runInShell = false}) async {
-        expect(a, containsAll(['--output-format', 'json', '--approval-mode', 'plan']));
-        return _Proc(jsonEncode({'response': '```json\n{"text":"Hello"}\n```'}));
-      },
-    );
+    final gemini = make(DeviceAiTool.gemini, (_, a, {workingDirectory, runInShell = false}) async {
+      expect(a, containsAll(['--output-format', 'json', '--approval-mode', 'plan']));
+      return _Proc(jsonEncode({'response': '```json\n{"text":"Hello"}\n```'}));
+    });
     expect(await gemini.answer(_request), {'text': 'Hello'});
 
     final ollama = make(
@@ -110,12 +117,24 @@ void main() {
       model: 'gemma3',
       client: MockClient((req) async {
         if (req.url.path == '/api/tags') {
-          return http.Response(jsonEncode({'models': [{'name': 'gemma3'}]}), 200);
+          return http.Response(
+            jsonEncode({
+              'models': [
+                {'name': 'gemma3'},
+              ],
+            }),
+            200,
+          );
         }
         final body = jsonDecode(req.body) as Map;
         expect(body['model'], 'gemma3');
         expect(body['format'], {'type': 'object'});
-        return http.Response(jsonEncode({'message': {'content': '{"text":"Hello"}'}}), 200);
+        return http.Response(
+          jsonEncode({
+            'message': {'content': '{"text":"Hello"}'},
+          }),
+          200,
+        );
       }),
     );
     expect(await ollama.answer(_request), {'text': 'Hello'});

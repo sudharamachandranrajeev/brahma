@@ -63,9 +63,7 @@ class SettingsPage extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      link?.ready ?? false
-                          ? Uri.tryParse(link!.url)?.host ?? link.url
-                          : 'Not connected. Set up your own hub (once, on a computer), or connect one you have.',
+                      link?.ready ?? false ? Uri.tryParse(link!.url)?.host ?? link.url : 'Not connected. Set up your own hub (once, on a computer), or connect one you have.',
                       style: t.bodyLarge,
                     ),
                   ),

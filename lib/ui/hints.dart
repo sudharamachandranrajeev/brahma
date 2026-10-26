@@ -33,9 +33,9 @@ const vaniHints = <String, String>{
   // Analytics
   'analytics.best': 'When your posts got the most engagement, in your local time.',
   // Settings
-  'settings.hub': 'Your own hub on your Cloudflare account. It keeps your accounts signed in and runs the schedule.',
-  'settings.ai':
-      'Which AI writes captions and replies: an API key on the hub, or your own Claude, ChatGPT or Gemini plan through its official app on a computer.',
+  'settings.hub':
+      'Your own hub on your Cloudflare account. It keeps your accounts signed in and runs the schedule.',
+  'settings.ai': 'Which AI writes captions and replies: an API key on the hub, or your own Claude, ChatGPT or Gemini plan through its official app on a computer.',
   'settings.queue': 'Weekly slots that "Add to queue" fills in order.',
   'settings.notify': 'Sends a test alert to your phone through the hub.',
   'settings.language': 'Inbox items in other languages are translated into this one.',

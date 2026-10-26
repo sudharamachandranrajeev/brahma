@@ -131,7 +131,18 @@ class FakeHub {
         return _json({'ok': true});
       case ('GET', ['social', 'credentials']):
         return _json([
-          for (final p in ['meta', 'threads', 'google', 'linkedin', 'ebay', 'anthropic', 'openai', 'gemini', 'openrouter', 'compatible'])
+          for (final p in [
+            'meta',
+            'threads',
+            'google',
+            'linkedin',
+            'ebay',
+            'anthropic',
+            'openai',
+            'gemini',
+            'openrouter',
+            'compatible',
+          ])
             credentials[p] ?? {'provider': p, 'set': false, 'publicId': null, 'updatedAt': null},
         ]);
       case ('PUT', ['social', 'credentials', final p]):
@@ -144,7 +155,9 @@ class FakeHub {
       case ('GET', ['social', 'accounts']):
         return _json(accounts);
       case ('POST', ['social', 'credentials', final p, 'check']):
-        if (b()['secret'] == 'wrong') return _json({'error': '$p did not accept the app ID and secret.'}, 422);
+        if (b()['secret'] == 'wrong') {
+          return _json({'error': '$p did not accept the app ID and secret.'}, 422);
+        }
         return _json({'detail': '$p accepted the app ID and secret.'});
       case ('POST', ['social', 'connect', 'mastodon']):
         return _json({'url': 'https://${b()['instance']}/oauth/authorize?client_id=vani'});

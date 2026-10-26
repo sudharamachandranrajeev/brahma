@@ -18,7 +18,8 @@ class FakeCloudflare {
 
   static const account = 'acc1';
 
-  http.Response ok(Object? result) => http.Response(jsonEncode({'success': true, 'errors': [], 'result': result}), 200);
+  http.Response ok(Object? result) =>
+      http.Response(jsonEncode({'success': true, 'errors': [], 'result': result}), 200);
   http.Response fail(int status, int code, String message) => http.Response(
     jsonEncode({
       'success': false,
@@ -32,7 +33,9 @@ class FakeCloudflare {
 
   late final client = MockClient((req) async {
     if (req.url.host.endsWith('workers.dev')) {
-      if (req.headers['authorization'] != 'Bearer $hubToken') return http.Response('{"error":"unauthorised"}', 401);
+      if (req.headers['authorization'] != 'Bearer $hubToken') {
+        return http.Response('{"error":"unauthorised"}', 401);
+      }
       return http.Response(jsonEncode({'version': version, 'social': true}), 200);
     }
     if (req.headers['authorization'] != 'Bearer cf-key') return fail(403, 10000, 'Authentication error');
@@ -99,7 +102,9 @@ class FakeCloudflare {
     if (p.startsWith('$a/r2/buckets')) {
       if (!r2Enabled) return fail(403, 10042, 'Please enable R2 through the Cloudflare Dashboard.');
       final name = p.split('/').last;
-      if (req.method == 'GET') return buckets.contains(name) ? ok({'name': name}) : fail(404, 10006, 'no bucket');
+      if (req.method == 'GET') {
+        return buckets.contains(name) ? ok({'name': name}) : fail(404, 10006, 'no bucket');
+      }
       buckets.add((body as Map)['name'] as String);
       return ok({});
     }

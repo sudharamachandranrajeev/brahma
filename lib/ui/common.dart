@@ -361,7 +361,8 @@ class AiButton extends ConsumerWidget {
   final VoidCallback? onPressed;
   final bool filled, busy;
 
-  static const _noKey = 'Set up AI in Settings > AI (an API key, or your own plan on a computer) to use the AI features.';
+  static const _noKey =
+      'Set up AI in Settings > AI (an API key, or your own plan on a computer) to use the AI features.';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

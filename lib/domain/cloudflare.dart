@@ -169,7 +169,9 @@ class CloudflareClient {
   Future<void> setSchedules(String account, String name, List<String> crons) => _call(
     'PUT',
     '/accounts/$account/workers/scripts/$name/schedules',
-    body: [for (final c in crons) {'cron': c}],
+    body: [
+      for (final c in crons) {'cron': c},
+    ],
   );
 
   /// Serves the Worker at `<name>.<subdomain>.workers.dev`.
@@ -340,7 +342,11 @@ Future<Deployed> deployHub({
       'bindings': [
         {'type': 'kv_namespace', 'name': str(bundle.manifest['kvBinding']), 'namespace_id': kv},
         {'type': 'd1', 'name': str(obj(bundle.manifest['d1'])['binding']), 'id': db},
-        {'type': 'r2_bucket', 'name': str(obj(bundle.manifest['r2'])['binding']), 'bucket_name': bundle.r2Name},
+        {
+          'type': 'r2_bucket',
+          'name': str(obj(bundle.manifest['r2'])['binding']),
+          'bucket_name': bundle.r2Name,
+        },
         for (final e in vars.entries) {'type': 'plain_text', 'name': e.key, 'text': '${e.value}'},
         if (secrets != null)
           for (final e in secrets.entries) {'type': 'secret_text', 'name': e.key, 'text': e.value},

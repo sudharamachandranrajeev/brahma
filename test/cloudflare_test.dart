@@ -50,7 +50,19 @@ void main() {
     expect(fake.workersDev, isTrue);
 
     final bindings = {for (final b in objs(fake.script!['bindings'])) str(b['name']): b};
-    expect(bindings.keys, containsAll(['KV', 'DB', 'MEDIA', 'SUBREQUEST_BUDGET', 'API_TOKEN', 'TOKEN_KEY', 'NTFY_TOPIC', 'PUBLIC_URL']));
+    expect(
+      bindings.keys,
+      containsAll([
+        'KV',
+        'DB',
+        'MEDIA',
+        'SUBREQUEST_BUDGET',
+        'API_TOKEN',
+        'TOKEN_KEY',
+        'NTFY_TOPIC',
+        'PUBLIC_URL',
+      ]),
+    );
     expect(bindings['PUBLIC_URL']!['text'], 'https://vani-hub.tester.workers.dev');
     expect(base64.decode(str(bindings['TOKEN_KEY']!['text'])), hasLength(32));
     expect(fake.script!.containsKey('keep_bindings'), isFalse);

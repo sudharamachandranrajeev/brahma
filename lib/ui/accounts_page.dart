@@ -273,7 +273,10 @@ class _ConnectCard extends ConsumerWidget {
                 spacing: 6,
                 children: [
                   const Tag('Ready', color: growth, icon: Icons.check_rounded),
-                  TextButton(onPressed: () => openAppWizard(context, provider), child: const Text('Setup steps')),
+                  TextButton(
+                    onPressed: () => openAppWizard(context, provider),
+                    child: const Text('Setup steps'),
+                  ),
                 ],
               ),
             ),
@@ -392,8 +395,11 @@ class _FormCard extends ConsumerWidget {
     if (ok) await signIn(context, ref, 'Mastodon', (h) => h.connectMastodon(_host(instance.text)));
   }
 
-  static String _host(String text) =>
-      text.trim().replaceFirst(RegExp(r'^https?://'), '').replaceAll(RegExp(r'/+$'), '').replaceFirst(RegExp(r'^@?[^@]*@'), '');
+  static String _host(String text) => text
+      .trim()
+      .replaceFirst(RegExp(r'^https?://'), '')
+      .replaceAll(RegExp(r'/+$'), '')
+      .replaceFirst(RegExp(r'^@?[^@]*@'), '');
 
   Future<void> _addMastodonToken(BuildContext context, WidgetRef ref) async {
     final instance = TextEditingController();
@@ -460,7 +466,12 @@ Future<void> connectProvider(BuildContext context, WidgetRef ref, OAuthProvider 
 
 /// Opens the sign-in page [start] gets from the hub in the browser, then
 /// watches the hub for the new accounts its callback stores.
-Future<void> signIn(BuildContext context, WidgetRef ref, String label, Future<String> Function(HubClient h) start) async {
+Future<void> signIn(
+  BuildContext context,
+  WidgetRef ref,
+  String label,
+  Future<String> Function(HubClient h) start,
+) async {
   final before = {for (final a in await ref.read(accountsProvider.future)) a.id};
   final String url;
   try {

@@ -41,7 +41,8 @@ class HubLink {
 
   /// The `vani://hub?u=<address>&t=<token>` link a hub's setup shows as a QR
   /// code, so a phone connects by scanning it (or pasting it).
-  String toPairingLink() => Uri(scheme: 'vani', host: 'hub', queryParameters: {'u': url, 't': token}).toString();
+  String toPairingLink() =>
+      Uri(scheme: 'vani', host: 'hub', queryParameters: {'u': url, 't': token}).toString();
 
   /// Reads a pairing link from [text]; null when it is not one.
   static HubLink? fromPairingLink(String text) {
@@ -216,9 +217,14 @@ class HubClient {
 
   /// Asks the platform whether an app's ID and secret are right (the stored
   /// secret when [secret] is null): a sentence to show, or a HubException.
-  Future<String> checkCredential(CredentialProvider p, {required String publicId, String? secret}) async => str(
-    (await _obj('POST', '/social/credentials/${p.name}/check', body: {'publicId': publicId, 'secret': ?secret}))['detail'],
-  );
+  Future<String> checkCredential(CredentialProvider p, {required String publicId, String? secret}) async =>
+      str(
+        (await _obj(
+          'POST',
+          '/social/credentials/${p.name}/check',
+          body: {'publicId': publicId, 'secret': ?secret},
+        ))['detail'],
+      );
 
   Future<void> deleteCredential(CredentialProvider p) => _send('DELETE', '/social/credentials/${p.name}');
 
