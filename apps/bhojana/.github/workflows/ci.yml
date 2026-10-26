@@ -28,8 +28,50 @@ jobs:
           channel: stable
           flutter-version: 3.47.7
           cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - run: flutter pub get
+      - run: npm ci --prefix web
       - name: Formatting
         run: dart format -l 110 --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
+
+  server:
+    name: Sync server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  web:
+    name: Web app and extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+        working-directory: web
+      - run: npm run typecheck
+        working-directory: web
+      - run: npm test
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+      - run: npm test
+        working-directory: extension

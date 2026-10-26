@@ -1,7 +1,7 @@
 name: bhojana
 description: "Bhojana - grocery and shopping: lists, UK price comparison across shops, live prices and basket filling through your own shop logins (Linux, Windows, Android). Part of Brahma."
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.3.0+3
 
 environment:
   sdk: ^3.13.5

@@ -1,0 +1,9 @@
+{
+  "name": "bhojana-extension",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "pack": "node scripts/pack.js"
+  }
+}

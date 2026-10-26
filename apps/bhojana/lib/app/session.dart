@@ -4,7 +4,12 @@ import '../db/database.dart';
 import '../domain/book.dart';
 
 /// Bhojana in Brahma's terms: the app's id, name and Android package.
-const bhojanaIdentity = AppIdentity(id: 'bhojana', name: 'Bhojana', androidPackage: 'dev.brahma.bhojana');
+const bhojanaIdentity = AppIdentity(
+  id: 'bhojana',
+  name: 'Bhojana',
+  androidPackage: 'dev.brahma.bhojana',
+  releases: 'sudharamachandranrajeev/bhojana',
+);
 
 /// Everything a running app needs: keys, the encrypted database and the
 /// shopping book on top of it. Opened once at start-up.

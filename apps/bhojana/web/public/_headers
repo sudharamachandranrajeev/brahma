@@ -1,0 +1,9 @@
+# Cloudflare static assets apply these to the web app's files (the Worker's
+# /api responses set their own). The page holds the account's keys, so the
+# policy only lets this origin's own scripts run; hash-wasm (Argon2id) needs
+# WebAssembly, and the QR scanner the camera.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(self), microphone=(), geolocation=()

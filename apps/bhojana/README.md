@@ -2,7 +2,7 @@
 
 Grocery and shopping for the UK: shopping lists, price comparison across shops, live prices through
 your own shop logins, and basket filling. Part of the [Brahma](https://github.com/sudharamachandranrajeev/brahma)
-suite. Linux, Windows and Android.
+suite. Linux, Windows and Android, plus a web app served by your sync server.
 
 <p>
   <img src="docs/screenshots/list-light.png" width="260" alt="A shopping list costed per shop">
@@ -37,6 +37,19 @@ suite. Linux, Windows and Android.
   site-agnostic script in `lib/domain/reader.dart`. The script reads schema.org Product data, or product
   links with a £ price on their tile.
 
+## Sync
+
+Sync is optional and goes to a server you deploy yourself: [`server/`](server/README.md) is a Cloudflare
+Worker (free plan is enough). On a fresh install the setup wizard walks you through it: server address
+or setup link, your account, and the recovery key. Everything is end-to-end encrypted before it leaves the
+device, and nothing about you or your server is in this repository.
+
+The same server also serves **Bhojana on the web** ([`web/`](web/README.md)): open your server's address
+in any browser, sign in or pair it like another device, and your lists, typed prices and starred shops are
+there. A web page cannot read shop sites, so on a computer the [browser extension](extension/README.md) reads
+live prices in your own signed-in browser for the web app's Compare page. The Android and Windows apps
+read them too, and everything syncs.
+
 ## Privacy
 
 The database is encrypted on the device. Sync is optional, to your own server, end-to-end encrypted.
@@ -49,4 +62,6 @@ flutter pub get
 flutter test                       # reader_test runs the price reader in headless Chromium if installed
 BHOJANA_SHOTS=/tmp/shots FLUTTER_ROOT=... flutter test test/screenshots_test.dart
 flutter build linux --release && scripts/install-linux.sh
+(cd server && npm ci && npm test)  # sync server; sync_worker_test.dart also needs Node 24
+(cd web && npm ci && npm test)     # web app; web_interop_test.dart runs Dart against it
 ```

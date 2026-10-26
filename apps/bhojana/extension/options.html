@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bhojana shop prices</title>
+  <style>
+    :root { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
+    body { max-width: 34rem; margin: 2rem auto; padding: 0 1rem; }
+    label { display: block; margin: 1rem 0 .25rem; font-weight: 600; }
+    input { width: 100%; box-sizing: border-box; padding: .5rem; font: inherit; }
+    button { margin-top: 1rem; padding: .5rem 1rem; font: inherit; }
+    #status { margin-top: 1rem; }
+    #status.error { color: #b3261e; }
+  </style>
+</head>
+<body>
+  <h1>Bhojana shop prices</h1>
+  <p>This extension lets <strong>your own Bhojana server</strong> read prices from the shop sites you are
+     signed in to, and fill a basket from a list. Nothing is sent anywhere else: prices go to your web app
+     page, which saves them in your encrypted account.</p>
+  <form id="form">
+    <label for="server">Your Bhojana server address</label>
+    <input id="server" type="url" required placeholder="https://bhojana.example.workers.dev" autocomplete="url">
+    <p>Allowing it also lets the extension open the shop sites Bhojana knows (Tesco, Aldi and so on), and
+       only those.</p>
+    <button type="submit">Allow and save</button>
+  </form>
+  <p id="status" role="status"></p>
+  <script src="hosts.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

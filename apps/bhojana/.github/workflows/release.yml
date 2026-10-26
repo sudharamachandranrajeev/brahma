@@ -50,6 +50,10 @@ jobs:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --prefix web
       - run: flutter analyze
       - run: flutter test
 
@@ -321,6 +325,10 @@ jobs:
         with:
           name: linux
           path: dist
+      - name: Browser extension
+        run: |
+          version=${{ needs.version.outputs.version }}
+          (cd extension && zip -qr "../dist/bhojana-extension-$version.zip" manifest.json background.js bridge.js core.js hosts.js reader.js options.html options.js icons)
       - name: Checksums
         run: |
           cd dist

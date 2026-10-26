@@ -57,11 +57,12 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
-# flutter_inappwebview_windows builds C++/WinRT as C++17, which pulls in
-# <experimental/coroutine>; Visual Studio 2026 (MSVC 14.51) rejects that with
-# STL1011 unless told to allow it.
-target_compile_definitions(flutter_inappwebview_windows_plugin PRIVATE
-  _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+# flutter_inappwebview_windows and local_auth_windows build C++/WinRT as C++17,
+# which pulls in <experimental/coroutine>; Visual Studio 2026 (MSVC 14.51)
+# rejects that with STL1011 unless told to allow it.
+foreach(plugin flutter_inappwebview_windows_plugin local_auth_windows_plugin)
+  target_compile_definitions(${plugin} PRIVATE _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+endforeach()
 
 
 # === Installation ===

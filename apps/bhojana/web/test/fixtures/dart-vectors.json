@@ -1,0 +1,57 @@
+{
+  "note": "Made by web/test/fixtures-gen/generate_test.dart from brahma_core. Test values only.",
+  "password": {
+    "email": "  Me@Example.com ",
+    "password": "correct horse battery staple",
+    "authSecret": "ae13cb00cda9d9293371e8f5bed705360c5a100012b759fee2635b9fd3f9d552",
+    "kek": "6c9393d156a7041a1931d24d59b8a3644d5eb21e7abd1a3d0b4dba54a5128dca"
+  },
+  "wrap": {
+    "dek": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+    "wrappedPassword": "Tx+EmcYfflT6h6dr+KcRB4JwRfP6K1LtZnpTbjTBDhy7ZymAWewsFmKW54ptdgnB1vLoY1b2788K85ogSpmj2yFBXHVUD0j/",
+    "recoveryKey": "6VS0-7FM0-6B2Z-7E1N-C95J-QPST-QKR8-9RX3-SJWZ-ANJK-R5AD-TAY0-0ZGG",
+    "recoveryLoose": "6vso 7fmo 6b2z 7eln c95j qpst qkr8 9rx3 sjwz anjk r5ad tayo ozgg",
+    "recoveryKek": "360d31896c6e5cc5646a2286294951e671de9f2e08e597493c1a0e2f0b79a269",
+    "wrappedRecovery": "jkSH39pXhwT+qNh336wX/5o6ytyuZ57EE5exzFT8F7qqyD6zq0jqSJGY0d+lrS34qqiIarZLiXRR+AQk0H3ESskha4K1urBG"
+  },
+  "batch": {
+    "aad": "artha/v1|abcdefghijklmno|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|1",
+    "json": {
+      "v": 1,
+      "rows": [
+        {
+          "t": "food_items",
+          "r": {
+            "id": "0b6f3c3e-1d1e-4c55-9b7e-2f6a3d1c9e01",
+            "hlc": "001760000000000-000000-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "deleted": 0,
+            "list_id": "7d2b1c0e-5f4a-4e8b-a1c2-3d4e5f6a7b8c",
+            "name": "Semi-skimmed milk £1.55 ✓",
+            "qty": 2,
+            "note": "",
+            "done": 0,
+            "ord": 0,
+            "added": "2026-10-26"
+          }
+        }
+      ]
+    },
+    "sealed": "neX5GXNQOUkG0EJBoLRbF36Kcgy186v/kRmVc0azwXCkYis4J+LHfqR5Hj9NDUFU1fgASSX2n7HML02o8mlYLn/imo4k4sVN9aAD+oaTfa/lLuwJzIs8SNJmOfRDNxqJ2HmKcRwuJpLCczy2qG8Y9civkI1W0YDqgwdFTG/EM1aczXGHBlCR0JMHKdmv3lky0m2Ts34Ki44wbo2MGEwZTN33OPMhYuV4r+ZxUgHkTaV/HHq45915q9i2zYj7vc39Ltags3IXybgDcVZg/gbL6S3sa1G9oP5yjEMP3Fxi5FPBdb8qiHvysm1EORKvPLVU/UTFDAU0bz0H9fusaE9q5Nk0y/CVV+LWeOH2b+Q="
+  },
+  "pairing": {
+    "link": "bhojana://pair?s=https%3A%2F%2Fsync.example.com&p=pairpairpair123&k=ZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1-f4CBgoM",
+    "joinerSeed": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7",
+    "joinerPublic": "TVuribBzPZ2Nzs8E8yHJC3Ybd2WmvbK92/rT56vfH2Y=",
+    "code": "955 186",
+    "request": "8EaMGR4ZHypg0wVG8gPHFJ9Ygt00B1GCl5Pto7XiuGdLcT1BfHS2UBj84z3X9zUOOmMKduD3DdOaT7cb986oM5zQk7R6GBqeDZf6pduzcCnVJfDnKd7TGVNPKnqVAJ6/64rBV0OohCbd7R4LGPPARU82zlOcfSbRIazPdVfBv/yh/A==",
+    "grant": "{\"key\":\"JPtSlNXIO6O8q2evFrBrZzdkw/VIJh5ep2aatP+67y0=\",\"box\":\"vpi6VKoOwoRC99Fhdg4wYXqLkDE5szxUHCQId5b4AAs7YtY76xGjUEYM4UZKTvUs/EjaZ6sUzRoKMcQLSizWTx3rUu9oSbs8YgY1aeKXIU79H0lkFk5dE9D7TLBPbQEqYvo9okB5sqIWXdLOh0OeUpABFP/rzEITrTnO7Uc228ya1BFFtsT+JFwFJbswuXVKorlStLbgwcO8K/tVa+umECYFAFFreh822IP/svvHzXOa6K7z1ARKgqjFtbQlXLdDg37wL9iNdrS04EbrEMZZSfFXZnS9eoFzjFI7PEWR\"}"
+  },
+  "hlc": {
+    "ticks": [
+      "001760000000000-000000-n0de",
+      "001760000000000-000001-n0de",
+      "001760000000005-000009-n0de",
+      "001760000000009-000000-n0de"
+    ]
+  }
+}

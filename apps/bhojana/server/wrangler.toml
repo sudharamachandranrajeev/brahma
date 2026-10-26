@@ -1,0 +1,18 @@
+name = "bhojana"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+
+# `npm run setup` creates the database and fills in its id.
+[[d1_databases]]
+binding = "DB"
+database_name = "bhojana"
+database_id = "REPLACE_WITH_D1_ID"
+
+# The web app (built from ../web into ./public). /api/* always reaches the
+# Worker; other paths are served from the files, and unknown ones get
+# index.html so the app's own routes survive a reload.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]

@@ -19,11 +19,14 @@ class AppHarness {
 
   ShoppingBook get book => session.book;
 
-  /// Opens the database; [seed] runs before the app starts.
-  Future<void> open({Future<void> Function(ShoppingBook book)? seed}) async {
+  /// Opens the database; [seed] runs before the app starts. With [onboarded]
+  /// false the first-run sync setup is still to come.
+  Future<void> open({Future<void> Function(ShoppingBook book)? seed, bool onboarded = true}) async {
     await tester.runAsync(() async {
       final store = await Store.open(memoryDatabase());
       session = AppSession(KeyVault(MemorySecretStore(), bhojanaIdentity), store, ShoppingBook(store));
+      // A fresh install asks about sync first; tests of the app itself skip it.
+      if (onboarded) await session.db.setLocalSetting('onboarding.sync', 'done');
       await seed?.call(session.book);
     });
   }

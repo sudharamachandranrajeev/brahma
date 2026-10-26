@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Bhojana shop prices",
+  "version": "0.1.0",
+  "description": "Lets your own Bhojana web app read prices and fill baskets in your signed-in shop tabs.",
+  "icons": { "128": "icons/icon-512.png" },
+  "permissions": ["scripting", "storage"],
+  "optional_host_permissions": ["https://*/*"],
+  "background": { "service_worker": "background.js", "scripts": ["hosts.js", "reader.js", "core.js", "background.js"] },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "browser_specific_settings": { "gecko": { "id": "bhojana@example.invalid", "strict_min_version": "128.0" } }
+}

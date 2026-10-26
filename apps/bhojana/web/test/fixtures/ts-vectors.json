@@ -1,0 +1,67 @@
+{
+  "note": "Made by web/test/fixtures-gen/make-ts-vectors.ts. Test values only.",
+  "password": {
+    "email": "Someone@Example.com",
+    "password": "another long password 42",
+    "authSecret": "0dd0e206b7ce5a0259917e791231c6dd3efcfb8c6d3226e91208a9b1826220ee",
+    "kek": "9db6a5732c53e5cec5cb7b812b0ae2546e670b80d6c30a090e70ce031e1a4b59"
+  },
+  "wrap": {
+    "dek": "5157e62e8b4e52c605c73aca3308c7457b8a21916675601c11c1d8a607c6ebc4",
+    "wrappedPassword": "5C1HPk3nRH5EesYzdeyNyCR0mEo1+9Iq7uDKZNJob7Gr0IsF8z+dA0meAhef+q3MENYq5EJP/2HIrtJgsnCxmYhpqLqByy0F",
+    "recoveryKey": "VXSS-JT6J-98HD-HCEK-68MW-X7F2-XX46-1G7S-7R2D-FZ7J-8G4W-A80D-MDB0",
+    "wrappedRecovery": "m7C6m+m7PuemrOArB3zd5KdWrSZyTv7DVdUxakChz161cR2ewX6U9CTgALIOhI9PIkJ/zbSRbWI80y5YqZNFssfpnvT+dOX7"
+  },
+  "batch": {
+    "aad": "artha/v1|zyxwvutsrqponml|cccccccccccccccccccccccccccccccc|3",
+    "json": {
+      "v": 1,
+      "rows": [
+        {
+          "t": "food_lists",
+          "r": {
+            "id": "list-1",
+            "hlc": "001770000000000-000000-cccccccccccccccccccccccccccccccc",
+            "deleted": 0,
+            "name": "Weekly shop",
+            "created": "2026-10-26"
+          }
+        },
+        {
+          "t": "food_items",
+          "r": {
+            "id": "item-1",
+            "hlc": "001770000000000-000001-cccccccccccccccccccccccccccccccc",
+            "deleted": 0,
+            "list_id": "list-1",
+            "name": "Free-range eggs ✓",
+            "qty": 12,
+            "note": "large",
+            "done": 1,
+            "ord": 3,
+            "added": "2026-10-26"
+          }
+        },
+        {
+          "t": "prefs",
+          "r": {
+            "id": "bhojana.postcode",
+            "hlc": "001770000000000-000002-cccccccccccccccccccccccccccccccc",
+            "deleted": 0,
+            "value": "SW1A 1AA"
+          }
+        }
+      ]
+    },
+    "sealed": "DC+/ffEE9X6nMeeVlJw2cuDS/Sz7f99dXy5GHFo/nKe1edx0araZNTwewnoc2n5CAU2uigwKM2u0pYcd1caBSAO4KXsfUrK79vlHJhWP/X67dXQ1/WQIAdZkCBCoUXPg7Scbq+QKnnwIg1a+GIVphqYXrmG0JBIX20d/WyhkVvPII8LWUbx89buwPtx1rzazHJQ4d6Ddf6D0sOclaQYqVJqVZDMkxVFTK+bb1EwOx6ke8m/VTyxp/1VV85I21QlG3UMLx8CXN849Q/yRshnnrA2Qp9gWvQ7H1qkIZEvWIBsnCW8p8VmASsioNsOR2wsljkTb9CZuJoXkPQmj27IxYSp6dA4kAH8DyHBuEQR2+XC2XbJtuZr8RGqmmmLNApm9dw=="
+  },
+  "pairing": {
+    "link": "bhojana://pair?s=https%3A%2F%2Fsync.example.com&p=tswebpairing123&k=_jwS-TGSNxJJLTEUq4LXnLG8GkAmtG7rSml4MWBeBpk",
+    "joinerPublic": "JnlRQjcU6Yg6Dn3D42cPlfN97kaqL6MU8tvPoOEUR0I=",
+    "code": "432 686",
+    "request": "+xA/xinJc268godhCaPJZm9g0QJo02bjOk2o5l1vvZdVYy2yNUt0Tb3DNF2Yo9bafRjJ0Yqhcvjh7TkPiYCl8mPK7Vhmnd0QPtgVn8VmqwP48HnZds26+iPM5MEj3F7hvZOyjrnc2N2GqojDru+LiykacgnuTQ19wCvWa+vLqY3J8oa/bXMv1Lo=",
+    "recipientSeed": "1b62c57270af8885a953fc6f9465efcc97f70e7da1afa0ef09e9bfd8c6571ad1",
+    "recipientPublic": "Ho3bluJx3xYLBWOquxA50hcB0fVao0cP4JLIPJWz4h4=",
+    "grant": "{\"key\":\"8HQ45+S+qwM360oFzwrhU/KMoQcKfCkt0lylfdvJyRM=\",\"box\":\"nyL2/QA0fTpMe4I+9N+HiSx6r+UbT5CFVRd2HCopJ/Bpkw8I0ffxBbJF5iWLFKcOtTdD8XVlpwZYC1YT2WSKWzcuBK+DwmFGgrSq8AgEMdT7BxZ/gISZDulwYTYQpykivlN/JtEn27QZrKsPPfvijXz8aIulHuaGZvaNb4/hlTMLLEp12rR2QcP5u45B1zo7UqHWkvKumJaU1K814abSIQLk68USd4Ni/WqdXBnpvXd7b6WGKRv+S6QrDPbszkJgf2kZP+fhLTkfBeTajl4LIkrB9GIEvY0EADqDphFjGjE25Cg=\"}"
+  }
+}
