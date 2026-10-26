@@ -105,11 +105,23 @@ void main() {
       ('http://127.0.0.1:8090', false),
       ('http://100.101.2.3:8090', false),
       ('http://[fd7a:115c:a1e0::1]:8090', false),
+      ('http://box.tail1234.ts.net:8090', false),
       ('http://192.168.1.5:8090', true),
       ('http://box.local', true),
     ]) {
       expect(sentInClear(Uri.parse(url)), clear, reason: url);
     }
+  });
+
+  test('a service reached in clear is one warning, named for where to fix it', () {
+    Finding? link(String url) => linkInClear(id: 'x.http', name: 'Vani hub', url: url, where: 'Settings');
+    expect(link('https://hub.example.com'), isNull);
+    expect(link(''), isNull);
+    final f = link('http://192.168.1.5:8787')!;
+    expect(f.id, 'x.http');
+    expect(f.status, Status.warning);
+    expect(f.title, 'Vani hub is reached without https');
+    expect(f.steps, endsWith('in Settings.'));
   });
 
   group('sync check', () {

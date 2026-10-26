@@ -26,6 +26,8 @@ const staleSyncDays = 7;
 /// token is not.
 bool sentInClear(Uri server) {
   if (server.scheme != 'http' || server.host == 'localhost') return false;
+  // Tailscale's MagicDNS names.
+  if (server.host.endsWith('.ts.net')) return false;
   final ip = InternetAddress.tryParse(server.host);
   if (ip == null) return true;
   if (ip.isLoopback) return false;
@@ -35,6 +37,23 @@ bool sentInClear(Uri server) {
       // fd7a:115c:a1e0::/48
       : b[0] == 0xfd && b[1] == 0x7a && b[2] == 0x11 && b[3] == 0x5c && b[4] == 0xa1 && b[5] == 0xe0;
   return !tailscale;
+}
+
+/// A service an app reaches with its own token (a Worker, a webhook),
+/// reported when [url] is reached in clear. [where] says where the user
+/// changes the address.
+Finding? linkInClear({required String id, required String name, required String url, required String where}) {
+  final u = Uri.tryParse(url);
+  if (u == null || !sentInClear(u)) return null;
+  return Finding(
+    id: id,
+    status: Status.warning,
+    title: '$name is reached without https',
+    why:
+        'The token that lets this app into $name crosses the network in clear. Anyone on that network '
+        'could copy it and use $name as you.',
+    steps: 'Give $name an https address, or reach it over Tailscale, then change the address in $where.',
+  );
 }
 
 /// Sync: the server reached in clear, or this device not synced for days.
