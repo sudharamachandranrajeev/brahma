@@ -80,6 +80,12 @@ class SecurityCard extends StatelessWidget {
             ),
             (Icons.cloud_off_outlined, network),
             (
+              Icons.gpp_maybe_outlined,
+              'Sentinel fetches CISA\'s public list of flaws used in real attacks, through your sync '
+                  'server when you sync. No account or device details go with it. You can turn it off '
+                  'under Sentinel.',
+            ),
+            (
               Icons.enhanced_encryption_outlined,
               'Sync is end-to-end encrypted with XChaCha20-Poly1305. Keys come from your password '
                   'through Argon2id. The server stores only ciphertext and cannot read your data.',

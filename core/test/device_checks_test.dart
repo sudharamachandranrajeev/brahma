@@ -89,4 +89,11 @@ void main() {
     expect(found.firstWhere((f) => f.id == 'device.screenlock').status, Status.serious);
     expect(found.last.status, Status.info);
   });
+
+  test('the kernel build day stands in for the patch date on Linux', () {
+    expect(kernelBuilt('#1 SMP PREEMPT_DYNAMIC Sat, 17 Oct 2026 22:09:33 +0000'), '2026-10-17');
+    expect(kernelBuilt('#45-Ubuntu SMP PREEMPT_DYNAMIC Fri Aug  2 12:02:04 UTC 2024'), '2024-08-02');
+    expect(kernelBuilt('#1 SMP PREEMPT_DYNAMIC Debian 6.1.112-1 (2024-10-02)'), '2024-10-02');
+    expect(kernelBuilt('#1 SMP'), isNull);
+  });
 }

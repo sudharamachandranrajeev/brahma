@@ -2,6 +2,8 @@
 // a data key or plaintext: clients send a login secret derived from the
 // password, wrapped keys and encrypted change batches.
 
+import { threats } from "./threats.ts";
+
 export interface Env {
   DB: D1Database;
   /// Signs session tokens.
@@ -264,6 +266,14 @@ async function route(req: Request, env: Env, url: URL, ip: string): Promise<Resp
   }
 
   const user = await authenticate(env, req);
+
+  if (is("GET", "/api/threats")) {
+    try {
+      return json(await threats());
+    } catch {
+      throw new HttpError(503, "Could not fetch the threat list");
+    }
+  }
 
   if (is("POST", "/api/invites")) {
     if (!user.is_owner) throw new HttpError(403, "Only the owner can invite people");

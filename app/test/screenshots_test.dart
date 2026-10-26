@@ -102,6 +102,7 @@ void main() {
                 updateCheck.findings.overrideWith((_) async => const []),
                 startupUpdateProvider.overrideWith((_) async => null),
                 deviceFactsProvider.overrideWith((_) async => const DeviceFacts()),
+                threatFeedProvider.overrideWith((_) async => ThreatList(DateTime.now(), const [])),
               ],
               retry: (_, _) => null,
               child: const BrahmaApp(),

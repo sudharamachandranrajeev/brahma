@@ -156,6 +156,12 @@ class WorkerApi implements AccountApi {
       DateTime.tryParse('${(await _call('GET', '/api/me'))['lastBackup'] ?? ''}');
 
   @override
+  Future<Map<String, Object?>?> threats() async {
+    final r = await _call('GET', '/api/threats', allow: {404});
+    return r['_status'] == 404 ? null : r;
+  }
+
+  @override
   Future<bool> isOwner() async => (await _call('GET', '/api/me'))['owner'] == true;
 
   @override

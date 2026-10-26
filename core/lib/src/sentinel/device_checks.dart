@@ -59,8 +59,28 @@ bool? rootEncrypted(String lsblkJson) {
 /// several units (one state per line).
 bool firewallActive(String states) => states.split('\n').any((s) => s.trim() == 'active');
 
+const _months = 'JanFebMarAprMayJunJulAugSepOctNovDec';
+
+/// The day the running kernel was built, from `uname -v`, as YYYY-MM-DD:
+/// on Linux the nearest thing to a security patch date, since distributions
+/// rebuild the kernel with its fixes. Null when the text has no date.
+String? kernelBuilt(String unameV) {
+  String day(String y, int m, String d) => '$y-${'$m'.padLeft(2, '0')}-${d.padLeft(2, '0')}';
+  final iso = RegExp(r'\b(\d{4})-(\d{2})-(\d{2})\b').firstMatch(unameV);
+  if (iso != null) return day(iso[1]!, int.parse(iso[2]!), iso[3]!);
+  const mon = '(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)';
+  // Arch: "Sat, 17 Oct 2026 22:09:33 +0000".
+  final dmy = RegExp('\\b(\\d{1,2}) $mon (\\d{4})\\b').firstMatch(unameV);
+  if (dmy != null) return day(dmy[3]!, _months.indexOf(dmy[2]!) ~/ 3 + 1, dmy[1]!);
+  // Ubuntu, Fedora: "Fri Aug 30 12:02:04 UTC 2024".
+  final mdy = RegExp('\\b$mon +(\\d{1,2}) [\\d:]+ \\S+ (\\d{4})\\b').firstMatch(unameV);
+  if (mdy != null) return day(mdy[3]!, _months.indexOf(mdy[1]!) ~/ 3 + 1, mdy[2]!);
+  return null;
+}
+
 Future<DeviceFacts> _linux(Runner run) async {
   bool? disk, firewall;
+  String? patched;
   try {
     final r = await run('lsblk', ['-J', '-o', 'NAME,TYPE,MOUNTPOINTS']);
     if (r.exitCode == 0) disk = rootEncrypted('${r.stdout}');
@@ -74,7 +94,13 @@ Future<DeviceFacts> _linux(Runner run) async {
   } on Object {
     // No systemd: unknown.
   }
-  return DeviceFacts(diskEncrypted: disk, firewall: firewall);
+  try {
+    final r = await run('uname', ['-v']);
+    if (r.exitCode == 0) patched = kernelBuilt('${r.stdout}');
+  } on Object {
+    // Unknown.
+  }
+  return DeviceFacts(diskEncrypted: disk, firewall: firewall, patched: patched);
 }
 
 /// Defender's state and the newest hotfix day, from one PowerShell call.

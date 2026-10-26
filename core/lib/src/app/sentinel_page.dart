@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../sentinel/core_checks.dart';
 import '../sentinel/sentinel.dart';
+import '../sentinel/threats.dart';
 import '../ui/theme.dart';
 import '../ui/widgets.dart';
 import 'providers.dart';
@@ -53,6 +54,8 @@ class SentinelPage extends ConsumerWidget {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     final checks = ref.watch(sentinelChecksProvider);
     final updates = ref.watch(updateChecksProvider).value ?? true;
+    final threats = ref.watch(threatWatchProvider).value ?? true;
+    final synced = ref.watch(syncProvider.select((s) => s.server != null));
     return PageScaffold(
       title: 'Sentinel',
       actions: [
@@ -97,6 +100,16 @@ class SentinelPage extends ConsumerWidget {
                   value: updates,
                   onChanged: (v) => ref.read(updateChecksProvider.notifier).set(v),
                 ),
+              SwitchListTile(
+                title: const Text('Watch for attacks under way'),
+                subtitle: Text(
+                  synced
+                      ? 'Your sync server fetches CISA\'s list of flaws used in real attacks, twice a day.'
+                      : 'Fetches CISA\'s list of flaws used in real attacks from cisa.gov, twice a day.',
+                ),
+                value: threats,
+                onChanged: (v) => ref.read(threatWatchProvider.notifier).set(v),
+              ),
               ListTile(
                 title: const Text('Snoozed'),
                 subtitle: Text(r.snoozed == 0 ? 'Nothing snoozed.' : '${r.snoozed} hidden for now.'),

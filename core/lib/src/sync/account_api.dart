@@ -136,6 +136,10 @@ abstract interface class AccountApi {
   /// and PocketBase servers keep their own history).
   Future<DateTime?> lastBackup();
 
+  /// The server's copy of Sentinel's threat list (`/api/threats`, raw
+  /// JSON); null when this server keeps none (PocketBase, older servers).
+  Future<Map<String, Object?>?> threats();
+
   /// Whether this login may invite people (the Worker's first account).
   Future<bool> isOwner();
 

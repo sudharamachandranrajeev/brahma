@@ -89,6 +89,11 @@ The database id goes into your local `wrangler.toml`: don't commit it to a publi
   7 days). Sign-in, sign-up, reset and pairing are rate limited per address.
 - A home server serves plain `http` on your home network and Tailscale only; the apps refuse plain
   `http` to anything else, and Tailscale encrypts its traffic.
+- Sentinel's threat watch: the server fetches CISA's public list of flaws used in real attacks
+  (the KEV catalogue) at most twice a day and hands the last half year of it to signed-in devices
+  (`GET /api/threats`). Each device decides on its own what concerns it. Devices that keep their data
+  on the device only fetch the list from CISA themselves; so does a synced device when the server
+  cannot help.
 
 ## Develop
 

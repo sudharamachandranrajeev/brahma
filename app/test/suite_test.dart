@@ -16,6 +16,8 @@ void main() {
   late SuiteSession suite;
   // What the update check finds; GitHub is never asked from the tests.
   var updates = <Finding>[];
+  var threats = <Threat>[];
+  var feedCalls = 0;
 
   setUp(() async {
     dir = await Directory.systemTemp.createTemp('brahma');
@@ -28,6 +30,8 @@ void main() {
 
   tearDown(() {
     updates = [];
+    threats = [];
+    feedCalls = 0;
     return dir.delete(recursive: true);
   });
 
@@ -51,6 +55,10 @@ void main() {
           updateCheck.findings.overrideWith((_) async => updates),
           startupUpdateProvider.overrideWith((_) async => null),
           deviceFactsProvider.overrideWith((_) async => const DeviceFacts()),
+          threatFeedProvider.overrideWith((_) async {
+            feedCalls++;
+            return ThreatList(DateTime.now(), threats);
+          }),
         ],
         retry: (_, _) => null,
         child: const BrahmaApp(),
@@ -153,6 +161,38 @@ void main() {
     await tester.pageBack();
     await settle(tester);
     expect(find.text('Sentinel · All clear'), findsOneWidget);
+    await stop(tester);
+  });
+
+  testWidgets('Sentinel watches for attacks, keeps the list a while and can stop', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    threats = [
+      Threat(cve: 'CVE-1', vendor: 'Google', product: 'Chromium V8', name: 'V8 type confusion', added: today),
+    ];
+    await start(tester);
+    await tester.tap(find.textContaining('Sentinel · '));
+    await settle(tester);
+    expect(find.text('A browser flaw under attack this month'), findsOneWidget);
+    expect(find.textContaining('V8 type confusion (CVE-1)'), findsOneWidget);
+    expect(feedCalls, 1);
+
+    await tester.tap(find.text('Watch for attacks under way'));
+    await settle(tester);
+    expect(find.text('A browser flaw under attack this month'), findsNothing);
+    await stop(tester);
+
+    // Off stays off; back on, the kept list serves without a new fetch.
+    await start(tester);
+    await tester.tap(find.textContaining('Sentinel · '));
+    await settle(tester);
+    expect(find.text('A browser flaw under attack this month'), findsNothing);
+    await tester.tap(find.text('Watch for attacks under way'));
+    await settle(tester);
+    expect(find.text('A browser flaw under attack this month'), findsOneWidget);
+    expect(feedCalls, 1);
     await stop(tester);
   });
 
