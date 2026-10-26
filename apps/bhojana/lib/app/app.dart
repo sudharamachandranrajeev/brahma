@@ -14,7 +14,7 @@ class BhojanaApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: bhojanaTheme(Brightness.light),
     darkTheme: bhojanaTheme(Brightness.dark),
-    builder: (context, child) => Backdrop(child: child ?? const SizedBox.shrink()),
+    builder: (context, child) => AppLockGate(child: Backdrop(child: child ?? const SizedBox.shrink())),
     home: home,
   );
 }

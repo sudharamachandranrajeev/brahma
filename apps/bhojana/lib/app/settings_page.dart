@@ -8,6 +8,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) => const PageScaffold(
     title: 'Settings',
     children: [
+      AppLockCard(),
       HintsCard(),
       SyncCard(),
       SecurityCard(

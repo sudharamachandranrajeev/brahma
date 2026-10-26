@@ -20,6 +20,7 @@ List<Override> bhojanaOverrides(AppSession session) => [
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(bhojanaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...bhojanaHints}),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, lockCheck]),
 ];
 
 /// Reads shop pages; tests swap in a fake.
