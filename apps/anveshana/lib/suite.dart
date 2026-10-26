@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/app.dart';
 import 'app/modules.dart';
 import 'app/providers.dart';
+import 'app/security_checks.dart';
 import 'app/session.dart';
 import 'domain/pipeline.dart';
 import 'ui/hints.dart';
@@ -23,6 +24,7 @@ final anveshanaSuite = SuiteApp(
   home: (onHome) => AppShell(destinations: allDestinations, onHome: onHome, floating: true),
   onStart: fetchWatch,
   summary: (_) => const _Summary(),
+  securityChecks: anveshanaChecks,
 );
 
 class _Summary extends ConsumerWidget {

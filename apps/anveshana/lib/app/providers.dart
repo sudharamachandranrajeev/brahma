@@ -9,6 +9,7 @@ import '../domain/contact_links.dart';
 import '../domain/listing.dart';
 import '../domain/watch_client.dart';
 import '../ui/hints.dart';
+import 'security_checks.dart';
 import 'session.dart';
 
 /// The open session; main() overrides this before the first frame.
@@ -21,6 +22,7 @@ List<Override> anveshanaOverrides(AppSession session) => [
   coreSessionProvider.overrideWithValue(session),
   appIdentityProvider.overrideWithValue(anveshanaIdentity),
   hintTextsProvider.overrideWithValue({...coreHints, ...anveshanaHints}),
+  sentinelChecksProvider.overrideWithValue([...coreChecks, ...anveshanaChecks]),
 ];
 
 extension Mutate on WidgetRef {

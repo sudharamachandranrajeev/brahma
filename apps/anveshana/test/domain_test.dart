@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:anveshana/app/providers.dart';
+import 'package:anveshana/app/security_checks.dart';
 import 'package:anveshana/domain/contact_links.dart';
 import 'package:anveshana/domain/lettings.dart';
 import 'package:anveshana/domain/listing.dart';
@@ -7,6 +9,7 @@ import 'package:anveshana/domain/research.dart';
 import 'package:anveshana/domain/tax.dart';
 import 'package:anveshana/domain/watch_client.dart';
 import 'package:brahma_core/brahma_core.dart' show addMonths;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -223,6 +226,18 @@ void main() {
         w.runNow(),
         throwsA(isA<WatchException>().having((e) => e.message, 'message', contains('token'))),
       );
+    });
+
+    test('Sentinel reports a Watch reached without https', () async {
+      Future<List<String>> ids(WatchClient? w) async {
+        final c = ProviderContainer(overrides: [watchProvider.overrideWithValue(AsyncData(w))]);
+        addTearDown(c.dispose);
+        return [for (final f in await c.read(watchCheck.findings.future)) f.id];
+      }
+
+      expect(await ids(null), isEmpty);
+      expect(await ids(WatchClient('https://w.example', 't')), isEmpty);
+      expect(await ids(WatchClient('http://w.example', 't')), ['anveshana.watch.http']);
     });
 
     test('search paths are checked like the Worker does', () {
