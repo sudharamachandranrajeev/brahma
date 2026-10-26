@@ -40,4 +40,21 @@ const anveshanaHints = <String, String>{
   'settings.watch':
       'Your own Brahma Watch Worker on Cloudflare, which checks searches and alerts your phone.',
   // Page banners
+  'page.hunt':
+      'Every home you are considering, from first sight to keys. Add one with a PropertyPal link, then '
+      'move it on: new, shortlisted, enquired, viewing, applied, agreed. Calls and messages move it on '
+      'by themselves; drop the ones that are not for you.',
+  'page.contacts': 'Agents, landlords, tenants and trades in one place. Add them here or from a home.',
+  'page.searches':
+      'PropertyPal searches Brahma Watch checks for you. Send them to the Watch, then new homes arrive '
+      'as phone alerts and under Hunt. Settings > Brahma Watch connects it first.',
+  'page.invest':
+      'Work out buy-to-let returns, what buying a home costs, or what land is worth to develop. Save the '
+      'figures to compare later.',
+  'page.lettings':
+      'Tenancies for homes you let out or rent: rent due and paid, and safety checks with the date each '
+      'is next due.',
+  'page.research':
+      'Type a UK postcode for prices, crime and links about the area, or work out purchase tax. Save '
+      'reports to compare areas.',
 };

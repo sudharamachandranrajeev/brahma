@@ -58,8 +58,15 @@ class SettingsPage extends ConsumerWidget {
           ),
           child: Text(
             watch == null
-                ? 'Not set up. Brahma Watch runs your searches on your own Cloudflare account and alerts your phone '
-                      'through ntfy. Deploy it with `npm run setup` in the brahma repository\'s watch folder.'
+                ? 'Not set up. Brahma Watch runs your searches on your own free Cloudflare account and alerts '
+                      'your phone through ntfy. On a computer with Git and Node.js 24+:\n'
+                      '1. git clone https://github.com/sudharamachandranrajeev/brahma.git, then cd brahma/watch '
+                      'and npm install.\n'
+                      '2. npx wrangler login (once; it opens the browser to allow your Cloudflare account).\n'
+                      '3. npm run setup. It prints the Watch address, its token and an ntfy topic with a QR code.\n'
+                      '4. On your phone install ntfy and subscribe to that topic (scan the code).\n'
+                      '5. Here choose Set up and paste the address and token (also kept in '
+                      '~/.config/brahma/watch.env on that computer).'
                 : 'Connected to ${Uri.parse(watch.url).host}. New listings are brought into the hunt when the app starts.',
           ),
         ),
