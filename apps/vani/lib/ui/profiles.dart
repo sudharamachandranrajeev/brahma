@@ -146,7 +146,7 @@ Future<void> editProfile(BuildContext context, WidgetRef ref, Profile? p) async 
       if (p == null) ...[
         const Text(
           'A profile has its own accounts, posts, inbox, rules and settings: for another person, a business '
-          'or a client. App credentials and the Anthropic key are shared by every profile.',
+          'or a client. App credentials and AI keys are shared by every profile.',
         ),
         const SizedBox(height: 16),
       ],

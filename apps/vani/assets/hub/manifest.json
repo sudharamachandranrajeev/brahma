@@ -1,0 +1,30 @@
+{
+  "version": "0.3.0",
+  "name": "vani-hub",
+  "compatibilityDate": "2026-10-01",
+  "crons": [
+    "* * * * *"
+  ],
+  "vars": {
+    "SUBREQUEST_BUDGET": "45"
+  },
+  "kvBinding": "KV",
+  "d1": {
+    "binding": "DB",
+    "name": "vani-hub"
+  },
+  "r2": {
+    "binding": "MEDIA",
+    "name": "vani-hub-media"
+  },
+  "migrations": [
+    {
+      "name": "0001_social.sql",
+      "sql": "-- Social hub. Most rows are JSON documents (the API's shapes) with the\n-- columns queries filter or sort on pulled out beside them.\n\nCREATE TABLE accounts (\n  id TEXT PRIMARY KEY,\n  platform TEXT NOT NULL,\n  remote_id TEXT NOT NULL,\n  body TEXT NOT NULL,          -- Account JSON\n  secret TEXT NOT NULL,        -- sealed tokens (crypto.ts)\n  poll_state TEXT,             -- adapter's cursor JSON\n  polled_at TEXT,\n  UNIQUE (platform, remote_id)\n);\n\nCREATE TABLE credentials (\n  provider TEXT PRIMARY KEY,\n  public_id TEXT,\n  secret TEXT NOT NULL,        -- sealed\n  updated_at TEXT NOT NULL\n);\n\nCREATE TABLE media (\n  id TEXT PRIMARY KEY,\n  body TEXT NOT NULL,          -- Media JSON without url\n  upload_id TEXT,\n  created_at TEXT NOT NULL\n);\n\nCREATE TABLE posts (\n  id TEXT PRIMARY KEY,\n  body TEXT NOT NULL,          -- Post JSON\n  status TEXT NOT NULL,\n  scheduled_at TEXT,\n  updated_at TEXT NOT NULL,\n  lock_until TEXT              -- set while a run publishes it\n);\nCREATE INDEX posts_due ON posts (status, scheduled_at);\n\nCREATE TABLE inbox (\n  id TEXT PRIMARY KEY,\n  account_id TEXT NOT NULL,\n  platform TEXT NOT NULL,\n  kind TEXT NOT NULL,\n  status TEXT NOT NULL,\n  at TEXT NOT NULL,\n  body TEXT NOT NULL           -- InboxItem JSON\n);\nCREATE INDEX inbox_by_time ON inbox (status, at);\n\nCREATE TABLE content (\n  id TEXT PRIMARY KEY,\n  account_id TEXT NOT NULL,\n  at TEXT NOT NULL,\n  body TEXT NOT NULL           -- Content JSON\n);\nCREATE INDEX content_by_account ON content (account_id, at);\n\nCREATE TABLE alerts (\n  id TEXT PRIMARY KEY,\n  at TEXT NOT NULL,\n  read INTEGER NOT NULL DEFAULT 0,\n  body TEXT NOT NULL           -- Alert JSON\n);\nCREATE INDEX alerts_by_time ON alerts (at);\n\n-- What each discovery watch has already seen, so only new finds alert.\nCREATE TABLE seen (\n  watch_id TEXT NOT NULL,\n  item_id TEXT NOT NULL,\n  at TEXT NOT NULL,\n  PRIMARY KEY (watch_id, item_id)\n);\n\nCREATE TABLE stats (\n  account_id TEXT NOT NULL,\n  day TEXT NOT NULL,\n  followers INTEGER,\n  body TEXT NOT NULL,          -- {posts, views28d}\n  PRIMARY KEY (account_id, day)\n);\n\n-- Small JSON documents: settings, rules, discovery, ideas, run state.\nCREATE TABLE docs (\n  key TEXT PRIMARY KEY,\n  value TEXT NOT NULL\n);\n"
+    },
+    {
+      "name": "0002_profiles.sql",
+      "sql": "-- Profiles: separate workspaces on one hub (a person's own accounts, a\n-- business, a client). Each row below belongs to one profile; documents\n-- (settings, rules, discovery, ideas, run state) are keyed per profile in\n-- docs. App credentials stay hub-wide. Existing data becomes \"default\".\n\nCREATE TABLE profiles (\n  id TEXT PRIMARY KEY,\n  name TEXT NOT NULL,\n  created_at TEXT NOT NULL\n);\nINSERT INTO profiles (id, name, created_at) VALUES ('default', 'Main', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));\n\nALTER TABLE accounts ADD COLUMN profile TEXT NOT NULL DEFAULT 'default';\nALTER TABLE media ADD COLUMN profile TEXT NOT NULL DEFAULT 'default';\nALTER TABLE posts ADD COLUMN profile TEXT NOT NULL DEFAULT 'default';\nALTER TABLE inbox ADD COLUMN profile TEXT NOT NULL DEFAULT 'default';\nALTER TABLE content ADD COLUMN profile TEXT NOT NULL DEFAULT 'default';\nALTER TABLE alerts ADD COLUMN profile TEXT NOT NULL DEFAULT 'default';\n\nCREATE INDEX inbox_by_profile ON inbox (profile, status, at);\nCREATE INDEX alerts_by_profile ON alerts (profile, at);\nCREATE INDEX posts_by_profile ON posts (profile, status, scheduled_at);\n"
+    }
+  ]
+}

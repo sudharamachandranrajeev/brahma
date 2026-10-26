@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- Set up your own hub from Vani: a guided setup (Settings > Social hub > Set up a hub, on Windows or
+  Linux) takes you through a free Cloudflare account, R2 and a key, then deploys the hub, with no
+  terminal. It ends with a QR code: scan it with your phone's camera and Vani on the phone connects.
+- The hub is Vani's own now (`hub/`, deployed as `vani-hub`), no longer part of Brahma Watch. Hubs made
+  with Brahma Watch's `npm run setup` are not carried over: set up the new one and reconnect accounts.
+- Update hub: Settings shows the hub's version and updates it when Vani has a newer one, keeping its
+  secrets and data.
+- Connect hub also takes a pasted `vani://hub` link.
+- AI from any service: Settings > AI takes an API key for Anthropic, OpenAI, Google Gemini (free tier),
+  OpenRouter or any OpenAI-compatible service, lists the models the key can use, and lets the hub use
+  the one you pick. On Windows and Linux you can instead answer AI requests with your own Claude,
+  ChatGPT or Gemini plan through its official command-line app (Claude Code, Codex CLI, Gemini CLI), or
+  with Ollama, while Vani is open. Vani never signs in to those plans or holds their tokens.
+- Every platform from day one. Bluesky, Mastodon and Telegram connect at once; Facebook & Instagram,
+  Threads, YouTube and LinkedIn open a step-by-step guide to making your own free app, with the exact
+  console pages, the addresses to paste and a Copy button, then check the app's keys with the platform
+  before saving them and end with "Sign in".
+- Mastodon in one click: enter your server and sign in there; the hub registers itself on the server.
+  An access token still works.
+
 ## 0.2.0 (2026-10-25)
 
 First public release, with everything built so far.

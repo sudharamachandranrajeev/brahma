@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/providers.dart';
 import '../domain/models.dart';
+import 'ai_settings.dart';
 import 'common.dart';
+import 'hub_setup.dart';
 import 'look.dart';
 import 'profiles.dart';
 
@@ -26,8 +28,7 @@ const _zones = [
 ];
 
 /// The hub link, its profiles, the greeting name, the theme, the current
-/// profile's hub settings (time zone, posting queue, saved replies, AI
-/// model), then the shared
+/// profile's hub settings (time zone, posting queue, saved replies, AI), then the shared
 /// hints, sync, security and about cards.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -62,12 +63,18 @@ class SettingsPage extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      link?.ready ?? false ? Uri.tryParse(link!.url)?.host ?? link.url : 'Not connected. Deploy Brahma Watch (brahma/watch) and enter its address and token.',
+                      link?.ready ?? false
+                          ? Uri.tryParse(link!.url)?.host ?? link.url
+                          : 'Not connected. Set up your own hub (once, on a computer), or connect one you have.',
                       style: t.bodyLarge,
                     ),
                   ),
                 ],
               ),
+              if (!(link?.ready ?? false) || canDeployHub) ...[
+                const SizedBox(height: 12),
+                const _HubUpkeep(),
+              ],
               if (link?.ready ?? false) ...[
                 const SizedBox(height: 12),
                 Align(
@@ -87,6 +94,15 @@ class SettingsPage extends ConsumerWidget {
                       icon: const Icon(Icons.notifications_active_outlined, size: 18),
                       label: const Text('Send a test alert'),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () => showPhoneLink(context, link!),
+                    icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                    label: const Text('Phone link'),
                   ),
                 ),
               ],
@@ -143,7 +159,7 @@ class SettingsPage extends ConsumerWidget {
         const SecurityCard(
           network:
               'This device talks only to your own hub (and your sync server, if you sign in). The hub talks to '
-              'the platforms you connect and, for AI features, to Anthropic with your key.',
+              'the platforms you connect and, for AI features, to the AI service you pick with your key.',
         ),
         const AboutCard(
           description:
@@ -221,6 +237,41 @@ class _NameFieldState extends State<_NameField> {
   );
 }
 
+/// The hub's version, and a button to set one up or update it (desktop; on
+/// a phone the button explains the computer step).
+class _HubUpkeep extends ConsumerWidget {
+  const _HubUpkeep();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ready = ref.watch(hubLinkProvider).value?.ready ?? false;
+    final bundled = ref.watch(hubBundleProvider).value?.version;
+    final version = ready ? ref.watch(hubVersionProvider) : null;
+    final older = bundled != null && version is AsyncData<String?> && hubIsOlder(version.value, bundled);
+    final muted = Theme.of(context).textTheme.bodyMedium?.copyWith(color: Tone.of(context).muted);
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (version is AsyncData<String?>)
+          Text(
+            older
+                ? 'Hub ${version.value ?? '0.2 or older'}: version $bundled is ready.'
+                : 'Hub ${version.value}, up to date.',
+            style: muted,
+          ),
+        if (!ready || older)
+          FilledButton.tonalIcon(
+            onPressed: () => setUpHub(context, ref),
+            icon: Icon(ready ? Icons.system_update_alt_rounded : Icons.rocket_launch_rounded, size: 18),
+            label: Text(ready ? 'Update hub' : 'Set up a hub'),
+          ),
+      ],
+    );
+  }
+}
+
 class _HubSettings extends ConsumerWidget {
   const _HubSettings({required this.settings});
   final HubSettings settings;
@@ -250,12 +301,6 @@ class _HubSettings extends ConsumerWidget {
                 },
                 onChanged: (v) => _save(context, ref, s.copyWith(timezone: v)),
               ),
-              Choice<String>(
-                label: 'AI model',
-                value: s.model,
-                options: {...aiModels, if (!aiModels.containsKey(s.model)) s.model: s.model},
-                onChanged: (v) => _save(context, ref, s.copyWith(model: v)),
-              ),
               Hint(
                 'settings.language',
                 child: Choice<String>(
@@ -282,6 +327,11 @@ class _HubSettings extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+        _Card(
+          title: 'AI',
+          hint: 'settings.ai',
+          child: AiSettings(settings: s, onSave: (v) => _save(context, ref, v)),
         ),
         _Card(
           title: 'Queue',

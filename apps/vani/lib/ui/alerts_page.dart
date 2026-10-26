@@ -337,7 +337,7 @@ class _DiscoveryState extends ConsumerState<_Discovery> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Claude turns it into a watch over eBay and DoneDeal listings, Instagram hashtags and business '
+                  'AI turns it into a watch over eBay and DoneDeal listings, Instagram hashtags and business '
                   'accounts, Bluesky and YouTube. You check it before it is saved.',
                   style: t.bodyMedium?.copyWith(color: tone.muted),
                 ),
@@ -725,7 +725,7 @@ class _WatchEditorState extends ConsumerState<WatchEditor> {
                             contentPadding: EdgeInsets.zero,
                             value: _ai,
                             onChanged: (v) => setState(() => _ai = v),
-                            title: const Text('Claude checks each find'),
+                            title: const Text('AI checks each find'),
                             subtitle: const Text('Alerts only on finds that match the description.'),
                           ),
                         ),
@@ -1023,7 +1023,7 @@ Future<InboxRule?> editRule(BuildContext context, InboxRule r, List<Account> acc
         'rules.description',
         child: Field(
           description,
-          'Or describe it (Claude judges)',
+          'Or describe it (AI judges)',
           hint: 'asks about price or availability',
           lines: 2,
         ),

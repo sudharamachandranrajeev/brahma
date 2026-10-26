@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:vani/domain/device_ai.dart';
 import 'package:vani/domain/hub.dart';
 import 'package:vani/domain/models.dart';
 
@@ -195,5 +196,56 @@ void main() {
     expect(HubLink.checkUrl('http://hub.tail1234.ts.net'), isNull);
     expect(HubLink.checkUrl('http://example.com'), isNotNull);
     expect(HubLink.checkUrl('watch'), isNotNull);
+  });
+
+  test('with device AI the hub hands over each prompt and gets the answer back', () async {
+    final fake = FakeHub(ai: false);
+    final asked = <DeviceRequest>[];
+    final hub = HubClient(
+      hubUrl,
+      hubToken,
+      client: fake.client,
+      deviceAi: (r) async {
+        asked.add(r);
+        return {'lang': 'es', 'text': 'Hola'};
+      },
+    );
+    expect((await hub.translate('Hello', 'Spanish')).toString(), contains('Hola'));
+    expect(asked.single.system, 'Translate the text into Spanish.');
+    expect(fake.deviceAnswers, [
+      {'lang': 'es', 'text': 'Hola'},
+    ]);
+
+    // Without a device AI and without a key it is the plain 412.
+    final plain = HubClient(hubUrl, hubToken, client: FakeHub(ai: false).client);
+    await expectLater(plain.translate('Hello', 'Spanish'), throwsA(isA<HubException>()));
+  });
+
+  test('AI settings keep the provider and a model per service', () {
+    final s = HubSettings.fromJson({
+      'timezone': 'UTC',
+      'aiProvider': 'gemini',
+      'aiModels': {'gemini': 'gemini-test', 'anthropic': 'claude-sonnet-5-5'},
+    });
+    expect(s.aiProvider, CredentialProvider.gemini);
+    final next = s.copyWith(aiModels: {...s.aiModels, 'openai': 'gpt-x'});
+    expect(next.aiProvider, CredentialProvider.gemini);
+    expect(next.toJson()['aiModels'], containsPair('openai', 'gpt-x'));
+    expect(next.withAiProvider(null).toJson()['aiProvider'], isNull);
+    expect(HubSettings.fromJson({'aiProvider': 'nope'}).aiProvider, isNull);
+    expect(CredentialProvider.aiServices, contains(CredentialProvider.compatible));
+    expect(CredentialProvider.meta.ai, isFalse);
+  });
+
+  test('credential checks and the Mastodon sign-in', () async {
+    final fake = FakeHub();
+    final hub = HubClient(hubUrl, hubToken, client: fake.client);
+    expect(await hub.checkCredential(CredentialProvider.google, publicId: 'c', secret: 's'), contains('accepted'));
+    expect(fake.bodies['POST /social/credentials/google/check'], {'publicId': 'c', 'secret': 's'});
+    await expectLater(
+      hub.checkCredential(CredentialProvider.google, publicId: 'c', secret: 'wrong'),
+      throwsA(isA<HubException>().having((e) => e.status, 'status', 422)),
+    );
+    expect(await hub.connectMastodon('social.example'), startsWith('https://social.example/oauth/authorize'));
   });
 }

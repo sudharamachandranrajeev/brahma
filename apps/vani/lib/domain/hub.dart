@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:brahma_core/brahma_core.dart';
 import 'package:http/http.dart' as http;
 
+import 'device_ai.dart';
 import 'models.dart';
 
 /// A failed hub call, worded for the user. [problems] lists what the hub
@@ -38,12 +39,25 @@ class HubLink {
   factory HubLink.fromJson(Json j) => HubLink(url: str(j['url']), token: str(j['token']));
   Json toJson() => {'url': url, 'token': token};
 
+  /// The `vani://hub?u=<address>&t=<token>` link a hub's setup shows as a QR
+  /// code, so a phone connects by scanning it (or pasting it).
+  String toPairingLink() => Uri(scheme: 'vani', host: 'hub', queryParameters: {'u': url, 't': token}).toString();
+
+  /// Reads a pairing link from [text]; null when it is not one.
+  static HubLink? fromPairingLink(String text) {
+    final uri = Uri.tryParse(text.replaceAll(RegExp(r'\s'), ''));
+    if (uri == null || uri.scheme != 'vani' || uri.host != 'hub') return null;
+    final url = uri.queryParameters['u'] ?? '', token = uri.queryParameters['t'] ?? '';
+    if (checkUrl(url) != null || token.isEmpty) return null;
+    return HubLink(url: url.replaceAll(RegExp(r'/+$'), ''), token: token);
+  }
+
   /// What is wrong with [url], or null. Plain http only for the user's own
   /// network, never the public internet.
   static String? checkUrl(String url) {
     final u = Uri.tryParse(url.trim());
     if (u == null || !u.hasScheme || u.host.isEmpty) {
-      return 'Enter the hub address, e.g. https://brahma-watch.you.workers.dev';
+      return 'Enter the hub address, e.g. https://vani-hub.you.workers.dev';
     }
     if (u.scheme == 'https') return null;
     if (u.scheme == 'http' && _local(u.host)) return null;
@@ -57,14 +71,20 @@ class HubLink {
       RegExp(r'^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.)').hasMatch(host);
 }
 
+class _NeedsAi implements Exception {
+  _NeedsAi(this.request);
+  final DeviceRequest request;
+}
+
 typedef DiscoveryRun = ({List<Find> finds, List<Alert> alerts, List<String> errors});
 
-/// Every call of the social hub's HTTP API (watch/SOCIAL.md).
+/// Every call of the hub's HTTP API (hub/README.md).
 class HubClient {
   HubClient(
     String url,
     this.token, {
     this.profile = Profile.main,
+    this.deviceAi,
     http.Client? client,
     this.timeout = const Duration(seconds: 30),
   }) : base = Uri.parse(url.trim().replaceAll(RegExp(r'/+$'), '')),
@@ -75,6 +95,10 @@ class HubClient {
 
   /// The profile every call works in (profile management is hub-wide).
   final String profile;
+
+  /// This device's AI, when the user chose it: the hub then hands AI work
+  /// back as 409 `needsAi`, and the call is resent with the answers.
+  final DeviceAnswer? deviceAi;
   final Duration timeout;
   final http.Client _http;
 
@@ -90,8 +114,11 @@ class HubClient {
     'authorization': 'Bearer $token',
     'accept': 'application/json',
     if (profile != Profile.main) 'x-vani-profile': profile,
+    if (deviceAi != null) 'x-vani-ai': 'device',
   };
 
+  /// One call; with [deviceAi], answers each `needsAi` and resends until the
+  /// hub has all it asked for.
   Future<Object?> _send(
     String method,
     String path, {
@@ -99,7 +126,30 @@ class HubClient {
     Map<String, String?> query = const {},
     Duration? wait,
   }) async {
+    final answers = <Object?>[];
+    while (true) {
+      try {
+        return await _sendOnce(method, path, body: body, query: query, wait: wait, answers: answers);
+      } on _NeedsAi catch (e) {
+        // A call asks for one answer per AI step; a bound stops a runaway loop.
+        if (answers.length >= 20) throw HubException('The hub kept asking for more AI answers.');
+        answers.add(await deviceAi!(e.request));
+      }
+    }
+  }
+
+  Future<Object?> _sendOnce(
+    String method,
+    String path, {
+    Object? body,
+    Map<String, String?> query = const {},
+    Duration? wait,
+    List<Object?> answers = const [],
+  }) async {
     final req = http.Request(method, _uri(path, query))..headers.addAll(_headers);
+    if (answers.isNotEmpty) {
+      req.headers['x-vani-ai-answers'] = base64Url.encode(utf8.encode(jsonEncode(answers)));
+    }
     if (body is Uint8List) {
       req.headers['content-type'] = 'application/octet-stream';
       req.bodyBytes = body;
@@ -128,6 +178,9 @@ class HubClient {
     }
     if (res.statusCode >= 200 && res.statusCode < 300) return data;
     final j = obj(data);
+    if (res.statusCode == 409 && deviceAi != null && j['needsAi'] is Map) {
+      throw _NeedsAi(DeviceRequest.fromJson(obj(j['needsAi'])));
+    }
     final error =
         strOrNull(j['error']) ??
         switch (res.statusCode) {
@@ -161,7 +214,17 @@ class HubClient {
   Future<void> setCredential(CredentialProvider p, {String? publicId, required String secret}) =>
       _send('PUT', '/social/credentials/${p.name}', body: {'publicId': ?publicId, 'secret': secret});
 
+  /// Asks the platform whether an app's ID and secret are right (the stored
+  /// secret when [secret] is null): a sentence to show, or a HubException.
+  Future<String> checkCredential(CredentialProvider p, {required String publicId, String? secret}) async => str(
+    (await _obj('POST', '/social/credentials/${p.name}/check', body: {'publicId': publicId, 'secret': ?secret}))['detail'],
+  );
+
   Future<void> deleteCredential(CredentialProvider p) => _send('DELETE', '/social/credentials/${p.name}');
+
+  /// The models [p]'s key can use; also checks the key.
+  Future<List<String>> aiModels(CredentialProvider p) async =>
+      strs((await _obj('GET', '/social/ai/models', query: {'provider': p.name}))['models']);
 
   // ---- profiles ----
 
@@ -187,6 +250,10 @@ class HubClient {
   /// The sign-in page to open in a browser.
   Future<String> connect(OAuthProvider p) async =>
       str((await _obj('POST', '/social/connect/${p.name}'))['url']);
+
+  /// The Mastodon server's sign-in page; the hub registers itself there first.
+  Future<String> connectMastodon(String instance) async =>
+      str((await _obj('POST', '/social/connect/mastodon', body: {'instance': instance}))['url']);
 
   Future<Account> addBluesky({required String handle, required String appPassword, String? service}) async =>
       Account.fromJson(
@@ -471,8 +538,19 @@ class HubClient {
 
   Future<List<Idea>> ideas() async => parseIdeas(await _obj('GET', '/social/ai/ideas'));
 
-  /// Sends a test push to the phone (Brahma Watch's ntfy topic).
+  /// Sends a test push to the phone (the hub's ntfy topic).
   Future<void> testNotify() => _send('POST', '/test-notify');
+
+  /// The hub's version, or null for a hub from before versions (0.2 and
+  /// older), which is then due an update.
+  Future<String?> version() async {
+    try {
+      return strOrNull(obj(await _send('GET', '/version'))['version']);
+    } on HubException catch (e) {
+      if (e.status == 404) return null;
+      rethrow;
+    }
+  }
 }
 
 /// The MIME type for a file name, for the media types platforms take.
