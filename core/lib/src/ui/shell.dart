@@ -14,8 +14,28 @@ import 'theme.dart';
 /// a scrolling dock and a side panel the page slides aside for. Pages are
 /// built on first visit and then kept.
 class AppShell extends ConsumerStatefulWidget {
-  const AppShell({super.key, required this.destinations, this.onStart, this.floating = false, this.onHome});
+  const AppShell({
+    super.key,
+    required this.destinations,
+    this.onStart,
+    this.floating = false,
+    this.onHome,
+    this.railHeader,
+    this.railFooter,
+    this.railPanel = false,
+  });
+
+  /// The rail floats as a rounded, shadowed panel inset from the window edge.
+  final bool railPanel;
   final List<Destination> destinations;
+
+  /// Replaces the app's initial above the rail's destinations, e.g. a picture
+  /// and a greeting. Given whether the rail is extended (labels beside icons).
+  final Widget Function(bool extended)? railHeader;
+
+  /// Shown at the foot of the rail, e.g. a card with a call to action. Given
+  /// whether the rail is extended.
+  final Widget Function(bool extended)? railFooter;
 
   /// Leaves the app for the place that opened it (the suite's home screen):
   /// a button above the rail, the first entry in the dock and panel on phones.
@@ -109,39 +129,63 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     );
 
     if (width >= 840) {
+      final extended = width >= 1280;
+      final rail = NavigationRail(
+        extended: extended,
+        selectedIndex: _index,
+        onDestinationSelected: _select,
+        labelType: extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+        trailingAtBottom: true,
+        trailing: widget.railFooter == null
+            ? null
+            : Padding(padding: const EdgeInsets.all(12), child: widget.railFooter!(extended)),
+        leading: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            children: [
+              if (widget.onHome != null)
+                IconButton(onPressed: widget.onHome, tooltip: 'All apps', icon: const Icon(Icons.apps)),
+              widget.railHeader?.call(extended) ?? const _Logo(),
+              const SizedBox(height: 8),
+              IconButton(
+                onPressed: _ask,
+                tooltip: 'Ask AI for help with this screen',
+                icon: const Icon(Icons.auto_awesome_outlined),
+              ),
+            ],
+          ),
+        ),
+        destinations: [
+          for (final d in _destinations)
+            NavigationRailDestination(
+              icon: Hint(d.hint, child: Icon(d.icon)),
+              selectedIcon: Icon(d.selectedIcon),
+              label: Text(d.label),
+            ),
+        ],
+      );
       return Scaffold(
         body: Row(
           children: [
-            NavigationRail(
-              extended: width >= 1280,
-              selectedIndex: _index,
-              onDestinationSelected: _select,
-              labelType: width >= 1280 ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-              leading: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Column(
-                  children: [
-                    if (widget.onHome != null)
-                      IconButton(onPressed: widget.onHome, tooltip: 'All apps', icon: const Icon(Icons.apps)),
-                    const _Logo(),
-                    const SizedBox(height: 8),
-                    IconButton(
-                      onPressed: _ask,
-                      tooltip: 'Ask AI for help with this screen',
-                      icon: const Icon(Icons.auto_awesome_outlined),
-                    ),
-                  ],
-                ),
-              ),
-              destinations: [
-                for (final d in _destinations)
-                  NavigationRailDestination(
-                    icon: Hint(d.hint, child: Icon(d.icon)),
-                    selectedIcon: Icon(d.selectedIcon),
-                    label: Text(d.label),
+            if (widget.railPanel)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 0, 16),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-              ],
-            ),
+                  child: ClipRRect(borderRadius: BorderRadius.circular(32), child: rail),
+                ),
+              )
+            else
+              rail,
             if (!widget.floating) const VerticalDivider(width: 1),
             Expanded(child: stack),
           ],
