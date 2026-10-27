@@ -63,9 +63,10 @@
   (saved as a PDF to upload) and repurposing a long piece. Every draft is written in your own voice
   and cleaned on the device of dashes, invisible characters and stock phrases, with a five-check
   score. The same check runs on a CV or cover letter. Nothing is posted or automated for you.
-* **Your Claude subscription** – on Linux and Windows, Settings > AI can use the Claude Code you
-  already have, signed in to your own Claude plan, instead of an API key. Udyoga never handles your
-  Claude login. Its permission lasts 24 hours; at the next start it asks you to renew.
+* **Your Claude or ChatGPT subscription** – on Linux and Windows, Settings > AI can use the Claude
+  Code or Codex you already have, signed in to your own Claude or ChatGPT plan, instead of an API key,
+  for every AI feature. Udyoga never handles your login. Its permission lasts 24 hours; at the next
+  start it asks you to renew.
 * **In-app updates** – at start (switch it off in Settings > Updates) and on demand, Udyoga finds a
   newer GitHub release, asks, checks the download against `SHA256SUMS.txt` and installs it (release
   builds only).
@@ -87,6 +88,9 @@ Switzerland. Job-site keys for Adzuna and Reed are free and optional.
 On Linux and Windows you can use your Claude subscription instead: install
 [Claude Code](https://code.claude.com/docs/en/setup), then Settings > AI > Connect. Udyoga runs your
 own Claude Code, which keeps your sign-in to itself; Udyoga stores only the time you allowed it.
+A ChatGPT plan works the same way through [Codex](https://developers.openai.com/codex/cli) (sign in
+with `codex login`), using Codex's default model. Codex cannot read PDFs here, so paste your CV's
+text when reading a CV with it.
 
 Your data stays on the device, encrypted, until you turn on sync. An account made in any Brahma app
 works in all of them.

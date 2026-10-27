@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.2 (2026-10-27)
+
+- ChatGPT subscription (Linux and Windows): use the Codex you have installed, signed in to your own
+  ChatGPT plan, for every AI feature instead of an API key. Like the Claude subscription, access
+  lasts 24 hours and Udyoga asks to renew it at the next start; it never sees your login. Codex
+  cannot read PDFs, so paste a CV's text when using it.
+
 ## 0.4.1 (2026-10-25)
 
 - LinkedIn: the week plan and repurpose tools now pick from the hook formulas too (only the post

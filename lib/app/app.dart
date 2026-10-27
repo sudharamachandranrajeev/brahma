@@ -24,7 +24,7 @@ class UdyogaApp extends StatelessWidget {
 
 /// The app, opening the links the platform hands over (a scanned pairing
 /// code). There is no onboarding: Today says what to do first. At start it
-/// asks to renew lapsed access to the Claude subscription, then offers a
+/// asks to renew lapsed access to a Claude or ChatGPT subscription, then offers a
 /// new version when there is one.
 class _Root extends ConsumerStatefulWidget {
   const _Root();
@@ -41,15 +41,17 @@ class _RootState extends ConsumerState<_Root> {
   }
 
   Future<void> _startPrompts() async {
-    final grant = await ref.read(claudeCodeGrantProvider.future);
-    if (grant != null && !grant.activeAt(DateTime.now()) && mounted) {
+    for (final MapEntry(key: provider, value: cli) in subscriptionClis.entries) {
+      final grant = await ref.read(grantProvider(provider).future);
+      if (grant == null || grant.activeAt(DateTime.now()) || !mounted) continue;
       final next = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Renew access to your Claude subscription?'),
+          title: Text('Renew access to your ${cli.plan} subscription?'),
           content: Text(
-            'Udyoga\'s 24-hour access to Claude Code${grant.account.isEmpty ? '' : ' (${grant.account})'} has '
-            'ended, so the AI features are paused. Reconnect to check the sign-in and allow another 24 hours.',
+            'Udyoga\'s 24-hour access to ${cli.app}${grant.account.isEmpty ? '' : ' (${grant.account})'} has '
+            'ended, so the AI features that use it are paused. Reconnect to check the sign-in and allow another '
+            '24 hours.',
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context, 'forget'), child: const Text('Disconnect')),
@@ -59,8 +61,8 @@ class _RootState extends ConsumerState<_Root> {
         ),
       );
       if (!mounted) return;
-      if (next == 'renew') await connectClaudeCode(context, ref);
-      if (next == 'forget') await ref.mutate((s) => s.book.setClaudeCodeGrant(null));
+      if (next == 'renew') await connectSubscription(context, ref, provider);
+      if (next == 'forget') await ref.mutate((s) => s.book.setGrant(provider, null));
     }
     final updater = ref.read(updaterProvider);
     if (updater == null) return;

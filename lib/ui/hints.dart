@@ -13,7 +13,7 @@ const udyogaHints = <String, String>{
   'nav.profile': 'Your CV, experience and what you are looking for.',
   'nav.linkedin': 'Posts, comments, connection notes and a profile score, for you to post by hand.',
   'nav.settings':
-      'AI keys or your Claude subscription, updates, job sites, the AI routine, sync and security.',
+      'AI keys or your Claude or ChatGPT subscription, updates, job sites, the AI routine, sync and security.',
   // Jobs
   'jobs.refresh': 'Check the job sites now.',
   'jobs.ai': 'Ask the AI to search LinkedIn, Indeed, national and public-sector boards for you.',
@@ -38,8 +38,8 @@ const udyogaHints = <String, String>{
   // Settings
   'settings.n8n': 'A webhook in your own n8n that takes a job and answers with contacts. See docs/n8n in the Udyoga repository.',
   'settings.ai':
-      'Your own Gemini or Claude key, or on a computer your Claude subscription through Claude Code. Requests '
-      'go straight from this device to Google or Anthropic.',
+      'Your own Gemini or Claude key, or on a computer your Claude subscription through Claude Code or your '
+      'ChatGPT subscription through Codex. Requests go straight from this device to Google, Anthropic or OpenAI.',
   'linkedin.voice':
       'A few words on how you write and a few lines you wrote. Every draft is written to match.',
   'settings.routine':

@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/book.dart';
 import '../domain/ai.dart';
-import '../domain/claude_code.dart';
 import '../domain/feeds.dart';
 import '../domain/gemini.dart';
 import '../domain/n8n.dart';
+import '../domain/subscription.dart';
 import '../domain/update.dart';
 import '../ui/common.dart';
 import 'providers.dart';
@@ -55,11 +55,11 @@ class SettingsPage extends ConsumerWidget {
                           'interview reviews and the LinkedIn studio) need a key. The quickest is a free Gemini '
                           'key: sign in to Google AI Studio with your Google account, press Create API key and '
                           'paste it here. A Claude API key from console.anthropic.com works too; Anthropic bills '
-                          'you for use.${ClaudeCodeCli.supported ? ' With a Claude Pro or Max plan, connect it '
-                                    'through Claude Code instead.' : ''}'
+                          'you for use.${SubscriptionCli.supported ? ' With a Claude Pro or Max plan, connect it '
+                                    'through Claude Code instead; with a ChatGPT plan, through Codex.' : ''}'
                     : 'Spent about \$${(s?.spend ?? 0).toStringAsFixed(2)} this month on this device at '
-                          'list prices; a Gemini key on the free tier and your Claude subscription cost nothing '
-                          'more.',
+                          'list prices; a Gemini key on the free tier and your Claude or ChatGPT subscription '
+                          'cost nothing more.',
               ),
               if (model == null) ...[
                 const SizedBox(height: 12),
@@ -92,7 +92,8 @@ class SettingsPage extends ConsumerWidget {
                     ),
                   ],
                 ),
-              if (ClaudeCodeCli.supported) const _SubscriptionRow(),
+              if (SubscriptionCli.supported)
+                for (final p in subscriptionClis.keys) _SubscriptionRow(p),
               if (s != null && model != null) ...[
                 const SizedBox(height: 12),
                 Choice<String>(
@@ -176,7 +177,8 @@ class SettingsPage extends ConsumerWidget {
         const SecurityCard(
           network:
               'Nothing leaves the device unless you sign in to sync, refresh jobs (your search terms go to the job '
-              'sites) or use an AI feature (your profile and the job go to Google or Anthropic with your key).',
+              'sites) or use an AI feature (your profile and the job go to Google, Anthropic or OpenAI with your key '
+              'or plan).',
         ),
         const AboutCard(
           description:
@@ -427,34 +429,36 @@ Future<void> installUpdate(BuildContext context, Updater updater, Release releas
   if (restart == true) await Updater.restartLinux();
 }
 
-/// The Claude subscription in the AI card: who it is signed in as and for
-/// how long Udyoga may use it.
+/// A subscription in the AI card: who it is signed in as and for how long
+/// Udyoga may use it.
 class _SubscriptionRow extends ConsumerWidget {
-  const _SubscriptionRow();
+  const _SubscriptionRow(this.provider);
+  final AiProvider provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final grant = ref.watch(claudeCodeGrantProvider).value;
+    final cli = subscriptionClis[provider]!;
+    final grant = ref.watch(grantProvider(provider)).value;
     final active = grant != null && grant.activeAt(DateTime.now());
     return Row(
       children: [
         Expanded(
           child: Text(switch (grant) {
-            null => 'Claude subscription: not connected',
+            null => '${provider.label}: not connected',
             _ when active =>
-              'Claude subscription: ${grant.account.isEmpty ? 'connected' : grant.account} through Claude Code, '
+              '${provider.label}: ${grant.account.isEmpty ? 'connected' : grant.account} through ${cli.app}, '
                   'until ${niceDateTime(grant.expires.toLocal().toIso8601String())}',
-            _ => 'Claude subscription: the 24 hours are up',
+            _ => '${provider.label}: the 24 hours are up',
           }),
         ),
         if (grant != null)
           TextButton(
-            onPressed: () => ref.mutate((s) => s.book.setClaudeCodeGrant(null)),
+            onPressed: () => ref.mutate((s) => s.book.setGrant(provider, null)),
             child: const Text('Disconnect'),
           ),
         if (!active)
           TextButton(
-            onPressed: () => connectClaudeCode(context, ref),
+            onPressed: () => connectSubscription(context, ref, provider),
             child: Text(grant == null ? 'Connect' : 'Reconnect'),
           ),
       ],
@@ -462,25 +466,26 @@ class _SubscriptionRow extends ConsumerWidget {
   }
 }
 
-/// Lets Udyoga use the Claude subscription that this device's Claude Code
-/// is signed in to, for 24 hours. Signing in happens in Claude Code's own
-/// flow, in a terminal; Udyoga only asks Claude Code who is signed in.
-/// Returns whether access was given.
-Future<bool> connectClaudeCode(BuildContext context, WidgetRef ref) async {
-  final exe = ClaudeCodeCli.locate();
+/// Lets Udyoga use the subscription [provider] that this device's CLI
+/// (Claude Code or Codex) is signed in to, for 24 hours. Signing in happens
+/// in the CLI's own flow, in a terminal; Udyoga only asks the CLI who is
+/// signed in. Returns whether access was given.
+Future<bool> connectSubscription(BuildContext context, WidgetRef ref, AiProvider provider) async {
+  final cli = subscriptionClis[provider]!;
+  final exe = cli.locate();
   if (exe == null) {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Claude Code is not installed'),
-        content: const Text(
-          'Udyoga uses your Claude subscription through Claude Code, Anthropic\'s own app, so your Claude '
-          'password and sign-in never pass through Udyoga. Install Claude Code, then connect again.',
+        title: Text('${cli.app} is not installed'),
+        content: Text(
+          'Udyoga uses your ${cli.plan} subscription through ${cli.app}, ${cli.maker}\'s own app, so your '
+          '${cli.plan} password and sign-in never pass through Udyoga. Install ${cli.app}, then connect again.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
           FilledButton.icon(
-            onPressed: () => openLink(context, claudeCodeInstallPage),
+            onPressed: () => openLink(context, cli.installPage),
             icon: const Icon(Icons.open_in_new, size: 18),
             label: const Text('How to install it'),
           ),
@@ -493,30 +498,31 @@ Future<bool> connectClaudeCode(BuildContext context, WidgetRef ref) async {
     if (!context.mounted) return false;
     final auth = await runAi(
       context,
-      title: 'Claude subscription',
-      status: 'Asking Claude Code who is signed in…',
-      task: (_) => ClaudeCodeCli.status(exe),
+      title: provider.label,
+      status: 'Asking ${cli.app} who is signed in…',
+      task: (_) => cli.status(exe),
     );
     if (auth == null || !context.mounted) return false;
     if (auth.loggedIn && auth.subscription) {
       final allow = await confirm(
         context,
-        title: 'Use your Claude subscription?',
+        title: 'Use your ${cli.plan} subscription?',
         message:
-            'Udyoga will run Claude Code, signed in as ${auth.account.isEmpty ? 'your Claude account' : auth.account}, '
+            'Udyoga will run ${cli.app}, signed in as ${auth.account.isEmpty ? 'your ${cli.plan} account' : auth.account}, '
             'for its AI features for the next 24 hours. Requests count towards your plan\'s usage limits. After 24 '
             'hours Udyoga stops and asks again when it starts.',
         action: 'Allow for 24 hours',
       );
       if (!allow) return false;
-      final first = await ref.read(sessionProvider).book.claudeCodeGrant() == null;
+      final first = await ref.read(sessionProvider).book.grant(provider) == null;
       await ref.mutate((s) async {
-        await s.book.setClaudeCodeGrant(
-          ClaudeCodeGrant(at: DateTime.now().toUtc(), account: auth.account, exe: exe),
+        await s.book.setGrant(
+          provider,
+          SubscriptionGrant(at: DateTime.now().toUtc(), account: auth.account, exe: exe),
         );
         // A first connection switches the AI to the subscription; the model
         // can be changed below.
-        if (first) await s.book.setPref(PrefKeys.aiModel, AiProvider.claudeCode.defaultModel);
+        if (first) await s.book.setPref(PrefKeys.aiModel, provider.defaultModel);
       });
       if (context.mounted) showMessage(context, 'Connected for 24 hours.');
       return true;
@@ -524,12 +530,12 @@ Future<bool> connectClaudeCode(BuildContext context, WidgetRef ref) async {
     final next = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign in to Claude Code'),
+        title: Text('Sign in to ${cli.app}'),
         content: Text(
-          '${auth.loggedIn ? 'Claude Code is signed in with an API key, not a Claude plan.' : 'Claude Code is not signed in.'} '
-          'Udyoga opens Claude Code\'s own sign-in in a terminal: choose your Claude account there and finish in '
-          'the browser. Then come back and press "I have signed in".\n\n'
-          'Or run this yourself:\n${ClaudeCodeCli.signInCommand(exe)}',
+          '${auth.loggedIn ? '${cli.app} is signed in with an API key, not a ${cli.plan} plan (${cli.plans}).' : '${cli.app} is not signed in.'} '
+          'Udyoga opens ${cli.app}\'s own sign-in in a terminal: choose your ${cli.plan} account there and finish '
+          'in the browser. Then come back and press "I have signed in".\n\n'
+          'Or run this yourself:\n${cli.signInCommand(exe)}',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
@@ -540,10 +546,10 @@ Future<bool> connectClaudeCode(BuildContext context, WidgetRef ref) async {
     );
     if (next == null || !context.mounted) return false;
     if (next == 'open') {
-      if (!await ClaudeCodeCli.openSignIn(exe) && context.mounted) {
+      if (!await cli.openSignIn(exe) && context.mounted) {
         await copyText(
           context,
-          ClaudeCodeCli.signInCommand(exe),
+          cli.signInCommand(exe),
           what: 'No terminal found. The command is copied.',
         );
       }

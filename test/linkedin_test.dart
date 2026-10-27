@@ -9,15 +9,17 @@ import 'package:udyoga/ui/carousel.dart';
 import 'package:udyoga/domain/ai.dart';
 import 'package:udyoga/domain/book.dart';
 import 'package:udyoga/domain/claude_code.dart';
+import 'package:udyoga/domain/codex.dart';
 import 'package:udyoga/domain/humanizer.dart';
 import 'package:udyoga/domain/json.dart';
 import 'package:udyoga/domain/linkedin.dart';
 import 'package:udyoga/domain/pdf.dart';
 import 'package:udyoga/domain/schema.dart';
+import 'package:udyoga/domain/subscription.dart';
 
 import 'support.dart';
 
-/// A stand-in for the Claude Code process: prints [out] and exits.
+/// A stand-in for the Claude Code or Codex process: prints [out] and exits.
 class FakeProcess implements Process {
   FakeProcess(String out, {String err = '', int code = 0})
     : stdout = Stream.value(utf8.encode(out)),
@@ -87,12 +89,12 @@ void main() {
 
   group('Claude subscription', () {
     final at = DateTime.utc(2026, 10, 25, 9);
-    final grant = ClaudeCodeGrant(at: at, account: 'a@example.com', exe: '/usr/bin/claude');
+    final grant = SubscriptionGrant(at: at, account: 'a@example.com', exe: '/usr/bin/claude');
 
     test('grant lapses after 24 hours and survives JSON', () {
       expect(grant.activeAt(at.add(const Duration(hours: 23, minutes: 59))), isTrue);
       expect(grant.activeAt(at.add(const Duration(hours: 24))), isFalse);
-      final again = ClaudeCodeGrant.fromJson(grant.toJson());
+      final again = SubscriptionGrant.fromJson(grant.toJson());
       expect(again.at, at);
       expect(again.account, 'a@example.com');
     });
@@ -152,7 +154,7 @@ void main() {
       );
       expect(
         ai.ask(system: 's', content: const [], schema: object({'name': string()})),
-        throwsA(isA<AiException>().having((e) => e.message, 'message', claudeCodeExpired)),
+        throwsA(isA<AiException>().having((e) => e.message, 'message', subscriptionExpired('Claude'))),
       );
     });
 
@@ -193,7 +195,7 @@ void main() {
     });
 
     test('auth status is read from its JSON', () async {
-      final a = await ClaudeCodeCli.status(
+      final a = await const ClaudeCodeCli().status(
         '/x/claude',
         start: (exe, args, {workingDirectory, runInShell = false}) async =>
             FakeProcess('{"loggedIn":true,"authMethod":"claude.ai","email":"a@example.com"}'),
@@ -203,17 +205,177 @@ void main() {
 
     test('grant and the update switch are stored on the device', () async {
       final book = CareerBook(await Store.open(memoryDatabase()));
-      expect(await book.claudeCodeGrant(), isNull);
+      expect(await book.grant(AiProvider.claudeCode), isNull);
       expect(await book.updateOnStart(), isTrue);
-      await book.setClaudeCodeGrant(grant);
-      expect((await book.claudeCodeGrant())!.account, 'a@example.com');
+      await book.setGrant(AiProvider.claudeCode, grant);
+      expect((await book.grant(AiProvider.claudeCode))!.account, 'a@example.com');
+      expect(await book.grant(AiProvider.codex), isNull);
       final keys = await book.aiKeys();
       expect(keys[AiProvider.claudeCode], 'subscription');
+      expect(keys[AiProvider.codex], '');
       expect(effectiveModel('', keys), AiProvider.claudeCode.defaultModel);
-      await book.setClaudeCodeGrant(null);
-      expect(await book.claudeCodeGrant(), isNull);
+      await book.setGrant(AiProvider.claudeCode, null);
+      expect(await book.grant(AiProvider.claudeCode), isNull);
       await book.setUpdateOnStart(false);
       expect(await book.updateOnStart(), isFalse);
+    });
+  });
+
+  group('ChatGPT subscription', () {
+    final at = DateTime.utc(2026, 10, 25, 9);
+    final grant = SubscriptionGrant(at: at, account: '', exe: '/usr/bin/codex');
+
+    test('models and keys pick the subscription', () async {
+      expect(AiProvider.of(CodexModels.standard), AiProvider.codex);
+      expect(aiModels, contains(CodexModels.standard));
+      expect(effectiveModel('', {AiProvider.codex: 'subscription', AiProvider.gemini: 'g'}), CodexModels.standard);
+      final book = CareerBook(await Store.open(memoryDatabase()));
+      await book.setGrant(AiProvider.codex, grant);
+      expect((await book.grant(AiProvider.codex))!.exe, '/usr/bin/codex');
+      expect(await book.grant(AiProvider.claudeCode), isNull);
+      expect((await book.aiKeys())[AiProvider.codex], 'subscription');
+    });
+
+    test('answers from exec JSON with the schema on file and the prompt on stdin', () async {
+      final progress = <String>[];
+      late FakeProcess proc;
+      late List<String> argv;
+      final ai = Codex(
+        grant: grant,
+        model: CodexModels.standard,
+        now: () => at.add(const Duration(hours: 1)),
+        start: (exe, args, {workingDirectory, runInShell = false}) async {
+          argv = args;
+          final schemaFile = args[args.indexOf('--output-schema') + 1];
+          expect(jsonDecode(File(schemaFile).readAsStringSync()), object({'name': string()}));
+          return proc = FakeProcess(
+            lines([
+              {'type': 'thread.started', 'thread_id': 't'},
+              {
+                'type': 'item.completed',
+                'item': {'id': 'i1', 'type': 'web_search', 'query': 'ward jobs'},
+              },
+              {
+                'type': 'item.completed',
+                'item': {'id': 'i2', 'type': 'agent_message', 'text': '{"name":"ok"}'},
+              },
+              {
+                'type': 'turn.completed',
+                'usage': {'input_tokens': 10, 'output_tokens': 5},
+              },
+            ]),
+          );
+        },
+      );
+      final r = await ai.ask(
+        system: 'be brief',
+        content: [
+          {'type': 'text', 'text': 'hi'},
+        ],
+        schema: object({'name': string()}),
+        web: true,
+        onProgress: progress.add,
+      );
+      expect(r.data['name'], 'ok');
+      expect(progress, contains('Searching: ward jobs'));
+      expect(argv, containsAllInOrder(['exec', '--json']));
+      expect(argv, isNot(contains('--model')));
+      expect(argv, containsAllInOrder(['--sandbox', 'read-only']));
+      expect(argv, contains('web_search=live'));
+      expect(argv.last, '-');
+      expect(proc._sink.text.toString(), allOf(contains('be brief'), contains('hi')));
+    });
+
+    test('refuses after the grant lapses, without starting Codex', () {
+      final ai = Codex(
+        grant: grant,
+        model: CodexModels.standard,
+        now: () => at.add(const Duration(hours: 25)),
+        start: (exe, args, {workingDirectory, runInShell = false}) => fail('must not start'),
+      );
+      expect(
+        ai.ask(system: 's', content: const [], schema: object({'name': string()})),
+        throwsA(isA<AiException>().having((e) => e.message, 'message', subscriptionExpired('ChatGPT'))),
+      );
+    });
+
+    test('a PDF is refused, without starting Codex', () {
+      final ai = Codex(
+        grant: grant,
+        model: CodexModels.standard,
+        now: () => at,
+        start: (exe, args, {workingDirectory, runInShell = false}) => fail('must not start'),
+      );
+      expect(
+        ai.ask(
+          system: 's',
+          content: const [
+            {
+              'type': 'document',
+              'source': {'type': 'base64', 'media_type': 'application/pdf', 'data': ''},
+            },
+          ],
+          schema: object({'name': string()}),
+        ),
+        throwsA(isA<AiException>().having((e) => e.message, 'message', contains('PDF'))),
+      );
+    });
+
+    test('an answer that breaks the schema is rejected', () {
+      final ai = Codex(
+        grant: grant,
+        model: CodexModels.standard,
+        now: () => at,
+        start: (exe, args, {workingDirectory, runInShell = false}) async => FakeProcess(
+          lines([
+            {
+              'type': 'item.completed',
+              'item': {'id': 'i1', 'type': 'agent_message', 'text': '{"name":3}'},
+            },
+          ]),
+        ),
+      );
+      expect(
+        ai.ask(system: 's', content: const [], schema: object({'name': string()})),
+        throwsA(isA<AiException>().having((e) => e.retryable, 'retryable', isTrue)),
+      );
+    });
+
+    test('a failed turn is reported, a usage limit plainly', () {
+      final ai = Codex(
+        grant: grant,
+        model: CodexModels.standard,
+        now: () => at,
+        start: (exe, args, {workingDirectory, runInShell = false}) async => FakeProcess(
+          lines([
+            {
+              'type': 'turn.failed',
+              'error': {'message': 'You\'ve hit your usage limit.'},
+            },
+          ]),
+          code: 1,
+        ),
+      );
+      expect(
+        ai.ask(system: 's', content: const [], schema: object({'name': string()})),
+        throwsA(isA<AiException>().having((e) => e.message, 'message', contains('usage limit is reached'))),
+      );
+    });
+
+    test('login status tells a ChatGPT plan from an API key', () async {
+      Future<CliAuth> status(String err, int code) => const CodexCli().status(
+        '/x/codex',
+        start: (exe, args, {workingDirectory, runInShell = false}) async {
+          expect(args, ['login', 'status']);
+          return FakeProcess('', err: err, code: code);
+        },
+      );
+      final plan = await status('Logged in using ChatGPT', 0);
+      expect((plan.loggedIn, plan.subscription), (true, true));
+      final key = await status('Logged in using an API key - sk-proj-***', 0);
+      expect((key.loggedIn, key.subscription), (true, false));
+      final out = await status('Not logged in', 1);
+      expect((out.loggedIn, out.subscription), (false, false));
     });
   });
 

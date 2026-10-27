@@ -12,10 +12,12 @@ import '../domain/book.dart';
 import '../domain/ai.dart';
 import '../domain/claude.dart';
 import '../domain/claude_code.dart';
+import '../domain/codex.dart';
 import '../domain/gemini.dart';
 import '../domain/profile.dart';
 import '../domain/refresh.dart';
 import '../domain/n8n.dart';
+import '../domain/subscription.dart';
 import '../domain/update.dart';
 import '../ui/hints.dart';
 import 'security_checks.dart';
@@ -51,10 +53,17 @@ final updateProvider = FutureProvider<Release?>((ref) async {
   return updater.check();
 });
 
-/// Permission to use this device's Claude Code, or null when never given.
-final claudeCodeGrantProvider = FutureProvider<ClaudeCodeGrant?>((ref) {
+/// The CLIs that run the user's subscriptions, by service.
+const subscriptionClis = <AiProvider, SubscriptionCli>{
+  AiProvider.claudeCode: ClaudeCodeCli(),
+  AiProvider.codex: CodexCli(),
+};
+
+/// Permission to use this device's CLI for a subscription, or null when
+/// never given.
+final grantProvider = FutureProvider.family<SubscriptionGrant?, AiProvider>((ref, p) {
   ref.watch(revisionProvider);
-  return ref.watch(sessionProvider).book.claudeCodeGrant();
+  return ref.watch(sessionProvider).book.grant(p);
 });
 
 /// What main() and the tests override: the session, under both its Udyoga
@@ -163,11 +172,13 @@ final advisorProvider = FutureProvider<Advisor?>((ref) async {
   final keys = await s.book.aiKeys();
   final model = effectiveModel(await s.book.pref<String>(PrefKeys.aiModel, ''), keys);
   if (model == null) return null;
-  final key = keys[AiProvider.of(model)]!;
+  final provider = AiProvider.of(model);
+  final key = keys[provider]!;
   final client = ref.watch(httpClientProvider);
   void onUsage(AiUsage u) => s.book.addSpend(u, month: today().substring(0, 7)).ignore();
-  return Advisor(switch (AiProvider.of(model)) {
-    AiProvider.claudeCode => ClaudeCode(grant: (await s.book.claudeCodeGrant())!, model: model),
+  return Advisor(switch (provider) {
+    AiProvider.claudeCode => ClaudeCode(grant: (await s.book.grant(provider))!, model: model),
+    AiProvider.codex => Codex(grant: (await s.book.grant(provider))!, model: model),
     AiProvider.claude => Claude(apiKey: key, model: model, client: client, onUsage: onUsage),
     AiProvider.gemini => Gemini(apiKey: key, model: model, client: client, onUsage: onUsage),
   }, today: today());

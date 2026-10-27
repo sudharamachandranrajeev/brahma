@@ -5,7 +5,6 @@ import 'package:drift/drift.dart';
 
 import '../db/database.dart';
 import 'ai.dart';
-import 'claude_code.dart';
 import 'feeds.dart';
 import 'insights.dart';
 import 'json.dart';
@@ -14,6 +13,7 @@ import 'n8n.dart';
 import 'pipeline.dart';
 import 'profile.dart';
 import 'resume.dart';
+import 'subscription.dart';
 
 /// Pref keys. The prefs table is shared by every Brahma app, so Udyoga's
 /// keys carry its prefix.
@@ -45,8 +45,12 @@ abstract final class LocalKeys {
   /// Spend this month: {"month": "2026-10", "dollars": 1.23}.
   static const spend = 'udyoga.ai.spend';
 
-  /// Permission to use this device's Claude Code (ClaudeCodeGrant), or ''.
-  static const claudeCode = 'udyoga.ai.claude_code';
+  /// Permission to use this device's Claude Code or Codex
+  /// (SubscriptionGrant), or '', by subscription.
+  static const grants = {
+    AiProvider.claudeCode: 'udyoga.ai.claude_code',
+    AiProvider.codex: 'udyoga.ai.codex',
+  };
 
   /// 'off' when Udyoga should not look for a new version at start.
   static const updateOnStart = 'udyoga.update.on_start';
@@ -80,24 +84,26 @@ class CareerBook {
   Future<FeedKeys> feedKeys() async =>
       FeedKeys.fromJson(await pref<Map<String, Object?>>(PrefKeys.feedKeys, const {}));
 
-  /// The user's key for each AI service, '' where there is none. The
+  /// The user's key for each AI service, '' where there is none. A
   /// subscription has no key: it counts as set while a grant exists, even a
   /// lapsed one, so a lapsed grant is reported rather than quietly replaced
   /// by a paid key.
   Future<Map<AiProvider, String>> aiKeys() async => {
-    AiProvider.claudeCode: await claudeCodeGrant() == null ? '' : 'subscription',
+    for (final p in LocalKeys.grants.keys) p: await grant(p) == null ? '' : 'subscription',
     AiProvider.claude: await pref<String>(PrefKeys.aiKey, ''),
     AiProvider.gemini: await pref<String>(PrefKeys.geminiKey, ''),
   };
 
-  Future<ClaudeCodeGrant?> claudeCodeGrant() async {
-    final j = decodeObject(await db.localSetting(LocalKeys.claudeCode) ?? '');
-    return j.isEmpty ? null : ClaudeCodeGrant.fromJson(j);
+  /// The grant for subscription [p], or null.
+  Future<SubscriptionGrant?> grant(AiProvider p) async {
+    final j = decodeObject(await db.localSetting(LocalKeys.grants[p]!) ?? '');
+    return j.isEmpty ? null : SubscriptionGrant.fromJson(j);
   }
 
-  /// Saves or (with null) removes the grant, on this device only.
-  Future<void> setClaudeCodeGrant(ClaudeCodeGrant? g) =>
-      db.setLocalSetting(LocalKeys.claudeCode, g == null ? '' : jsonEncode(g.toJson()));
+  /// Saves or (with null) removes the grant for subscription [p], on this
+  /// device only.
+  Future<void> setGrant(AiProvider p, SubscriptionGrant? g) =>
+      db.setLocalSetting(LocalKeys.grants[p]!, g == null ? '' : jsonEncode(g.toJson()));
 
   Future<bool> updateOnStart() async => await db.localSetting(LocalKeys.updateOnStart) != 'off';
 
