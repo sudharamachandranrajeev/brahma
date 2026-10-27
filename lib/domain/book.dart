@@ -47,10 +47,7 @@ abstract final class LocalKeys {
 
   /// Permission to use this device's Claude Code or Codex
   /// (SubscriptionGrant), or '', by subscription.
-  static const grants = {
-    AiProvider.claudeCode: 'udyoga.ai.claude_code',
-    AiProvider.codex: 'udyoga.ai.codex',
-  };
+  static const grants = {AiProvider.claudeCode: 'udyoga.ai.claude_code', AiProvider.codex: 'udyoga.ai.codex'};
 
   /// 'off' when Udyoga should not look for a new version at start.
   static const updateOnStart = 'udyoga.update.on_start';

@@ -547,11 +547,7 @@ Future<bool> connectSubscription(BuildContext context, WidgetRef ref, AiProvider
     if (next == null || !context.mounted) return false;
     if (next == 'open') {
       if (!await cli.openSignIn(exe) && context.mounted) {
-        await copyText(
-          context,
-          cli.signInCommand(exe),
-          what: 'No terminal found. The command is copied.',
-        );
+        await copyText(context, cli.signInCommand(exe), what: 'No terminal found. The command is copied.');
       }
       if (!context.mounted) return false;
       final done = await confirm(

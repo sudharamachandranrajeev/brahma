@@ -12,8 +12,7 @@ const udyogaHints = <String, String>{
   'nav.growth': 'Certifications, courses and skills to build.',
   'nav.profile': 'Your CV, experience and what you are looking for.',
   'nav.linkedin': 'Posts, comments, connection notes and a profile score, for you to post by hand.',
-  'nav.settings':
-      'AI keys or your Claude or ChatGPT subscription, updates, job sites, the AI routine, sync and security.',
+  'nav.settings': 'AI keys or your Claude or ChatGPT subscription, updates, job sites, the AI routine, sync and security.',
   // Jobs
   'jobs.refresh': 'Check the job sites now.',
   'jobs.ai': 'Ask the AI to search LinkedIn, Indeed, national and public-sector boards for you.',

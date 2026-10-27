@@ -228,7 +228,10 @@ void main() {
     test('models and keys pick the subscription', () async {
       expect(AiProvider.of(CodexModels.standard), AiProvider.codex);
       expect(aiModels, contains(CodexModels.standard));
-      expect(effectiveModel('', {AiProvider.codex: 'subscription', AiProvider.gemini: 'g'}), CodexModels.standard);
+      expect(
+        effectiveModel('', {AiProvider.codex: 'subscription', AiProvider.gemini: 'g'}),
+        CodexModels.standard,
+      );
       final book = CareerBook(await Store.open(memoryDatabase()));
       await book.setGrant(AiProvider.codex, grant);
       expect((await book.grant(AiProvider.codex))!.exe, '/usr/bin/codex');
