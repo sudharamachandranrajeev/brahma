@@ -13,18 +13,20 @@ import 'schema.dart';
 
 typedef Progress = void Function(String status);
 
-/// A CV to read: a PDF (the model reads the layout itself) or text.
+/// A CV to read: a PDF (the model reads the layout itself) or text, with the
+/// document's [name].
 sealed class CvSource {
-  const CvSource();
+  const CvSource(this.name);
+  final String name;
 }
 
 class PdfCv extends CvSource {
-  const PdfCv(this.bytes);
+  const PdfCv(this.bytes, {String name = 'CV.pdf'}) : super(name);
   final Uint8List bytes;
 }
 
 class TextCv extends CvSource {
-  const TextCv(this.text);
+  const TextCv(this.text, {String name = 'Pasted CV'}) : super(name);
   final String text;
 }
 
@@ -76,27 +78,45 @@ Principles:
     if (j.salaryMax != null && j.salaryMax != j.salaryMin) '${j.salaryMax}',
   ].join('–').let((s) => s.isEmpty ? '' : '${j.currency} $s'.trim());
 
-  /// Reads a CV into a profile.
-  Future<CandidateProfile> readCv(CvSource cv) async {
-    final content = switch (cv) {
-      PdfCv(:final bytes) => <Json>[
-        {
-          'type': 'document',
-          'source': {'type': 'base64', 'media_type': 'application/pdf', 'data': base64Encode(bytes)},
+  /// Reads one or more CVs into one profile. Several are usually versions of
+  /// the same CV tailored for different roles: they are merged into a master
+  /// profile that keeps everything any of them says.
+  Future<CandidateProfile> readCv(List<CvSource> cvs) async {
+    final many = cvs.length > 1;
+    final content = <Json>[
+      for (final cv in cvs)
+        ...switch (cv) {
+          PdfCv(:final bytes) => [
+            _text('<cv name="${cv.name}">'),
+            {
+              'type': 'document',
+              'source': {'type': 'base64', 'media_type': 'application/pdf', 'data': base64Encode(bytes)},
+            },
+            _text('</cv>'),
+          ],
+          TextCv(:final text) => [_text('<cv name="${cv.name}">\n$text\n</cv>')],
         },
-        _text('This is the candidate\'s CV. Fill in the profile from it.'),
-      ],
-      TextCv(:final text) => [
-        _text('<cv>\n$text\n</cv>\n\nThis is the candidate\'s CV. Fill in the profile from it.'),
-      ],
-    };
+      _text(
+        many
+            ? 'These ${cvs.length} CVs belong to the same candidate, most likely versions tailored for different '
+                  'roles. Fill in one master profile from all of them.'
+            : 'This is the candidate\'s CV. Fill in the profile from it.',
+      ),
+    ];
     final r = await ai.ask(
       system:
-          'You read CVs and fill in a structured profile exactly as the CV states it. Today is $today. '
-          'Copy facts faithfully; do not improve, guess or add anything. Leave unknown fields empty.',
+          'You read CVs and fill in a structured profile exactly as the CVs state it. Today is $today. '
+          'Copy facts faithfully; do not improve, guess or add anything. Leave unknown fields empty.'
+          '${many ? ' With several CVs: list each job once (the same employer and dates is the same job, '
+                    'however the title or wording differs; prefer the fuller title) and keep every distinct '
+                    'highlight from any version, without repeating the same point. Combine skills, '
+                    'certifications, achievements and languages without duplicates. Take contact details and '
+                    'the summary from the most recent or most complete version. Put every role the versions '
+                    'aim at in the target roles. Where versions contradict each other on a fact, use the most '
+                    'recent document\'s.' : ''}',
       content: content,
       schema: CandidateProfile.schema,
-      effort: 'medium',
+      effort: many ? 'high' : 'medium',
     );
     return CandidateProfile.fromJson(r.data);
   }

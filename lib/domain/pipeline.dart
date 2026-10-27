@@ -75,6 +75,10 @@ const growthKinds = {
   'goal': 'Career goal',
 };
 
+/// The candidate's own notes on the Growth page, kept with the plan but
+/// shown apart from it. The AI reads them with the profile.
+const noteKinds = {'idea': 'Idea', 'win': 'Win'};
+
 const growthStatuses = {
   'suggested': 'Suggested',
   'planned': 'Planned',

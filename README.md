@@ -32,6 +32,8 @@
 
 * **Profile from your CV** – import a PDF, Word or text CV and the AI reads it into experience,
   education, skills and achievements; set the roles, countries, places and ways of working you want.
+  Import several tailored versions at once and they become one master profile: each job once, every
+  skill, the roles each version aims at added to your targets, and certifications you hold on Growth.
 * **Jobs, found for you** – openings for your target roles in every country you choose, from free job
   APIs (Adzuna, Reed, Remotive, Jobicy, Arbeitnow), refreshed every few hours while the app is open,
   plus an optional AI web search of employer and public-sector sites. Duplicates are merged.
@@ -57,6 +59,13 @@
   paths from your current role, each with steps, timeframes, pay, likelihood and AI exposure. Redone
   monthly when the AI routine is on.
 * **Growth** – certifications, courses and experience to get, with priority, cost, target date and progress.
+  *Ideas and wins* keeps anything that could move your career on (a tip, a company to watch, praise at
+  work) in a few seconds; the AI reads them in every request, and an idea can become a goal.
+* **LinkedIn data import** – ask LinkedIn for a copy of your data and import the ZIP on the Growth page:
+  jobs, skills and certifications fill gaps in your profile, recommendations become wins, recent
+  applications and saved jobs join your pipeline, and connections at employers you pursue (and
+  recruiters) become contacts. Read on the device; Udyoga never signs in to LinkedIn. Importing again
+  doubles nothing.
 * **LinkedIn studio** – eleven tools, all drafting for you to post or send by hand: a 100-point profile
   score with rewrites, posts (18 hook formulas), comments, connection notes with follow-ups (also from
   a contact), inbox triage, replies to comments on your posts, a week plan, a post audit, carousels

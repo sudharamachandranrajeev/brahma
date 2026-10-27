@@ -35,6 +35,8 @@ const udyogaHints = <String, String>{
   'career.target': 'Adds this path\'s steps as goals and its certifications to Growth.',
   'career.assess': 'A candid assessment of where you stand in today\'s market.',
   // Settings
+  'growth.notes': 'Ideas, tips and wins for your career. The AI reads them in everything it does for you.',
+  'growth.linkedin': 'Your own LinkedIn data, read on this device. Udyoga never signs in to LinkedIn.',
   'settings.n8n': 'A webhook in your own n8n that takes a job and answers with contacts. See docs/n8n in the Udyoga repository.',
   'settings.ai':
       'Your own Gemini or Claude key, or on a computer your Claude subscription through Claude Code or your '

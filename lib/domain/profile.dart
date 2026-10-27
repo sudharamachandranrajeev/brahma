@@ -150,6 +150,24 @@ class Targets {
   );
 }
 
+/// One CV the profile was read from. Candidates often keep a CV per kind of
+/// role; each says which role it aims at, which shows where they are looking.
+class CvVersion {
+  const CvVersion({this.document = '', this.aimedAt = '', this.emphasis = ''});
+  final String document, aimedAt, emphasis;
+
+  factory CvVersion.fromJson(Json j) =>
+      CvVersion(document: str(j['document']), aimedAt: str(j['aimedAt']), emphasis: str(j['emphasis']));
+
+  Json toJson() => {'document': document, 'aimedAt': aimedAt, 'emphasis': emphasis};
+
+  static final schema = object({
+    'document': string('The document\'s name as given'),
+    'aimedAt': string('The role or kind of role this version is tailored for'),
+    'emphasis': string('In one line, what this version puts first'),
+  });
+}
+
 /// The candidate: who they are, what they have done and what they want.
 /// One per account, kept as a synced pref.
 class CandidateProfile {
@@ -174,6 +192,8 @@ class CandidateProfile {
     this.languages = const [],
     this.targets = const Targets(),
     this.cvText = '',
+    this.versions = const [],
+    this.notes = const [],
   });
 
   final String name, headline, email, phone, location;
@@ -190,6 +210,13 @@ class CandidateProfile {
 
   /// The CV as imported, for the AI to read alongside the fields.
   final String cvText;
+
+  /// The CVs the profile was read from, one per document.
+  final List<CvVersion> versions;
+
+  /// The candidate's own ideas and wins from the Growth page, for the AI.
+  /// Loaded with the profile, never saved in it.
+  final List<String> notes;
 
   bool get isEmpty => name.isEmpty && currentRole.isEmpty && experience.isEmpty && cvText.isEmpty;
 
@@ -225,6 +252,7 @@ class CandidateProfile {
     languages: strs(j['languages']),
     targets: Targets.fromJson(obj(j['targets'])),
     cvText: j['cvText'] is String ? j['cvText'] as String : '',
+    versions: objs(j['versions']).map(CvVersion.fromJson).toList(),
   );
 
   Json toJson() => {
@@ -248,13 +276,15 @@ class CandidateProfile {
     'languages': languages,
     'targets': targets.toJson(),
     'cvText': cvText,
+    'versions': [for (final v in versions) v.toJson()],
   };
 
   /// What the AI is told about the candidate: everything but the raw CV
-  /// when the fields already carry it.
+  /// when the fields already carry it, and their own notes.
   Json forPrompt() {
     final j = toJson();
     if (experience.isNotEmpty && cvText.length > 12000) j.remove('cvText');
+    if (notes.isNotEmpty) j['ownNotes'] = notes;
     return j;
   }
 
@@ -279,6 +309,8 @@ class CandidateProfile {
     List<String>? languages,
     Targets? targets,
     String? cvText,
+    List<CvVersion>? versions,
+    List<String>? notes,
   }) => CandidateProfile(
     name: name ?? this.name,
     headline: headline ?? this.headline,
@@ -300,6 +332,8 @@ class CandidateProfile {
     languages: languages ?? this.languages,
     targets: targets ?? this.targets,
     cvText: cvText ?? this.cvText,
+    versions: versions ?? this.versions,
+    notes: notes ?? this.notes,
   );
 
   /// The shape the AI fills in when reading a CV.
@@ -332,5 +366,6 @@ class CandidateProfile {
       'salaryCurrency': string('ISO 4217'),
       'notes': string(),
     }),
+    'versions': array(CvVersion.schema, description: 'One entry per CV document supplied, in order'),
   });
 }

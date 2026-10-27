@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.3 (2026-10-27)
+
+- Several CVs: import up to eight tailored versions at once and the AI merges them into one master
+  profile (each job once, every skill, the most recent details), adds the roles they aim at to your
+  targets and lists the versions on the Profile page. Certifications you hold go to Growth as done.
+- Ideas and wins on the Growth page: jot down an idea, a tip or a win in seconds. The AI reads them
+  with your profile in every request; an idea can become a goal.
+- LinkedIn data import on the Growth page: import the ZIP LinkedIn sends you. It fills gaps in the
+  profile, turns recommendations into wins, adds recent applications, saved jobs and useful
+  connections, and never doubles anything. Read on the device; nothing is fetched from LinkedIn.
+
 ## 0.4.2 (2026-10-27)
 
 - ChatGPT subscription (Linux and Windows): use the Codex you have installed, signed in to your own
