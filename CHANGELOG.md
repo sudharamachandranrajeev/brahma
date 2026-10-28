@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.4 (2026-10-28)
+
+- Everything in 0.4.3, whose Windows build failed: the Windows app builds again with the newest
+  Visual Studio compiler.
+
 ## 0.4.3 (2026-10-27)
 
 - Several CVs: import up to eight tailored versions at once and the AI merges them into one master
