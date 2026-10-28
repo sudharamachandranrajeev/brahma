@@ -71,7 +71,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                     padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
                     child: Text('More Brahma apps', style: type.titleSmall?.copyWith(color: muted)),
                   ),
-                  ..._grid([for (final app in linkedApps) _LinkedCard(app)], columns, gap, after: apps.length),
+                  ..._grid(
+                    [for (final app in linkedApps) _LinkedCard(app)],
+                    columns,
+                    gap,
+                    after: apps.length,
+                  ),
                 ],
               ],
             ),
