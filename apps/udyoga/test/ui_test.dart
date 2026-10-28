@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/gestures.dart';
 import 'package:udyoga/app/modules.dart';
+import 'package:udyoga/db/database.dart';
+import 'package:udyoga/domain/pipeline.dart';
+import 'package:udyoga/ui/applications_page.dart';
 
 import 'app_harness.dart';
 import 'seed.dart';
@@ -21,6 +25,43 @@ void main() {
       }
       await app.close();
     }
+  });
+
+  testWidgets('the application board moves a card by drag and by its menu', (tester) async {
+    final app = AppHarness(tester)..desktop();
+    await app.open(seed: seedBook);
+    await app.run();
+    await app.go('Applications');
+    expect(find.byType(ApplicationBoard), findsOneWidget);
+
+    Future<String> stageOf(String title) => tester
+        .runAsync(() async => (await app.book.db.select(app.book.db.jobApplications).get()))
+        .then((all) => all!.singleWhere((a) => a.title == title).stage);
+
+    final card = find.text('Digital Nurse Specialist');
+    final screening = find.ancestor(
+      of: find.text('Screening'),
+      matching: find.byType(DragTarget<JobApplication>),
+    );
+    final drag = await tester.startGesture(tester.getCenter(card));
+    await tester.pump(kLongPressTimeout);
+    await drag.moveTo(tester.getCenter(screening));
+    await tester.pump();
+    await drag.up();
+    await app.settle();
+    expect(await stageOf('Digital Nurse Specialist'), Stage.screening.id);
+
+    await app.tap(
+      find.descendant(
+        of: find.ancestor(of: find.text('EPR Trainer'), matching: find.byType(Card)),
+        matching: find.byTooltip('Move to'),
+      ),
+    );
+    await app.tapText('Move to Rejected');
+    expect(await stageOf('EPR Trainer'), Stage.rejected.id);
+    expect(find.text('EPR Trainer'), findsNothing);
+    expect(tester.takeException(), isNull);
+    await app.close();
   });
 
   testWidgets('every page builds on a phone, with the detail pages', (tester) async {

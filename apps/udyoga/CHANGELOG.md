@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.4.5 (2026-10-28)
+
+- Application board: active applications as a column per stage. Drag a card to move it (hold it
+  first on a phone) or use its menu, which can also close it. Wide windows open on the board; the
+  list is a tap away.
+
+## 0.4.4 (2026-10-28)
+
+- Everything in 0.4.3, whose Windows build failed: the Windows app builds again with the newest
+  Visual Studio compiler.
+
+## 0.4.3 (2026-10-27)
+
+- Several CVs: import up to eight tailored versions at once and the AI merges them into one master
+  profile (each job once, every skill, the most recent details), adds the roles they aim at to your
+  targets and lists the versions on the Profile page. Certifications you hold go to Growth as done.
+- Ideas and wins on the Growth page: jot down an idea, a tip or a win in seconds. The AI reads them
+  with your profile in every request; an idea can become a goal.
+- LinkedIn data import on the Growth page: import the ZIP LinkedIn sends you. It fills gaps in the
+  profile, turns recommendations into wins, adds recent applications, saved jobs and useful
+  connections, and never doubles anything. Read on the device; nothing is fetched from LinkedIn.
+
+## 0.4.2 (2026-10-27)
+
+- ChatGPT subscription (Linux and Windows): use the Codex you have installed, signed in to your own
+  ChatGPT plan, for every AI feature instead of an API key. Like the Claude subscription, access
+  lasts 24 hours and Udyoga asks to renew it at the next start; it never sees your login. Codex
+  cannot read PDFs, so paste a CV's text when using it.
+
 ## 0.4.1 (2026-10-25)
 
 - LinkedIn: the week plan and repurpose tools now pick from the hook formulas too (only the post

@@ -17,23 +17,29 @@ class AiException implements Exception, UserFacingError {
 
 /// Shown wherever an AI feature runs without a key.
 const needsAiKey =
-    'Add a free Gemini key or a Claude API key, or connect your Claude subscription, in Settings to use the AI '
-    'features.';
+    'Add a free Gemini key or a Claude API key, or connect your Claude or ChatGPT subscription, in Settings to use '
+    'the AI features.';
 
 /// The services Udyoga can ask, in the order one is picked when the chosen
-/// model's service has no key. The subscription comes first: it costs the
+/// model's service has no key. The subscriptions come first: they cost the
 /// user nothing more.
 enum AiProvider {
-  claudeCode('Claude subscription', '${ClaudeCodeModels.prefix}claude-opus-5-5'),
+  claudeCode('Claude subscription', '${ClaudeCodeModels.prefix}claude-opus-5-5', subscription: true),
+  codex('ChatGPT subscription', CodexModels.standard, subscription: true),
   claude('Claude', 'claude-opus-5-5'),
   gemini('Gemini', 'gemini-3.8-flash');
 
-  const AiProvider(this.label, this.defaultModel);
+  const AiProvider(this.label, this.defaultModel, {this.subscription = false});
   final String label;
   final String defaultModel;
 
+  /// Run through a CLI the user has signed in to their plan, not a key.
+  final bool subscription;
+
   static AiProvider of(String model) => model.startsWith(ClaudeCodeModels.prefix)
       ? claudeCode
+      : model.startsWith(CodexModels.prefix)
+      ? codex
       : model.startsWith('gemini')
       ? gemini
       : claude;
@@ -45,11 +51,20 @@ abstract final class ClaudeCodeModels {
   static const prefix = 'claude-code:';
 }
 
+/// Models run through the user's own Codex (ChatGPT plan) are named with this
+/// prefix. Which models a plan offers changes often and differs by plan, so
+/// Udyoga leaves the choice to Codex: [standard] runs Codex's default model.
+abstract final class CodexModels {
+  static const prefix = 'codex:';
+  static const standard = '${prefix}default';
+}
+
 /// Models the user can choose in Settings, best first within each service.
 const aiModels = {
   '${ClaudeCodeModels.prefix}claude-opus-5-5': 'Claude Opus 5.5 on your subscription (most thorough)',
   '${ClaudeCodeModels.prefix}claude-sonnet-5-5': 'Claude Sonnet 5.5 on your subscription (faster)',
   '${ClaudeCodeModels.prefix}claude-haiku-5-5': 'Claude Haiku 5.5 on your subscription (quickest)',
+  CodexModels.standard: "ChatGPT on your subscription (Codex's default model)",
   'gemini-3.8-flash': 'Gemini 3.8 Flash (free tier, thorough)',
   'gemini-3.5-flash-lite': 'Gemini 3.5 Flash-Lite (free tier, quickest)',
   'claude-opus-5-5': 'Claude Opus 5.5 (most thorough)',

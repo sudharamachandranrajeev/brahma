@@ -14,6 +14,9 @@ import '../domain/resume.dart';
 import 'common.dart';
 import 'resume_page.dart';
 
+/// The most CV versions read together.
+const _maxCvs = 8;
+
 const _workModes = {'onsite': 'On site', 'hybrid': 'Hybrid', 'remote': 'Remote'};
 
 class ProfilePage extends ConsumerWidget {
@@ -40,9 +43,22 @@ class ProfilePage extends ConsumerWidget {
                     Text(
                       p.isEmpty
                           ? 'Start here. Import your CV (PDF or Word) or paste it, and the AI fills in your profile. '
-                                'Nothing is added that your CV does not say.'
-                          : 'Import an updated CV at any time; your targets are kept.',
+                                'Have a version for each kind of role? Choose them all: they become one profile. '
+                                'Nothing is added that your CVs do not say.'
+                          : 'Import an updated CV, or all your versions together, at any time; your targets are kept.',
                     ),
+                    if (p.versions.length > 1) ...[
+                      const SizedBox(height: 12),
+                      Subhead('Read from ${p.versions.length} versions'),
+                      for (final v in p.versions)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          leading: const Icon(Icons.description_outlined),
+                          title: Text(v.aimedAt.isEmpty ? v.document : v.aimedAt),
+                          subtitle: Text([v.document, v.emphasis].where((s) => s.isNotEmpty).join(' · ')),
+                        ),
+                    ],
                     if (!hasAi)
                       const Padding(
                         padding: EdgeInsets.only(top: 8),
@@ -56,7 +72,7 @@ class ProfilePage extends ConsumerWidget {
                         FilledButton.icon(
                           onPressed: hasAi ? () => _importFile(context, ref, p) : null,
                           icon: const Icon(Icons.upload_file),
-                          label: const Text('Import PDF or Word'),
+                          label: const Text('Import CVs (PDF or Word)'),
                         ),
                         OutlinedButton.icon(
                           onPressed: hasAi ? () => _paste(context, ref, p) : null,
@@ -220,10 +236,10 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Future<void> _importFile(BuildContext context, WidgetRef ref, CandidateProfile current) async {
-    final PlatformFile? file;
+    final List<PlatformFile> files;
     try {
-      file = await FilePicker.pickFile(
-        dialogTitle: 'Your CV',
+      files = await FilePicker.pickFiles(
+        dialogTitle: 'Your CVs (choose one or several versions)',
         type: FileType.custom,
         allowedExtensions: const ['pdf', 'docx', 'txt'],
       );
@@ -231,25 +247,35 @@ class ProfilePage extends ConsumerWidget {
       if (context.mounted) showError(context, e);
       return;
     }
-    if (file == null || !context.mounted) return;
-    final bytes = await file.readAsBytes();
-    final ext = (file.extension ?? '').toLowerCase();
-    final CvSource source;
-    var text = '';
-    try {
-      if (ext == 'pdf') {
-        if (bytes.length > 25 * 1024 * 1024) throw const FormatException('The PDF is over 25 MB.');
-        source = PdfCv(bytes);
-      } else {
-        text = ext == 'docx' ? docxText(bytes) : utf8.decode(bytes, allowMalformed: true);
-        if (text.trim().isEmpty) throw const FormatException('No text found in the file.');
-        source = TextCv(text);
-      }
-    } catch (e) {
-      if (context.mounted) showError(context, e is FormatException ? e.message : 'Could not read that file.');
-      return;
+    if (files.isEmpty || !context.mounted) return;
+    if (files.length > _maxCvs) {
+      return showError(context, 'Choose up to $_maxCvs CVs at a time.');
     }
-    if (context.mounted) await _read(context, ref, current, source, text);
+    final sources = <CvSource>[];
+    final texts = <String>[];
+    var size = 0;
+    for (final file in files) {
+      try {
+        final bytes = await file.readAsBytes();
+        size += bytes.length;
+        if (size > 25 * 1024 * 1024) throw const FormatException('The files come to over 25 MB.');
+        final ext = (file.extension ?? '').toLowerCase();
+        if (ext == 'pdf') {
+          sources.add(PdfCv(bytes, name: file.name));
+        } else {
+          final text = ext == 'docx' ? docxText(bytes) : utf8.decode(bytes, allowMalformed: true);
+          if (text.trim().isEmpty) throw const FormatException('No text found.');
+          sources.add(TextCv(text, name: file.name));
+          texts.add(files.length == 1 ? text : '=== ${file.name} ===\n$text');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          showError(context, '${file.name}: ${e is FormatException ? e.message : 'could not read it.'}');
+        }
+        return;
+      }
+    }
+    if (context.mounted) await _read(context, ref, current, sources, texts.join('\n\n'));
   }
 
   Future<void> _paste(BuildContext context, WidgetRef ref, CandidateProfile current) async {
@@ -262,20 +288,27 @@ class ProfilePage extends ConsumerWidget {
       fields: (_) => [Field(text, 'CV text', lines: 12, autofocus: true)],
       onSave: () async => text.text.trim().length < 200 ? 'Paste the whole CV.' : null,
     );
-    if (ok && context.mounted) await _read(context, ref, current, TextCv(text.text.trim()), text.text.trim());
+    if (ok && context.mounted) {
+      await _read(context, ref, current, [TextCv(text.text.trim())], text.text.trim());
+    }
   }
 
+  /// Reads [cvs] into one profile and spreads it through the app: the
+  /// profile, the roles the versions aim at, and held certifications on the
+  /// Growth page.
   Future<void> _read(
     BuildContext context,
     WidgetRef ref,
     CandidateProfile current,
-    CvSource cv,
+    List<CvSource> cvs,
     String text,
   ) async {
+    final many = cvs.length > 1;
     final read = await runAi(
       context,
-      title: 'Reading your CV',
-      task: (_) async => (await requireAdvisor(ref)).readCv(cv),
+      title: many ? 'Reading your ${cvs.length} CVs' : 'Reading your CV',
+      status: many ? 'Merging them into one profile…' : 'Reading…',
+      task: (_) async => (await requireAdvisor(ref)).readCv(cvs),
     );
     if (read == null || !context.mounted) return;
     if (!current.isEmpty &&
@@ -283,8 +316,10 @@ class ProfilePage extends ConsumerWidget {
           context,
           title: 'Replace your profile?',
           message:
-              'The AI read ${read.experience.length} jobs and ${read.skills.length} skills. Your details are '
-              'replaced with the CV\'s; what you are looking for is kept.',
+              'The AI read ${read.experience.length} jobs and ${read.skills.length} skills'
+              '${many ? ' from ${cvs.length} CVs' : ''}. Your details are replaced with '
+              '${many ? 'what they say together' : 'the CV\'s'}; what you are looking for is kept'
+              '${many ? ', with the roles your CVs aim at added' : ''}.',
           action: 'Replace',
         )) {
       return;
@@ -295,16 +330,32 @@ class ProfilePage extends ConsumerWidget {
       targets: current.isEmpty
           ? read.targets
           : keep.copyWith(
-              roles: keep.roles.isEmpty ? read.targets.roles : null,
+              // Each tailored version names a role the candidate wants.
+              roles: keep.roles.isEmpty || many ? _union(keep.roles, read.targets.roles) : null,
               keywords: keep.keywords.isEmpty ? read.targets.keywords : null,
               countries: keep.countries.isEmpty ? read.targets.countries : null,
               locations: keep.locations.isEmpty ? read.targets.locations : null,
             ),
     );
-    await ref.mutate((s) => s.book.saveProfile(merged));
+    final held = await ref.mutate((s) async {
+      await s.book.saveProfile(merged);
+      return s.book.recordHeld(merged.certifications, today: today());
+    });
     if (context.mounted) {
-      showMessage(context, 'Profile filled in. Check it, then run the assessment on the Career page.');
+      showMessage(
+        context,
+        [
+          many ? 'One profile made from ${cvs.length} CVs.' : 'Profile filled in.',
+          if (held > 0) 'Added $held certification${held == 1 ? '' : 's'} you hold to Growth.',
+          'Check it, then run the assessment on the Career page.',
+        ].join(' '),
+      );
     }
+  }
+
+  static List<String> _union(List<String> a, List<String> b) {
+    final seen = {for (final s in a) s.toLowerCase()};
+    return [...a, ...b.where((s) => seen.add(s.toLowerCase()))];
   }
 
   Future<void> _baseCv(BuildContext context, WidgetRef ref, CandidateProfile p) async {

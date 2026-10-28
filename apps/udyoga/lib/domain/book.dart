@@ -5,15 +5,16 @@ import 'package:drift/drift.dart';
 
 import '../db/database.dart';
 import 'ai.dart';
-import 'claude_code.dart';
 import 'feeds.dart';
 import 'insights.dart';
 import 'json.dart';
+import 'linkedin_export.dart';
 import 'matching.dart';
 import 'n8n.dart';
 import 'pipeline.dart';
 import 'profile.dart';
 import 'resume.dart';
+import 'subscription.dart';
 
 /// Pref keys. The prefs table is shared by every Brahma app, so Udyoga's
 /// keys carry its prefix.
@@ -45,8 +46,9 @@ abstract final class LocalKeys {
   /// Spend this month: {"month": "2026-10", "dollars": 1.23}.
   static const spend = 'udyoga.ai.spend';
 
-  /// Permission to use this device's Claude Code (ClaudeCodeGrant), or ''.
-  static const claudeCode = 'udyoga.ai.claude_code';
+  /// Permission to use this device's Claude Code or Codex
+  /// (SubscriptionGrant), or '', by subscription.
+  static const grants = {AiProvider.claudeCode: 'udyoga.ai.claude_code', AiProvider.codex: 'udyoga.ai.codex'};
 
   /// 'off' when Udyoga should not look for a new version at start.
   static const updateOnStart = 'udyoga.update.on_start';
@@ -72,32 +74,199 @@ class CareerBook {
     key,
   );
 
+  /// The profile, with the candidate's ideas and wins from the Growth page
+  /// as [CandidateProfile.notes].
   Future<CandidateProfile> profile() async =>
-      CandidateProfile.fromJson(await pref<Map<String, Object?>>(PrefKeys.profile, const {}));
+      CandidateProfile.fromJson(await pref<Map<String, Object?>>(PrefKeys.profile, const {})).copyWith(
+        notes: [
+          for (final n in await notes())
+            '${noteKinds[n.kind]}: ${n.title}${n.why.isEmpty ? '' : ' (${n.why})'}'
+                '${n.url.isEmpty ? '' : ' ${n.url}'}',
+        ],
+      );
+
+  /// The candidate's ideas and wins, newest first.
+  Future<List<GrowthItem>> notes() =>
+      (db.select(db.careerGrowth)
+            ..where((g) => g.deleted.not() & g.kind.isIn(noteKinds.keys))
+            ..orderBy([(g) => OrderingTerm.desc(g.added)]))
+          .get();
+
+  /// Saves an idea or win: new without [id].
+  Future<void> saveNote({
+    String? id,
+    required String kind,
+    required String title,
+    String detail = '',
+    String url = '',
+    required String added,
+  }) {
+    final rowId = id ?? newId();
+    return save(
+      db.careerGrowth,
+      CareerGrowthCompanion.insert(
+        id: rowId,
+        title: title,
+        kind: kind,
+        why: Value(detail),
+        url: Value(url),
+        status: const Value('planned'),
+        added: added,
+      ),
+      rowId,
+    );
+  }
+
+  /// Brings a LinkedIn export into every part of the app it helps: the
+  /// profile (filled in, never overwritten), held certifications and
+  /// recommendations on the Growth page, contacts at the employers the user
+  /// is pursuing (and recruiters), recent applications and saved jobs.
+  Future<LinkedInImport> importLinkedIn(LinkedInExport x, {required String today}) async {
+    final before = await profile();
+    final after = x.mergeInto(before);
+    await saveProfile(after);
+    final held = await recordHeld(after.certifications, today: today);
+
+    var wins = 0;
+    final known = {for (final n in await notes()) n.title.toLowerCase()};
+    for (final r in x.recommendations) {
+      final text = col(r, 'text');
+      if (text.isEmpty || col(r, 'status').toLowerCase() == 'hidden') continue;
+      final from = [col(r, 'first name'), col(r, 'last name')].where((s) => s.isNotEmpty).join(' ');
+      final role = [col(r, 'job title'), col(r, 'company')].where((s) => s.isNotEmpty).join(', ');
+      final title =
+          'Recommendation from ${from.isEmpty ? 'a colleague' : from}${role.isEmpty ? '' : ' ($role)'}';
+      if (!known.add(title.toLowerCase())) continue;
+      final on = linkedInDate(col(r, 'creation date'));
+      await saveNote(kind: 'win', title: title, detail: text, added: on.length == 10 ? on : today);
+      wins++;
+    }
+
+    final applications = await (db.select(db.jobApplications)..where((a) => a.deleted.not())).get();
+    final applied = {for (final a in applications) _key(a.title, a.company)};
+    var sent = 0;
+    for (final r in x.recentApplications(today: today)) {
+      final title = col(r, 'job title');
+      final company = col(r, 'company name');
+      if (!applied.add(_key(title, company))) continue;
+      final date = linkedInDate(col(r, 'application date'));
+      final on = date.length == 10 ? date : today;
+      final id = newId();
+      await save(
+        db.jobApplications,
+        JobApplicationsCompanion.insert(
+          id: id,
+          title: title,
+          company: Value(company),
+          url: Value(col(r, 'job url')),
+          stage: Value(Stage.applied.id),
+          applied: Value(on),
+          followUp: Value(followUpFor(Stage.applied, on)),
+          notes: const Value('Applied through LinkedIn.'),
+          updated: on,
+        ),
+        id,
+      );
+      sent++;
+    }
+
+    final saved = await importPostings(x.savedPostings(today: today), after, today: today);
+    for (final id in saved) {
+      await setJobStatus(id, 'saved');
+    }
+
+    final jobs = await (db.select(
+      db.jobListings,
+    )..where((j) => j.deleted.not() & j.status.isNotIn(['dismissed']))).get();
+    final companies = {
+      for (final a in await (db.select(db.jobApplications)..where((a) => a.deleted.not())).get()) a.company,
+      for (final j in jobs) j.company,
+    };
+    final contacts = await importLeads(
+      [
+        for (final c in x.usefulConnections(companies))
+          LeadSuggestion({
+            'name': [col(c, 'first name'), col(c, 'last name')].where((s) => s.isNotEmpty).join(' '),
+            'title': col(c, 'position'),
+            'company': col(c, 'company'),
+            'kind': isRecruiter(col(c, 'position')) ? 'recruiter' : 'peer',
+            'linkedin': col(c, 'url'),
+            'email': col(c, 'email address'),
+            'source': 'LinkedIn connection',
+            'why':
+                'Already a LinkedIn connection'
+                '${col(c, 'connected on').isEmpty ? '' : ' since ${col(c, 'connected on')}'}.',
+            'approach': '',
+          }),
+      ],
+      today: today,
+      chase: false,
+    );
+
+    return (
+      jobs: after.experience.length - before.experience.length,
+      skills: after.skills.length - before.skills.length,
+      certifications: held,
+      wins: wins,
+      applications: sent,
+      savedJobs: saved.length,
+      contacts: contacts,
+    );
+  }
+
+  /// Certifications the candidate holds, recorded as done on the Growth page
+  /// unless already there. Returns how many were added.
+  Future<int> recordHeld(List<String> certifications, {required String today}) => db.transaction(() async {
+    final existing = await (db.select(db.careerGrowth)..where((g) => g.deleted.not())).get();
+    final known = {for (final g in existing) g.title.toLowerCase().trim()};
+    var added = 0;
+    for (final c in certifications) {
+      if (c.trim().isEmpty || !known.add(c.toLowerCase().trim())) continue;
+      final id = newId();
+      await save(
+        db.careerGrowth,
+        CareerGrowthCompanion.insert(
+          id: id,
+          title: c.trim(),
+          kind: 'certification',
+          status: const Value('done'),
+          progress: const Value(100),
+          done: Value(today),
+          why: const Value('Held, from your CV or LinkedIn'),
+          added: today,
+        ),
+        id,
+      );
+      added++;
+    }
+    return added;
+  });
 
   Future<void> saveProfile(CandidateProfile p) => setPref(PrefKeys.profile, p.toJson());
 
   Future<FeedKeys> feedKeys() async =>
       FeedKeys.fromJson(await pref<Map<String, Object?>>(PrefKeys.feedKeys, const {}));
 
-  /// The user's key for each AI service, '' where there is none. The
+  /// The user's key for each AI service, '' where there is none. A
   /// subscription has no key: it counts as set while a grant exists, even a
   /// lapsed one, so a lapsed grant is reported rather than quietly replaced
   /// by a paid key.
   Future<Map<AiProvider, String>> aiKeys() async => {
-    AiProvider.claudeCode: await claudeCodeGrant() == null ? '' : 'subscription',
+    for (final p in LocalKeys.grants.keys) p: await grant(p) == null ? '' : 'subscription',
     AiProvider.claude: await pref<String>(PrefKeys.aiKey, ''),
     AiProvider.gemini: await pref<String>(PrefKeys.geminiKey, ''),
   };
 
-  Future<ClaudeCodeGrant?> claudeCodeGrant() async {
-    final j = decodeObject(await db.localSetting(LocalKeys.claudeCode) ?? '');
-    return j.isEmpty ? null : ClaudeCodeGrant.fromJson(j);
+  /// The grant for subscription [p], or null.
+  Future<SubscriptionGrant?> grant(AiProvider p) async {
+    final j = decodeObject(await db.localSetting(LocalKeys.grants[p]!) ?? '');
+    return j.isEmpty ? null : SubscriptionGrant.fromJson(j);
   }
 
-  /// Saves or (with null) removes the grant, on this device only.
-  Future<void> setClaudeCodeGrant(ClaudeCodeGrant? g) =>
-      db.setLocalSetting(LocalKeys.claudeCode, g == null ? '' : jsonEncode(g.toJson()));
+  /// Saves or (with null) removes the grant for subscription [p], on this
+  /// device only.
+  Future<void> setGrant(AiProvider p, SubscriptionGrant? g) =>
+      db.setLocalSetting(LocalKeys.grants[p]!, g == null ? '' : jsonEncode(g.toJson()));
 
   Future<bool> updateOnStart() async => await db.localSetting(LocalKeys.updateOnStart) != 'off';
 
@@ -337,35 +506,40 @@ class CareerBook {
 
   // ---- leads ----
 
-  Future<int> importLeads(List<LeadSuggestion> leads, {String? jobId, required String today}) =>
-      db.transaction(() async {
-        final existing = await (db.select(db.careerContacts)..where((c) => c.deleted.not())).get();
-        final known = {for (final c in existing) _key(c.name, c.company)};
-        var added = 0;
-        for (final l in leads) {
-          if (l.name.isEmpty || !known.add(_key(l.name, l.company))) continue;
-          final id = newId();
-          await save(
-            db.careerContacts,
-            CareerContactsCompanion.insert(
-              id: id,
-              name: l.name,
-              kind: Value(leadKinds.containsKey(l.kind) ? l.kind : 'other'),
-              title: Value(l.title),
-              company: Value(l.company),
-              email: Value(l.email),
-              linkedin: Value(l.linkedin),
-              source: Value(l.source),
-              jobId: Value(jobId),
-              followUp: Value(today),
-              notes: Value([l.why, if (l.approach.isNotEmpty) 'Approach: ${l.approach}'].join('\n')),
-            ),
-            id,
-          );
-          added++;
-        }
-        return added;
-      });
+  /// Adds leads not already known. With [chase], each gets a follow-up today.
+  Future<int> importLeads(
+    List<LeadSuggestion> leads, {
+    String? jobId,
+    required String today,
+    bool chase = true,
+  }) => db.transaction(() async {
+    final existing = await (db.select(db.careerContacts)..where((c) => c.deleted.not())).get();
+    final known = {for (final c in existing) _key(c.name, c.company)};
+    var added = 0;
+    for (final l in leads) {
+      if (l.name.isEmpty || !known.add(_key(l.name, l.company))) continue;
+      final id = newId();
+      await save(
+        db.careerContacts,
+        CareerContactsCompanion.insert(
+          id: id,
+          name: l.name,
+          kind: Value(leadKinds.containsKey(l.kind) ? l.kind : 'other'),
+          title: Value(l.title),
+          company: Value(l.company),
+          email: Value(l.email),
+          linkedin: Value(l.linkedin),
+          source: Value(l.source),
+          jobId: Value(jobId),
+          followUp: Value(chase ? today : null),
+          notes: Value([l.why, if (l.approach.isNotEmpty) 'Approach: ${l.approach}'].join('\n')),
+        ),
+        id,
+      );
+      added++;
+    }
+    return added;
+  });
 
   /// Records contact with a lead: status Contacted, chase again in a week.
   Future<void> contacted(Lead l, {required String today}) => save(
