@@ -8,6 +8,9 @@ const bhojanaHints = <String, String>{
   'action.basket':
       'Bhojana searches your shops for every item and shows the cheapest. Fill a basket adds the list to '
       'that shop\'s basket for you. You check out yourself.',
+  'action.deals':
+      'Shops price some things cheaper bought together. Bhojana compares single prices until you take a '
+      'deal; a deal taken is costed, and added to the basket, as whole deals.',
   'page.list':
       'Type "2 milk" to add two of milk. Bhojana searches your shops for it and keeps the best match; '
       'compare an item to pick a different product.',

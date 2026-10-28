@@ -57,3 +57,6 @@ key.properties
 
 # Local checkout of brahma_core (see pubspec.yaml)
 pubspec_overrides.yaml
+
+# Shop pages saved by the live test, replayed by test/live_pages_test.dart (the shops' own pages)
+test/live_pages/

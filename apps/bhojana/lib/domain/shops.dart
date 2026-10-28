@@ -24,6 +24,7 @@ class Shop {
     this.search,
     this.slots,
     this.loyalty,
+    this.multiBuys = false,
   });
 
   final String id;
@@ -44,6 +45,10 @@ class Shop {
   /// The loyalty scheme whose prices show only when signed in.
   final String? loyalty;
 
+  /// Whether Bhojana offers this shop's multi-buy deals ("Any 2 for £3") for
+  /// the user to take. Turned on per shop once its deals have been checked.
+  final bool multiBuys;
+
   bool get searchable => search != null;
 
   String searchUrl(String query) => search!.replaceAll('{q}', Uri.encodeComponent(query.trim()));
@@ -63,6 +68,7 @@ const shops = <Shop>[
     slots: 'https://www.tesco.com/groceries/en-GB/slots/delivery',
     selling: Selling.delivery,
     loyalty: 'Clubcard',
+    multiBuys: true,
   ),
   Shop(
     id: 'sainsburys',
@@ -83,6 +89,7 @@ const shops = <Shop>[
     slots: 'https://www.asda.com/groceries/book-slot',
     selling: Selling.delivery,
     loyalty: 'Asda Rewards',
+    multiBuys: true,
   ),
   Shop(
     id: 'morrisons',
@@ -122,6 +129,7 @@ const shops = <Shop>[
     slots: 'https://www.iceland.co.uk/book-delivery',
     selling: Selling.delivery,
     loyalty: 'Bonus Card',
+    multiBuys: true,
   ),
   Shop(
     id: 'coop',

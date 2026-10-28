@@ -9,7 +9,8 @@ import '../domain/shops.dart';
 import 'providers.dart';
 
 /// Where the automatic search for one item at one shop has got to.
-enum Lookup { searching, found, nothing, failed }
+/// [checkNeeded]: the shop showed its bot check (see [ShopCheck]).
+enum Lookup { searching, found, nothing, failed, checkNeeded }
 
 /// Prices list items by itself: it searches every compared shop for each
 /// item and keeps one product per shop, the same size everywhere it can
@@ -57,11 +58,13 @@ class ListPricer extends Notifier<Map<(String, String), Lookup>> {
   Future<void> _priceItem(Item item, List<Shop> shops) async {
     final searcher = ref.read(searcherProvider);
     final found = <String, List<Offer>>{};
-    final failed = <String>{};
+    final failed = <String>{}, checks = <String>{};
     await Future.wait([
       for (final s in shops)
-        _limited(() => searcher.search(s, item.name))
-            .then<void>((o) => found[s.id] = o, onError: (Object _) => failed.add(s.id)),
+        _limited(() => searcher.search(s, item.name)).then<void>(
+          (o) => found[s.id] = o,
+          onError: (Object e) => (e is ShopCheck ? checks : failed).add(s.id),
+        ),
     ]);
     final picks = pickAcross(item.name, found);
     if (!ref.mounted) return;
@@ -77,7 +80,9 @@ class ListPricer extends Notifier<Map<(String, String), Lookup>> {
     state = {
       ...state,
       for (final s in shops)
-        (item.id, s.id): failed.contains(s.id)
+        (item.id, s.id): checks.contains(s.id)
+            ? Lookup.checkNeeded
+            : failed.contains(s.id)
             ? Lookup.failed
             : picks.containsKey(s.id)
             ? Lookup.found

@@ -11,6 +11,7 @@ class Offer {
     required this.pence,
     this.unitPrice = '',
     this.offer = '',
+    this.deal = '',
     this.url = '',
     this.inStock = true,
   });
@@ -20,10 +21,56 @@ class Offer {
   final int pence;
   final String unitPrice;
   final String offer;
+
+  /// A multi-buy the tile shows ("Any 2 for £2 Clubcard Price", "Buy 2 Get
+  /// 1 Free"), or empty. [pence] is always the price of one bought alone.
+  final String deal;
   final String url;
   final bool inStock;
 
   Shop? get shopInfo => shopById(shop);
+
+  /// The multi-buy, where Bhojana reads them for this shop.
+  MultiBuy? get multiBuy => multiBuyAt(shop, deal, pence);
+}
+
+/// A multi-buy deal: [count] bought together cost [pence].
+class MultiBuy {
+  const MultiBuy(this.text, this.count, this.pence);
+
+  /// As the shop words it.
+  final String text;
+  final int count;
+  final int pence;
+
+  /// What one costs inside the deal, rounded up.
+  int get each => (pence / count).ceil();
+
+  /// How many to buy for [want] to get the deal: whole deals, rounded up.
+  int units(int want) => (want / count).ceil() * count;
+
+  /// What [units] of [want] cost on the deal.
+  int cost(int want) => (want / count).ceil() * pence;
+}
+
+/// The multi-buy in [text] at [shop], given one costs [single] pence. Only
+/// shops whose deals have been checked ([Shop.multiBuys]) give one, and only
+/// a deal that is cheaper than buying singly.
+MultiBuy? multiBuyAt(String shop, String text, int single) {
+  if (text.isEmpty || shopById(shop)?.multiBuys != true) return null;
+  final t = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  MultiBuy? deal;
+  if (RegExp(r'(\d+) for (?:£ ?(\d+(?:\.\d{1,2})?)|(\d+)p)', caseSensitive: false).firstMatch(t)
+      case final m?) {
+    final pence = m[2] != null ? (double.parse(m[2]!) * 100).round() : int.parse(m[3]!);
+    deal = MultiBuy(t, int.parse(m[1]!), pence);
+  } else if (RegExp(r'buy (\d+) get (\d+) free', caseSensitive: false).firstMatch(t) case final m?) {
+    deal = MultiBuy(t, int.parse(m[1]!) + int.parse(m[2]!), int.parse(m[1]!) * single);
+  } else if (RegExp(r'(\d+) for (\d+)\b').firstMatch(t) case final m?) {
+    deal = MultiBuy(t, int.parse(m[1]!), int.parse(m[2]!) * single);
+  }
+  if (deal == null || deal.count < 2 || deal.pence >= deal.count * single) return null;
+  return deal;
 }
 
 /// Searches shops for a product. The app's searcher loads each shop's page
@@ -34,6 +81,22 @@ abstract class PriceSearcher {
 
   Future<List<Offer>> search(Shop shop, String query);
 }
+
+/// A shop showed its "are you a person" check instead of results. Only the
+/// user can answer it, in the in-app browser; searches share its cookies.
+class ShopCheck implements Exception {
+  const ShopCheck(this.shop);
+  final String shop;
+
+  @override
+  String toString() => '$shop asked for a security check';
+}
+
+/// True on a shop's bot-check or access-denied page.
+const checkScript = r'''
+(() => /security checks?|verify(ing)? (that )?you are (a )?human|are you a robot|captcha|access denied|unusual traffic|pardon our interruption|just a moment|review the security of your connection/i
+  .test(document.title + ' ' + (document.body ? document.body.innerText.slice(0, 2000) : '')))()
+''';
 
 /// Turns the reader script's JSON into offers, dropping anything unusable.
 List<Offer> parseOffers(String shop, Object? json) {
@@ -52,6 +115,7 @@ List<Offer> parseOffers(String shop, Object? json) {
         pence: pence.round(),
         unitPrice: '${r['unit'] ?? ''}',
         offer: '${r['offer'] ?? ''}',
+        deal: '${r['deal'] ?? ''}',
         url: '${r['url'] ?? ''}',
         inStock: r['inStock'] != false,
       ),
@@ -172,15 +236,17 @@ const readerScript = r'''
   const out = [], seen = new Set();
   const unitRe = /(£\s?\d+(?:\.\d+)?|\d+(?:\.\d+)?p)\s*(?:\/|per)\s*(?:\d+\s?)?[a-z]+/gi;
   const priceRe = /£\s?(\d{1,4}(?:\.\d{1,2})?)|(?:^|\s)(\d{1,3})p\b/g;
-  const offerRe = /(clubcard price|nectar price|rollback|asda price|more card price|lidl plus|\b\d+ for £\s?\d+(?:\.\d\d)?|any \d+ for|half price|buy \d+ get \d+|save £\s?\d+(?:\.\d\d)?|\d+% off|was £\s?\d+(?:\.\d\d)?)/i;
+  const dealRe = /(?:any\s+)?\d+\s+for\s+(?:£\s?\d+(?:\.\d{1,2})?|\d+p)(?:\s+clubcard price)?|buy\s+\d+\s+get\s+\d+\s+free|\b\d+\s+for\s+\d+\b(?!\s*(?:\.\d|p\b|g\b|kg|ml|l\b|x\b))/i;
+  const notPriceRe = /(?:any\s+)?\d+\s+for\s+(?:£\s?\d+(?:\.\d{1,2})?|\d+p)|mix\s*&\s*match\s+from\s+£\s?\d+(?:\.\d{1,2})?(?:\s+each)?|£\s?\d+(?:\.\d{1,2})?\s+meal deal(?:[^£\n]*)|was\s+£\s?\d+(?:\.\d{1,2})?/gi;
+  const offerRe = /(clubcard price|nectar price|rollback|asda price|more card price|lidl plus|bonus card price|half price|save £\s?\d+(?:\.\d\d)?|\d+% off|was £\s?\d+(?:\.\d\d)?)/i;
   const noStockRe = /out of stock|sold out|currently unavailable|not available/i;
-  const add = (title, pence, url, unit, offer, inStock) => {
+  const add = (title, pence, url, unit, offer, deal, inStock) => {
     title = (title || '').replace(/\s+/g, ' ').trim();
     if (title.length < 3 || !(pence > 0)) return;
     const key = title.toLowerCase() + '|' + pence;
     if (seen.has(key)) return;
     seen.add(key);
-    out.push({title, pence, url: url || '', unit: unit || '', offer: offer || '', inStock});
+    out.push({title, pence, url: url || '', unit: unit || '', offer: offer || '', deal: deal || '', inStock});
   };
   const walk = (n) => {
     if (!n || typeof n !== 'object') return;
@@ -190,7 +256,7 @@ const readerScript = r'''
       const o = [].concat(n.offers || [])[0] || {};
       const p = parseFloat(o.price ?? o.lowPrice);
       const stock = o.availability ? !/OutOfStock|SoldOut/i.test(o.availability) : true;
-      add(n.name, Math.round(p * 100), n.url || o.url, '', '', stock);
+      add(n.name, Math.round(p * 100), n.url || o.url, '', '', '', stock);
     }
     for (const k in n) walk(n[k]);
   };
@@ -199,24 +265,31 @@ const readerScript = r'''
   }
   const tiles = new Set();
   for (const a of document.querySelectorAll('a[href]')) {
+    // Menus and offer pages, not products.
+    if (a.closest('header, nav, footer') || /\/(promotions|offers)(\/|$)/i.test(a.pathname)) continue;
     let el = a;
     for (let i = 0; i < 7 && el && el !== document.body; i++, el = el.parentElement) {
       const text = el.innerText || '';
-      if (text.length > 700) break;
+      if (text.length > 900) break;
       const units = text.match(unitRe) || [];
       let rest = text;
       for (const u of units) rest = rest.replace(u, ' ');
+      // A multi-buy, meal deal or old price is not what one costs today.
+      rest = rest.replace(notPriceRe, ' ');
       const prices = [...rest.matchAll(priceRe)].map((m) => m[1] ? Math.round(parseFloat(m[1]) * 100) : parseInt(m[2]));
       if (!prices.length) continue;
       // A tile already read, or the list around it: not a product of its own.
       if ([...tiles].some((t) => el.contains(t))) break;
       tiles.add(el);
-      const lines = text.split('\n').map((l) => l.trim()).filter((l) => l && !/£|\dp\b/.test(l) && !offerRe.test(l));
+      const lines = text.split('\n').map((l) => l.trim()).filter((l) => l && !/£|\dp\b/.test(l) && !offerRe.test(l) && !dealRe.test(l));
       const label = a.getAttribute('aria-label') || a.getAttribute('title') || '';
       let title = (a.innerText || '').trim().length > 5 ? a.innerText : (label || lines.sort((x, y) => y.length - x.length)[0]);
-      const offer = (text.match(offerRe) || [''])[0];
+      const plain = text.replace(/\s+/g, ' ');
+      const deal = (plain.match(dealRe) || [''])[0];
+      // The tile's own offer, not the words of its multi-buy or meal deal.
+      const offer = (plain.replace(deal, ' ').replace(/£\s?\d+(?:\.\d{1,2})?\s+meal deal[^£]*/gi, ' ').match(offerRe) || [''])[0];
       title = (title || '').replace(/\(?[^()]*\bper\b[^()]*\)|\([^()]*\/[^()]*\)|(for )?(£|GBP) ?\d+(\.\d+)?/g, ' ');
-      add(title, Math.min(...prices), a.href, units[0] || '', offer, !noStockRe.test(text));
+      add(title, Math.min(...prices), a.href, units[0] || '', offer, deal, !noStockRe.test(text));
       break;
     }
   }

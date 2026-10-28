@@ -13,7 +13,7 @@ import 'ui/look.dart';
 final bhojanaSuite = SuiteApp(
   identity: bhojanaIdentity,
   tagline: 'Shopping and groceries',
-  icon: Icons.shopping_basket_outlined,
+  icon: Icons.shopping_basket_rounded,
   open: AppSession.open,
   overrides: (s) => [sessionProvider.overrideWithValue(s as AppSession)],
   hints: bhojanaHints,

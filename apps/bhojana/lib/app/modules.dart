@@ -13,9 +13,9 @@ final shoppingModule = AppModule(
   id: 'shopping',
   name: 'Shopping',
   destinations: [
-    _d('list', 'List', Icons.checklist_outlined, Icons.checklist, const ListPage()),
-    _d('compare', 'Compare', Icons.compare_arrows_outlined, Icons.compare_arrows, const ComparePage()),
-    _d('shops', 'Shops', Icons.storefront_outlined, Icons.storefront, const ShopsPage()),
+    _d('list', 'List', Icons.checklist_rounded, Icons.fact_check_rounded, const ListPage()),
+    _d('compare', 'Compare', Icons.compare_arrows_rounded, Icons.manage_search_rounded, const ComparePage()),
+    _d('shops', 'Shops', Icons.storefront_outlined, Icons.storefront_rounded, const ShopsPage()),
   ],
 );
 
@@ -26,7 +26,7 @@ final settingsDestination = _d(
   'settings',
   'Settings',
   Icons.settings_outlined,
-  Icons.settings,
+  Icons.settings_rounded,
   const SettingsPage(),
 );
 

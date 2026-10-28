@@ -27,11 +27,9 @@ void main() {
       await loader.load();
     }
 
-    await family('Inter', [
-      for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold']) 'assets/fonts/Inter-$w.ttf',
-    ]);
-    await family('PlusJakartaSans', [
-      for (final w in ['Medium', 'SemiBold', 'Bold', 'ExtraBold']) 'assets/fonts/PlusJakartaSans-$w.ttf',
+    await family('Nunito', [
+      for (final w in ['Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold', 'Black'])
+        'assets/fonts/Nunito-$w.ttf',
     ]);
     final flutterRoot = Platform.environment['FLUTTER_ROOT'] ?? '';
     final icons = File('$flutterRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf');
@@ -75,6 +73,9 @@ void main() {
       await h.settle();
       final mode = dark ? 'dark' : 'light';
       await shot('list-$mode');
+      await h.tapText('2 × semi-skimmed milk');
+      await shot('item-$mode');
+      await h.tap(find.byType(BackButton));
       if (!dark) {
         for (final page in ['Compare', 'Shops']) {
           await h.go(page);
@@ -91,6 +92,9 @@ void main() {
     await tester.pumpWidget(app(h));
     await h.settle();
     await shot('list-desktop');
+    await h.tapText('2 × semi-skimmed milk');
+    await shot('item-desktop');
+    await h.tap(find.byType(BackButton));
     await h.go('Shops');
     await shot('shops-desktop');
     await h.close();

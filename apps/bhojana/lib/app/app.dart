@@ -2,6 +2,7 @@ import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 
 import '../ui/look.dart';
+import '../ui/rail.dart';
 import 'modules.dart';
 
 class BhojanaApp extends StatelessWidget {
@@ -35,6 +36,12 @@ class BhojanaHome extends StatelessWidget {
   final VoidCallback? onHome;
 
   @override
-  Widget build(BuildContext context) =>
-      AppShell(destinations: allDestinations, floating: true, onHome: onHome);
+  Widget build(BuildContext context) => AppShell(
+    destinations: allDestinations,
+    floating: true,
+    onHome: onHome,
+    railPanel: true,
+    railHeader: (extended) => RailHeader(extended: extended),
+    railFooter: (extended) => RailFooter(extended: extended),
+  );
 }

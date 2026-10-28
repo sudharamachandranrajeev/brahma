@@ -1,5 +1,8 @@
+import 'package:bhojana/db/database.dart';
 import 'package:bhojana/domain/book.dart';
 import 'package:bhojana/domain/reader.dart';
+import 'package:brahma_core/brahma_core.dart';
+import 'package:drift/drift.dart';
 
 /// A weekly shop with a few prices kept.
 Future<void> seedBook(ShoppingBook book) async {
@@ -28,5 +31,22 @@ Future<void> seedBook(ShoppingBook book) async {
     query: 'wholemeal bread',
     source: 'web',
   );
+  // Earlier weeks' milk, for the price history.
+  for (final (day, pence) in [('2026-10-04', 159), ('2026-10-11', 155), ('2026-10-18', 149)]) {
+    final id = newId();
+    await book.store.save(
+      book.db.foodPrices,
+      FoodPricesCompanion.insert(
+        id: id,
+        itemId: Value(milk),
+        query: 'semi-skimmed milk',
+        shop: 'aldi',
+        title: 'Cowbelle Semi Skimmed Milk 4 Pints',
+        pence: pence,
+        day: day,
+      ),
+      id,
+    );
+  }
   await book.setPref('bhojana.postcode', 'BT74 7AA');
 }

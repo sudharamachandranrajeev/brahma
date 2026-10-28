@@ -89,3 +89,37 @@ final myShopsProvider = FutureProvider<List<Shop>>((ref) async {
       if (ids.contains(s.id)) s,
   ];
 });
+
+/// The current list's budget in pence, or null.
+final budgetProvider = FutureProvider<int?>((ref) async {
+  ref.watch(revisionProvider);
+  final list = await ref.watch(currentListProvider.future);
+  return list == null ? null : ref.watch(sessionProvider).book.budget(list.id);
+});
+
+/// Whether the list is shown by aisle, a synced pref.
+const groupPref = 'bhojana.group';
+
+final groupedProvider = FutureProvider<bool>((ref) async {
+  ref.watch(revisionProvider);
+  return await ref.watch(sessionProvider).book.pref(groupPref) == '1';
+});
+
+/// What the user has bought before and has not on the list now.
+final usualProvider = FutureProvider<List<String>>((ref) async {
+  ref.watch(revisionProvider);
+  final items = await ref.watch(itemsProvider.future);
+  return ref.watch(sessionProvider).book.usualItems({for (final i in items) i.name});
+});
+
+/// The items whose price the user watches (ShoppingBook.watched).
+final watchedProvider = FutureProvider<Set<String>>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).book.watched();
+});
+
+/// The user's answers to multi-buy deals (ShoppingBook.dealChoices).
+final dealsProvider = FutureProvider<Map<String, bool>>((ref) {
+  ref.watch(revisionProvider);
+  return ref.watch(sessionProvider).book.dealChoices();
+});

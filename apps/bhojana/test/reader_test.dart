@@ -4,16 +4,11 @@ import 'dart:io';
 import 'package:bhojana/domain/reader.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'chromium.dart';
+
 /// Runs the reader script in a real headless Chromium over a page shaped
 /// like a supermarket's results. Skipped where Chromium is not installed.
 void main() {
-  final chromium = [
-    'chromium',
-    'chromium-browser',
-    'google-chrome-stable',
-    'google-chrome',
-  ].where((c) => Process.runSync('which', [c]).exitCode == 0).firstOrNull;
-
   test(
     'the reader finds products, prices, unit prices, offers and stock',
     () async {
@@ -49,6 +44,55 @@ void main() {
       expect(byTitle['Hovis Soft White Medium Bread 800g']?.inStock, isFalse);
       expect(byTitle['Bananas Loose']?.pence, 18);
       expect(byTitle.keys, isNot(contains('Help')));
+    },
+    timeout: const Timeout(Duration(seconds: 90)),
+    skip: chromium == null ? 'Chromium is not installed' : null,
+  );
+
+  test(
+    'multi-buys, meal deals and old prices are kept apart from the single price',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('bhojana_deals');
+      addTearDown(() => dir.delete(recursive: true));
+      final page = File('${dir.path}/page.html');
+      // Tiles as Tesco, Asda and Iceland drew them in October 2026.
+      await page.writeAsString('''
+<html><body>
+<header><a href="/about">About Asda</a> <a href="/less">£1 &amp; less</a></header>
+<ul>
+ <li><div><a href="/p/beans">Heinz Beans in Tomato Sauce 415g</a><p>More like this</p>
+   <a href="/shop/en-GB/promotions/1">Any 2 for £2 Clubcard Price - Selected Heinz Beanz 390g - 415g</a>
+   <p>Offer valid for delivery from 28/08/2026 until 19/01/2027</p><p>£1.40</p><p>£3.37/kg</p><button>Add</button></div></li>
+ <li><div><a href="/p/coke">Coca-Cola Original Taste 500ml</a>
+   <p>£5.50 Meal Deal Drink Clubcard Price £6 Meal Deal Drink Regular Price - Selected Drink + Snack</p>
+   <p>£1.89</p><p>£3.78/litre</p><button>Add</button></div></li>
+ <li><div><a href="/p/asda-beans">Heinz Tinned Baked Beans in a Rich Tomato Sauce 6 x 415g</a><p>(244)</p>
+   <p>Any 2 for £8</p><p>£5.24</p><p>(£2.10/kg)</p></div></li>
+ <li><div><a href="/p/ice-beans">Heinz Baked Beans 415g</a><p>10</p><p>for</p><p>£10.00</p><p>Mix &amp; Match</p>
+   <p>£2.41/1kg</p><p>Mix &amp; Match from</p><p>£1.00</p><p>each</p><p>£1.40</p><p>£3.37/1kg</p><button>Add to Basket</button></div></li>
+ <li><div><a href="/p/ice-pots">Heinz Baked Tinned Beans in Tomato Sauce 3 x 200g</a><p>Buy 2 Get 1 FREE</p>
+   <p>Cheapest Free</p><p>£2.50</p><button>Add to Basket</button></div></li>
+ <li><div><a href="/p/ice-six">Heinz Tinned Baked Beans 6 x 415g</a><p>£4.50</p><p>Was</p><p>£5.25</p><button>Add to Basket</button></div></li>
+</ul>
+<pre id="out"></pre>
+<script>document.getElementById('out').textContent = $readerScript;</script>
+</body></html>''');
+      final offers = parseOffers('tesco', await dumpOut(chromium!, dir, page));
+      final by = {for (final o in offers) o.title: o};
+      expect(by.keys, isNot(contains('About Asda')));
+      expect(by.keys.where((t) => t.contains('Selected')), isEmpty);
+      final tesco = by['Heinz Beans in Tomato Sauce 415g']!;
+      expect((tesco.pence, tesco.deal, tesco.offer), (140, 'Any 2 for £2 Clubcard Price', ''));
+      final coke = by['Coca-Cola Original Taste 500ml']!;
+      expect((coke.pence, coke.deal, coke.offer), (189, '', ''));
+      final asda = by['Heinz Tinned Baked Beans in a Rich Tomato Sauce 6 x 415g']!;
+      expect((asda.pence, asda.deal), (524, 'Any 2 for £8'));
+      final ice = by['Heinz Baked Beans 415g']!;
+      expect((ice.pence, ice.deal), (140, '10 for £10.00'));
+      final pots = by['Heinz Baked Tinned Beans in Tomato Sauce 3 x 200g']!;
+      expect((pots.pence, pots.deal), (250, 'Buy 2 Get 1 FREE'));
+      final six = by['Heinz Tinned Baked Beans 6 x 415g']!;
+      expect((six.pence, six.deal), (450, ''));
     },
     timeout: const Timeout(Duration(seconds: 90)),
     skip: chromium == null ? 'Chromium is not installed' : null,
@@ -108,32 +152,24 @@ document.getElementById('out').textContent = JSON.stringify({r, log});
     timeout: const Timeout(Duration(seconds: 90)),
     skip: chromium == null ? 'Chromium is not installed' : null,
   );
-}
 
-/// Loads [page] in headless Chromium and returns the text its script put in
-/// `<pre id="out">`.
-Future<String> dumpOut(String chromium, Directory dir, File page) async {
-  // A fresh profile and a virtual-time budget keep CI's Chrome from waiting
-  // on first-run work; the timeout stops a browser that hangs anyway.
-  final p = await Process.start(chromium, [
-    '--headless',
-    '--disable-gpu',
-    '--no-sandbox',
-    '--disable-dev-shm-usage',
-    '--no-first-run',
-    '--user-data-dir=${dir.path}/profile',
-    '--virtual-time-budget=5000',
-    '--dump-dom',
-    page.uri.toString(),
-  ]);
-  final stdout = p.stdout.transform(const SystemEncoding().decoder).join();
-  final stderr = p.stderr.transform(const SystemEncoding().decoder).join();
-  await p.exitCode.timeout(const Duration(seconds: 45), onTimeout: () => (p..kill()).pid);
-  final out = RegExp(r'<pre id="out">(.*?)</pre>', dotAll: true).firstMatch(await stdout)?[1];
-  expect(out, isNotNull, reason: await stderr);
-  return out!
-      .replaceAll('&amp;', '&')
-      .replaceAll('&quot;', '"')
-      .replaceAll('&lt;', '<')
-      .replaceAll('&gt;', '>');
+  test(
+    "Cloudflare's challenge page counts as a bot check",
+    () async {
+      final dir = await Directory.systemTemp.createTemp('bhojana_check');
+      addTearDown(() => dir.delete(recursive: true));
+      final page = File('${dir.path}/page.html');
+      // As Asda served it in October 2026, with a 403.
+      await page.writeAsString('''
+<html><head><title>Just a moment...</title></head><body>
+<h1>www.asda.com</h1><p>Verifying you are human. This may take a few seconds.</p>
+<p>www.asda.com needs to review the security of your connection before proceeding.</p>
+<pre id="out"></pre>
+<script>document.getElementById('out').textContent = String($checkScript);</script>
+</body></html>''');
+      expect(await dumpOut(chromium!, dir, page), 'true');
+    },
+    timeout: const Timeout(Duration(seconds: 90)),
+    skip: chromium == null ? 'Chromium is not installed' : null,
+  );
 }
