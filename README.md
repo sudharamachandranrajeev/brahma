@@ -39,6 +39,9 @@ here as a git subtree.
 * **Every app, in its own look** – Artha (money), Graha Anveshana (property), Vahana Anveshana
   (cars), Udyoga (career), Vidya (learning), Bhojana (shopping) and Vani (social media) each keep their own theme and
   navigation inside Brahma.
+* **More Brahma apps** – Vastra (fashion and personal care), Arogya (health records), Bhandara
+  (storage and disk health) and Ganana (AI tokens, costs and limits) run on their own for now; their
+  cards on the home screen open each app's download page.
 * **One sign-in, one key, one sync account** – a single keychain entry unlocks every app; each app
   keeps its own encrypted database.
 * **Encrypted at rest** – local databases use drift over SQLite3MultipleCiphers, with the key in the
@@ -189,6 +192,14 @@ This software uses the following open source packages and services:
   price comparison across shops, live prices through your own shop logins and basket filling
 * Vani ([`apps/vani`](apps/vani)) – social media: scheduled posts, one inbox, discovery alerts and
   analytics
+* [Vastra](https://github.com/sudharamachandranrajeev/vastra) – fashion and personal care: product
+  links, seller discovery and offer comparison (linked app)
+* [Arogya](https://github.com/sudharamachandranrajeev/arogya) – FHIR-native health records
+  (linked app)
+* [Bhandara](https://github.com/sudharamachandranrajeev/bhandara) – storage monitor: disk health,
+  SMART and file stats (linked app)
+* [Ganana](https://github.com/sudharamachandranrajeev/ganana) – AI token, cost and limit tracker
+  (linked app)
 
 ## License
 

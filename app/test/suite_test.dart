@@ -123,6 +123,20 @@ void main() {
     await stop(tester);
   });
 
+  testWidgets('the home lists the linked apps after the hosted ones', (tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await start(tester);
+
+    await tester.scrollUntilVisible(find.text('More Brahma apps'), 200);
+    for (final app in linkedApps) {
+      await tester.scrollUntilVisible(find.text(app.name), 200);
+      expect(find.text(app.tagline), findsOneWidget);
+    }
+    await stop(tester);
+  });
+
   testWidgets('Sentinel shows on the home panel, snoozes a finding and fixes another', (tester) async {
     tester.view.physicalSize = const Size(1200, 2400);
     tester.view.devicePixelRatio = 1;
