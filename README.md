@@ -42,7 +42,8 @@
 * **Tailored CV and cover letter** – reworded to one advert from your real experience only, with an
   applicant-tracking keyword score, missing keywords and what changed. Export to Word or text.
 * **Applications by stage** – preparing, applied, screening, interview, offer, closed. Moving on sets
-  the next follow-up; six weeks of silence marks it *No reply*. AI drafts the chaser, the thank-you
+  the next follow-up; six weeks of silence marks it *No reply*. See them as a list or as a board with a
+  column per stage, and drag a card to move it on. AI drafts the chaser, the thank-you
   note and, after a rejection, a feedback request. Follow-ups go to Google Calendar or an `.ics` file.
 * **Contacts** – recruiters, hiring managers and people in the field, found from public pages or
   added by you, each with a follow-up date and a drafted first message. LinkedIn is opened through

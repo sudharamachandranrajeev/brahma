@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:brahma_core/brahma_core.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,6 +44,9 @@ class ApplicationsPage extends ConsumerStatefulWidget {
 class _ApplicationsPageState extends ConsumerState<ApplicationsPage> {
   var open = true;
 
+  /// Active applications as stage columns; by default on a wide window.
+  bool? board;
+
   @override
   Widget build(BuildContext context) => PageScaffold(
     title: 'Applications',
@@ -62,19 +66,36 @@ class _ApplicationsPageState extends ConsumerState<ApplicationsPage> {
       label: const Text('Add application'),
     ),
     children: [
-      SegmentedButton<bool>(
-        segments: const [
-          ButtonSegment(value: true, label: Text('Active'), icon: Icon(Icons.pending_actions)),
-          ButtonSegment(value: false, label: Text('Closed'), icon: Icon(Icons.inventory_2_outlined)),
+      Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        children: [
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('Active'), icon: Icon(Icons.pending_actions)),
+              ButtonSegment(value: false, label: Text('Closed'), icon: Icon(Icons.inventory_2_outlined)),
+            ],
+            selected: {open},
+            onSelectionChanged: (s) => setState(() => open = s.first),
+          ),
+          if (open)
+            SegmentedButton<bool>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(value: false, icon: Icon(Icons.view_agenda_outlined), tooltip: 'List'),
+                ButtonSegment(value: true, icon: Icon(Icons.view_kanban_outlined), tooltip: 'Board'),
+              ],
+              selected: {_board(context)},
+              onSelectionChanged: (s) => setState(() => board = s.first),
+            ),
         ],
-        selected: {open},
-        onSelectionChanged: (s) => setState(() => open = s.first),
       ),
       const SizedBox(height: 12),
       AsyncView(
         ref.watch(applicationsProvider),
         builder: (all) {
           final mine = all.where((a) => Stage.of(a.stage).open == open).toList();
+          if (open && mine.isNotEmpty && _board(context)) return ApplicationBoard(mine);
           if (mine.isEmpty) {
             return EmptyState(
               icon: Icons.send_outlined,
@@ -108,6 +129,8 @@ class _ApplicationsPageState extends ConsumerState<ApplicationsPage> {
       ),
     ],
   );
+
+  bool _board(BuildContext context) => board ?? MediaQuery.sizeOf(context).width >= 900;
 
   Future<void> _add(BuildContext context) {
     final title = TextEditingController();
@@ -227,6 +250,184 @@ class ApplicationTile extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Active applications in a column per stage. Drag a card to another column
+/// (long-press first on a phone) or use its menu, which also closes it.
+class ApplicationBoard extends ConsumerWidget {
+  const ApplicationBoard(this.apps, {super.key});
+  final List<JobApplication> apps;
+
+  static const _gap = 12.0;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final stages = Stage.openStages;
+    return LayoutBuilder(
+      builder: (context, box) {
+        final fit = (box.maxWidth - _gap * (stages.length - 1)) / stages.length;
+        final width = fit < 220 ? 260.0 : fit;
+        final columns = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final s in stages) ...[
+              if (s != stages.first) const SizedBox(width: _gap),
+              SizedBox(
+                width: width,
+                child: _BoardColumn(s, apps.where((a) => a.stage == s.id).toList(), width: width),
+              ),
+            ],
+          ],
+        );
+        return fit < 220 ? SingleChildScrollView(scrollDirection: Axis.horizontal, child: columns) : columns;
+      },
+    );
+  }
+}
+
+/// Moves [a] to [stage] today, as the stage menu on its page does.
+Future<void> moveApplication(BuildContext context, WidgetRef ref, JobApplication a, Stage stage) async {
+  await ref.mutate((s) => s.book.moveTo(a.id, stage, date: today()));
+  if (context.mounted) showMessage(context, '${a.title}: ${stage.label}.');
+}
+
+class _BoardColumn extends ConsumerWidget {
+  const _BoardColumn(this.stage, this.apps, {required this.width});
+  final Stage stage;
+  final List<JobApplication> apps;
+  final double width;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    return DragTarget<JobApplication>(
+      onWillAcceptWithDetails: (d) => d.data.stage != stage.id,
+      onAcceptWithDetails: (d) => moveApplication(context, ref, d.data, stage),
+      builder: (context, offered, _) => AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        constraints: const BoxConstraints(minHeight: 160),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: offered.isEmpty
+              ? scheme.surfaceContainerLow
+              : scheme.primaryContainer.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: offered.isEmpty ? scheme.outlineVariant : scheme.primary),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 2, 4, 10),
+              child: Row(
+                children: [
+                  Expanded(child: Text(stage.label, style: t.titleSmall)),
+                  Pill('${apps.length}', status: stageStatus(stage)),
+                ],
+              ),
+            ),
+            for (final a in apps) _BoardCard(a, width: width - 16),
+            if (apps.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  'Drop here',
+                  textAlign: TextAlign.center,
+                  style: t.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BoardCard extends ConsumerWidget {
+  const _BoardCard(this.a, {required this.width});
+  final JobApplication a;
+  final double width;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = today();
+    final t = Theme.of(context).textTheme;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final stage = Stage.of(a.stage);
+    final card = Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ApplicationPage(a.id))),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(a.title, style: t.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                  ),
+                  PopupMenuButton<Stage>(
+                    tooltip: 'Move to',
+                    icon: const Icon(Icons.more_vert, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onSelected: (s) => moveApplication(context, ref, a, s),
+                    itemBuilder: (_) => [
+                      for (final s in Stage.values)
+                        if (s != stage) PopupMenuItem(value: s, child: Text('Move to ${s.label}')),
+                    ],
+                  ),
+                ],
+              ),
+              if (a.company.isNotEmpty)
+                Text(
+                  a.company,
+                  style: t.bodySmall?.copyWith(color: muted),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  Text('Updated ${relativeDay(a.updated, now)}', style: t.bodySmall?.copyWith(color: muted)),
+                  if (a.followUp != null)
+                    Pill(
+                      'Follow up ${relativeDay(a.followUp!, now)}',
+                      status: followUpStatus(a.followUp!, now),
+                      icon: Icons.notifications_none,
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final dragged = Material(
+      color: Colors.transparent,
+      elevation: 8,
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(width: width, child: card),
+    );
+    final faded = Opacity(opacity: 0.35, child: card);
+    // A touch drag would fight the board's own scrolling, so phones hold first.
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android || TargetPlatform.iOS => LongPressDraggable<JobApplication>(
+        data: a,
+        feedback: dragged,
+        childWhenDragging: faded,
+        child: card,
+      ),
+      _ => Draggable<JobApplication>(data: a, feedback: dragged, childWhenDragging: faded, child: card),
+    };
   }
 }
 

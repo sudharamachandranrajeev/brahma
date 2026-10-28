@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.5 (2026-10-28)
+
+- Application board: active applications as a column per stage. Drag a card to move it (hold it
+  first on a phone) or use its menu, which can also close it. Wide windows open on the board; the
+  list is a tap away.
+
 ## 0.4.4 (2026-10-28)
 
 - Everything in 0.4.3, whose Windows build failed: the Windows app builds again with the newest
