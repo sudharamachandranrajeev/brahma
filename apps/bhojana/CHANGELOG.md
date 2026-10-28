@@ -1,5 +1,64 @@
 # Changelog
 
+## 0.9.0
+
+- Running total and budget: the list shows what is in the basket and what the whole list comes to at
+  each item's best price. Set a budget for a list to see the basket fill against it, what is left to
+  spare, and a warning when the list or the basket goes over.
+
+## 0.8.0
+
+- Group by aisle: the button on the list sorts it into aisles in the order a shop is walked (fruit and
+  veg, bakery, meat, fish, dairy, frozen, cupboard and so on), each with how many are left.
+- Add again: things you have bought before, and are not on the list now, sit above it as one-tap chips.
+
+## 0.7.0
+
+- Asda (and any shop behind Cloudflare's "Just a moment…" check) no longer fails to load. The check
+  comes with an error status, which the Windows web view treated as a failed page: searches now read
+  it as a bot check and ask you to answer it, and the in-app browser shows it. If a page really does
+  not load, the browser says so, with Try again and Open in your browser, which is also in its toolbar.
+- Every item has its own page: tap it on the list. It shows the aisle, how many, whether it is in the
+  basket, the price at each shop as bars, the best and lowest prices seen, and a chart of how the
+  price has moved. Compare, edit or delete it from there.
+- Compare can add a search result straight to the list, with its price, and opens the new item.
+- Price drops: tap Watch the price on an item and, when its best price falls below the last day it was
+  priced, the list shows it ("£1.39 at Aldi, down 10p from £1.49 on 18 Oct") and so does the item.
+- Items are drawn with an icon for their aisle (fruit and veg, dairy, bakery, household and more),
+  guessed from the name.
+- A fuller new look: the rounded Nunito typeface, rounded icons, a floating sage rail with a card to
+  search every shop again, coral for the main action, and what the list costs at each shop drawn as
+  pastel bars.
+
+## 0.6.0
+
+- A new look: warm cream and pastel clay cards with soft shadows, a sage-green rail and bar, and coral
+  for prices.
+- The list opens with a greeting and tiles for what is left to buy, what is in the basket, the shops
+  compared and the multi-buys found.
+
+## 0.5.1
+
+- Windows: searching shops for list items no longer closes the app. A shop page calling the web view's
+  script bridge crashed the Windows web view plugin; Bhojana does not use the bridge, so it is now off.
+
+## 0.5.0
+
+Multi-buy deals, with your say (Tesco, Asda and Iceland for now).
+
+- A price is always the single-purchase price. A multi-buy (*Any 2 for £5*, *10 for £10*, *Buy 2 get 1
+  free*, *3 for 2*) is read separately and shown next to it, never mixed in.
+- The list's *Multi-buy deals* card shows each deal with what one costs alone, what one costs on the
+  deal, and what your quantity costs both ways. *Take deal* or *Single price* decides how the shop is
+  costed and how many *Fill a basket* adds. The choice syncs.
+- Meal deals, "mix & match from" and "was" prices are no longer read as a product's price.
+- Searches wait until the shop page stops changing, so late deal badges (Iceland) are read, and a load
+  cut short by a shop's redirect no longer fails the search.
+- When a shop shows its "are you a person" check instead of results, *Where to shop* says so and opens
+  the shop to answer it, instead of the item looking unsold there.
+- Live shop tests save the pages they read; `flutter test` replays the reader over them offline, so
+  reader changes are checked without loading the shops again.
+
 ## 0.4.0
 
 Lists price themselves, and baskets fill themselves.

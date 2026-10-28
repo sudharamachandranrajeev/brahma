@@ -6,15 +6,17 @@ function readShopPage() {
     const out = [], seen = new Set();
     const unitRe = /(£\s?\d+(?:\.\d+)?|\d+(?:\.\d+)?p)\s*(?:\/|per)\s*(?:\d+\s?)?[a-z]+/gi;
     const priceRe = /£\s?(\d{1,4}(?:\.\d{1,2})?)|(?:^|\s)(\d{1,3})p\b/g;
-    const offerRe = /(clubcard price|nectar price|rollback|asda price|more card price|lidl plus|\b\d+ for £\s?\d+(?:\.\d\d)?|any \d+ for|half price|buy \d+ get \d+|save £\s?\d+(?:\.\d\d)?|\d+% off|was £\s?\d+(?:\.\d\d)?)/i;
+    const dealRe = /(?:any\s+)?\d+\s+for\s+(?:£\s?\d+(?:\.\d{1,2})?|\d+p)(?:\s+clubcard price)?|buy\s+\d+\s+get\s+\d+\s+free|\b\d+\s+for\s+\d+\b(?!\s*(?:\.\d|p\b|g\b|kg|ml|l\b|x\b))/i;
+    const notPriceRe = /(?:any\s+)?\d+\s+for\s+(?:£\s?\d+(?:\.\d{1,2})?|\d+p)|mix\s*&\s*match\s+from\s+£\s?\d+(?:\.\d{1,2})?(?:\s+each)?|£\s?\d+(?:\.\d{1,2})?\s+meal deal(?:[^£\n]*)|was\s+£\s?\d+(?:\.\d{1,2})?/gi;
+    const offerRe = /(clubcard price|nectar price|rollback|asda price|more card price|lidl plus|bonus card price|half price|save £\s?\d+(?:\.\d\d)?|\d+% off|was £\s?\d+(?:\.\d\d)?)/i;
     const noStockRe = /out of stock|sold out|currently unavailable|not available/i;
-    const add = (title, pence, url, unit, offer, inStock) => {
+    const add = (title, pence, url, unit, offer, deal, inStock) => {
       title = (title || '').replace(/\s+/g, ' ').trim();
       if (title.length < 3 || !(pence > 0)) return;
       const key = title.toLowerCase() + '|' + pence;
       if (seen.has(key)) return;
       seen.add(key);
-      out.push({title, pence, url: url || '', unit: unit || '', offer: offer || '', inStock});
+      out.push({title, pence, url: url || '', unit: unit || '', offer: offer || '', deal: deal || '', inStock});
     };
     const walk = (n) => {
       if (!n || typeof n !== 'object') return;
@@ -24,7 +26,7 @@ function readShopPage() {
         const o = [].concat(n.offers || [])[0] || {};
         const p = parseFloat(o.price ?? o.lowPrice);
         const stock = o.availability ? !/OutOfStock|SoldOut/i.test(o.availability) : true;
-        add(n.name, Math.round(p * 100), n.url || o.url, '', '', stock);
+        add(n.name, Math.round(p * 100), n.url || o.url, '', '', '', stock);
       }
       for (const k in n) walk(n[k]);
     };
@@ -33,24 +35,31 @@ function readShopPage() {
     }
     const tiles = new Set();
     for (const a of document.querySelectorAll('a[href]')) {
+      // Menus and offer pages, not products.
+      if (a.closest('header, nav, footer') || /\/(promotions|offers)(\/|$)/i.test(a.pathname)) continue;
       let el = a;
       for (let i = 0; i < 7 && el && el !== document.body; i++, el = el.parentElement) {
         const text = el.innerText || '';
-        if (text.length > 700) break;
+        if (text.length > 900) break;
         const units = text.match(unitRe) || [];
         let rest = text;
         for (const u of units) rest = rest.replace(u, ' ');
+        // A multi-buy, meal deal or old price is not what one costs today.
+        rest = rest.replace(notPriceRe, ' ');
         const prices = [...rest.matchAll(priceRe)].map((m) => m[1] ? Math.round(parseFloat(m[1]) * 100) : parseInt(m[2]));
         if (!prices.length) continue;
         // A tile already read, or the list around it: not a product of its own.
         if ([...tiles].some((t) => el.contains(t))) break;
         tiles.add(el);
-        const lines = text.split('\n').map((l) => l.trim()).filter((l) => l && !/£|\dp\b/.test(l) && !offerRe.test(l));
+        const lines = text.split('\n').map((l) => l.trim()).filter((l) => l && !/£|\dp\b/.test(l) && !offerRe.test(l) && !dealRe.test(l));
         const label = a.getAttribute('aria-label') || a.getAttribute('title') || '';
         let title = (a.innerText || '').trim().length > 5 ? a.innerText : (label || lines.sort((x, y) => y.length - x.length)[0]);
-        const offer = (text.match(offerRe) || [''])[0];
+        const plain = text.replace(/\s+/g, ' ');
+        const deal = (plain.match(dealRe) || [''])[0];
+        // The tile's own offer, not the words of its multi-buy or meal deal.
+        const offer = (plain.replace(deal, ' ').replace(/£\s?\d+(?:\.\d{1,2})?\s+meal deal[^£]*/gi, ' ').match(offerRe) || [''])[0];
         title = (title || '').replace(/\(?[^()]*\bper\b[^()]*\)|\([^()]*\/[^()]*\)|(for )?(£|GBP) ?\d+(\.\d+)?/g, ' ');
-        add(title, Math.min(...prices), a.href, units[0] || '', offer, !noStockRe.test(text));
+        add(title, Math.min(...prices), a.href, units[0] || '', offer, deal, !noStockRe.test(text));
         break;
       }
     }

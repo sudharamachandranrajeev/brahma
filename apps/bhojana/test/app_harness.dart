@@ -99,14 +99,17 @@ class AppHarness {
   }
 }
 
-/// Shop pages from a table instead of the web.
+/// Shop pages from a table instead of the web; shops in [checks] show their
+/// bot check.
 class FakeSearcher implements PriceSearcher {
-  const FakeSearcher([this.offers = const {}]);
+  const FakeSearcher([this.offers = const {}, this.checks = const {}]);
   final Map<String, List<Offer>> offers;
+  final Set<String> checks;
 
   @override
   bool get available => true;
 
   @override
-  Future<List<Offer>> search(Shop shop, String query) async => offers[shop.id] ?? const [];
+  Future<List<Offer>> search(Shop shop, String query) async =>
+      checks.contains(shop.id) ? throw ShopCheck(shop.name) : offers[shop.id] ?? const [];
 }

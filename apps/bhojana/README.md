@@ -17,6 +17,9 @@ suite. Linux, Windows and Android, plus a web app served by your sync server.
   match at each, in the same pack size everywhere it can (4 pints against 4 pints), and *Where to shop*
   names the cheapest shop for the list and what it saves over the next one. Put a size in the item
   (`milk 4 pints`) to choose it yourself.
+- **Multi-buys, your call.** At Tesco, Asda and Iceland, a deal like *Any 2 for £5* is shown beside the
+  single-purchase price, never instead of it. You choose *Take deal* or *Single price* for each one;
+  that sets the list's cost at the shop and how many go in the basket.
 - **Compare.** Search one product across your starred shops and keep a different product than the one
   Bhojana picked. Your pick replaces its pick for that shop.
 - **Live prices with your login.** Sign in to a shop and set your postcode inside the in-app browser.
@@ -66,6 +69,9 @@ Bhojana contacts shop websites only when you search or open one.
 flutter pub get
 flutter test                       # reader_test runs the page scripts in headless Chromium if installed
 flutter test integration_test/live_app_test.dart -d linux   # the whole flow against the real shops
+flutter test integration_test/live_shops_test.dart -d linux --dart-define=SHOPS=asda,iceland
+                                   # reads real shop pages and saves them to test/live_pages (not committed);
+                                   # flutter test then replays the reader over them offline (live_pages_test)
 BHOJANA_SHOTS=/tmp/shots FLUTTER_ROOT=... flutter test test/screenshots_test.dart
 flutter build linux --release && scripts/install-linux.sh
 (cd server && npm ci && npm test)  # sync server; sync_worker_test.dart also needs Node 24

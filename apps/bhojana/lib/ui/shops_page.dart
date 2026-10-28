@@ -92,8 +92,8 @@ class _ShopRow extends ConsumerWidget {
     leading: IconButton(
       tooltip: compared ? 'Stop comparing ${shop.name}' : 'Compare ${shop.name}',
       isSelected: compared,
-      icon: const Icon(Icons.star_border),
-      selectedIcon: const Icon(Icons.star, color: tomato),
+      icon: const Icon(Icons.star_border_rounded),
+      selectedIcon: Icon(Icons.star_rounded, color: priceInk(context)),
       onPressed: shop.searchable
           ? () {
               final next = compared ? (mine.toSet()..remove(shop.id)) : {...mine, shop.id};
@@ -115,12 +115,12 @@ class _ShopRow extends ConsumerWidget {
         if (shop.slots != null)
           IconButton(
             tooltip: 'Delivery slots',
-            icon: const Icon(Icons.local_shipping_outlined),
+            icon: const Icon(Icons.local_shipping_rounded),
             onPressed: () => openShop(context, shop, url: shop.slots),
           ),
         IconButton(
           tooltip: shop.selling == Selling.browse ? 'Open ${shop.name}' : 'Sign in to ${shop.name}',
-          icon: Icon(shop.selling == Selling.browse ? Icons.open_in_new : Icons.login),
+          icon: Icon(shop.selling == Selling.browse ? Icons.open_in_new_rounded : Icons.login_rounded),
           onPressed: () => openShop(context, shop),
         ),
       ],

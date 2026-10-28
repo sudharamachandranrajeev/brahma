@@ -32,6 +32,8 @@
 
 * **Profile from your CV** – import a PDF, Word or text CV and the AI reads it into experience,
   education, skills and achievements; set the roles, countries, places and ways of working you want.
+  Import several tailored versions at once and they become one master profile: each job once, every
+  skill, the roles each version aims at added to your targets, and certifications you hold on Growth.
 * **Jobs, found for you** – openings for your target roles in every country you choose, from free job
   APIs (Adzuna, Reed, Remotive, Jobicy, Arbeitnow), refreshed every few hours while the app is open,
   plus an optional AI web search of employer and public-sector sites. Duplicates are merged.
@@ -40,7 +42,8 @@
 * **Tailored CV and cover letter** – reworded to one advert from your real experience only, with an
   applicant-tracking keyword score, missing keywords and what changed. Export to Word or text.
 * **Applications by stage** – preparing, applied, screening, interview, offer, closed. Moving on sets
-  the next follow-up; six weeks of silence marks it *No reply*. AI drafts the chaser, the thank-you
+  the next follow-up; six weeks of silence marks it *No reply*. See them as a list or as a board with a
+  column per stage, and drag a card to move it on. AI drafts the chaser, the thank-you
   note and, after a rejection, a feedback request. Follow-ups go to Google Calendar or an `.ics` file.
 * **Contacts** – recruiters, hiring managers and people in the field, found from public pages or
   added by you, each with a follow-up date and a drafted first message. LinkedIn is opened through
@@ -57,15 +60,23 @@
   paths from your current role, each with steps, timeframes, pay, likelihood and AI exposure. Redone
   monthly when the AI routine is on.
 * **Growth** – certifications, courses and experience to get, with priority, cost, target date and progress.
+  *Ideas and wins* keeps anything that could move your career on (a tip, a company to watch, praise at
+  work) in a few seconds; the AI reads them in every request, and an idea can become a goal.
+* **LinkedIn data import** – ask LinkedIn for a copy of your data and import the ZIP on the Growth page:
+  jobs, skills and certifications fill gaps in your profile, recommendations become wins, recent
+  applications and saved jobs join your pipeline, and connections at employers you pursue (and
+  recruiters) become contacts. Read on the device; Udyoga never signs in to LinkedIn. Importing again
+  doubles nothing.
 * **LinkedIn studio** – eleven tools, all drafting for you to post or send by hand: a 100-point profile
   score with rewrites, posts (18 hook formulas), comments, connection notes with follow-ups (also from
   a contact), inbox triage, replies to comments on your posts, a week plan, a post audit, carousels
   (saved as a PDF to upload) and repurposing a long piece. Every draft is written in your own voice
   and cleaned on the device of dashes, invisible characters and stock phrases, with a five-check
   score. The same check runs on a CV or cover letter. Nothing is posted or automated for you.
-* **Your Claude subscription** – on Linux and Windows, Settings > AI can use the Claude Code you
-  already have, signed in to your own Claude plan, instead of an API key. Udyoga never handles your
-  Claude login. Its permission lasts 24 hours; at the next start it asks you to renew.
+* **Your Claude or ChatGPT subscription** – on Linux and Windows, Settings > AI can use the Claude
+  Code or Codex you already have, signed in to your own Claude or ChatGPT plan, instead of an API key,
+  for every AI feature. Udyoga never handles your login. Its permission lasts 24 hours; at the next
+  start it asks you to renew.
 * **In-app updates** – at start (switch it off in Settings > Updates) and on demand, Udyoga finds a
   newer GitHub release, asks, checks the download against `SHA256SUMS.txt` and installs it (release
   builds only).
@@ -87,6 +98,9 @@ Switzerland. Job-site keys for Adzuna and Reed are free and optional.
 On Linux and Windows you can use your Claude subscription instead: install
 [Claude Code](https://code.claude.com/docs/en/setup), then Settings > AI > Connect. Udyoga runs your
 own Claude Code, which keeps your sign-in to itself; Udyoga stores only the time you allowed it.
+A ChatGPT plan works the same way through [Codex](https://developers.openai.com/codex/cli) (sign in
+with `codex login`), using Codex's default model. Codex cannot read PDFs here, so paste your CV's
+text when reading a CV with it.
 
 Your data stays on the device, encrypted, until you turn on sync. An account made in any Brahma app
 works in all of them.

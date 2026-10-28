@@ -3,8 +3,11 @@
 Releases of Brahma, the suite app in `app/`. Each app keeps its own
 changelog in `apps/<name>`.
 
-## Unreleased
+## 0.3.0 (2026-10-28)
 
+- More Brahma apps on the home screen: Vastra (fashion and personal care), Arogya (health
+  records), Bhandara (storage and disk health) and Ganana (AI tokens, costs and limits). They run
+  on their own for now; each card opens the app's download page.
 - One sync server for every Brahma app (`server/`): at home on any Linux computer that stays on
   (`server/home/install.sh` sets up the service, daily backups, the firewall and prints a setup
   link and QR code), or on Cloudflare's free plan (`npm run setup`). Same protocol, owner and
@@ -15,6 +18,9 @@ changelog in `apps/<name>`.
   in everyday words with what to try; Settings, Sync shows the server's health and last backup.
 - At start-up, once a day, each app says when a newer version is out, with What's new, a one-tap
   download (Android APK, Windows setup) and Later.
+- Apps can add a header, a footer and a floating panel to their side rail.
+- Apps updated: Bhojana 0.9.0, Udyoga 0.4.5, and the latest work from Graha Anveshana, Vahana
+  Anveshana, Artha, Vani and Vidya.
 
 ## 0.2.0 (2026-10-25)
 

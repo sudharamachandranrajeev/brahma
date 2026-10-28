@@ -1,8 +1,10 @@
 import 'package:brahma_core/brahma_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app/app.dart';
+import '../app/apps.dart';
 import '../app/providers.dart';
 import 'hosted_app.dart';
 import 'settings_page.dart';
@@ -63,28 +65,19 @@ class _HomePageState extends ConsumerState<HomePage> {
                   padding: const EdgeInsets.fromLTRB(4, 28, 4, 12),
                   child: Text('Your apps', style: type.titleSmall?.copyWith(color: muted)),
                 ),
-                for (var row = 0; row * columns < apps.length; row++)
+                ..._grid([for (final app in apps) _AppCard(app, onOpen: _open)], columns, gap),
+                if (linkedApps.isNotEmpty) ...[
                   Padding(
-                    padding: EdgeInsets.only(bottom: gap),
-                    child: IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          for (var c = 0; c < columns; c++) ...[
-                            if (c > 0) SizedBox(width: gap),
-                            Expanded(
-                              child: row * columns + c < apps.length
-                                  ? FadeIn(
-                                      delay: Duration(milliseconds: 50 * (row * columns + c + 1)),
-                                      child: _AppCard(apps[row * columns + c], onOpen: _open),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                    padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
+                    child: Text('More Brahma apps', style: type.titleSmall?.copyWith(color: muted)),
                   ),
+                  ..._grid(
+                    [for (final app in linkedApps) _LinkedCard(app)],
+                    columns,
+                    gap,
+                    after: apps.length,
+                  ),
+                ],
               ],
             ),
           ),
@@ -93,6 +86,33 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 }
+
+/// [cards] in rows of [columns] equal-height cells, each fading in after
+/// the [after] cards above it.
+List<Widget> _grid(List<Widget> cards, int columns, double gap, {int after = 0}) => [
+  for (var row = 0; row * columns < cards.length; row++)
+    Padding(
+      padding: EdgeInsets.only(bottom: gap),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var c = 0; c < columns; c++) ...[
+              if (c > 0) SizedBox(width: gap),
+              Expanded(
+                child: row * columns + c < cards.length
+                    ? FadeIn(
+                        delay: Duration(milliseconds: 50 * (after + row * columns + c + 1)),
+                        child: cards[row * columns + c],
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+];
 
 /// The top of the page: Brahma's dusk-to-saffron panel with the greeting,
 /// the date, Sentinel, sync and settings.
@@ -346,6 +366,89 @@ class _AppCardState extends ConsumerState<_AppCard> {
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A linked app's card: the same frame as [_AppCard], without figures. It
+/// opens the app's download page in the browser.
+class _LinkedCard extends StatelessWidget {
+  const _LinkedCard(this.app);
+  final LinkedApp app;
+
+  Future<void> _open(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await launchUrl(app.page, mode: LaunchMode.externalApplication)) {
+      messenger.showSnackBar(SnackBar(content: Text('Could not open ${app.page}')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final type = Theme.of(context).textTheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final accent = app.color;
+    final radius = BorderRadius.circular(24);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: const Alignment(0.4, 1),
+          colors: [
+            Color.alphaBlend(accent.withValues(alpha: dark ? 0.16 : 0.09), scheme.surfaceContainerLow),
+            scheme.surfaceContainerLow,
+          ],
+        ),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: radius,
+          onTap: () => _open(context),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [accent, Color.lerp(accent, Colors.black, 0.25)!],
+                    ),
+                  ),
+                  child: Icon(app.icon, color: Colors.white),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(app.name, style: type.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                      Text(
+                        app.tagline,
+                        style: type.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Tooltip(
+                  message: 'Opens in your browser',
+                  child: Icon(Icons.open_in_new, size: 18, color: scheme.onSurfaceVariant),
+                ),
+              ],
             ),
           ),
         ),

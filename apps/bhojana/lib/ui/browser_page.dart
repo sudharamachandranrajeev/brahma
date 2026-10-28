@@ -42,6 +42,9 @@ class BrowserPage extends ConsumerStatefulWidget {
 class _BrowserPageState extends ConsumerState<BrowserPage> {
   InAppWebViewController? _web;
   var _progress = 0.0;
+
+  /// Why the page in view did not load, shown over it with ways on.
+  String? _failed;
   var _step = 0;
   Completer<void>? _loaded;
 
@@ -84,13 +87,14 @@ class _BrowserPageState extends ConsumerState<BrowserPage> {
       _done.clear();
     });
     final kept = latestPrices(ref.read(pricesProvider).value ?? const []);
+    final deals = ref.read(dealsProvider).value ?? const <String, bool>{};
     for (var i = 0; i < widget.basket.length && !_stop && mounted; i++) {
       setState(() => _step = i);
       final item = _item;
       await _load(shop.searchUrl(item.name));
       // Results are drawn by script after the page loads.
       var offers = const <Offer>[];
-      for (var t = 0; t < 8 && offers.isEmpty && !_stop; t++) {
+      for (var t = 0; t < 10 && rank(item.name, offers).isEmpty && !_stop; t++) {
         await Future<void>.delayed(const Duration(milliseconds: 1500));
         offers = parseOffers(shop.id, await _web?.evaluateJavascript(source: readerScript));
       }
@@ -105,13 +109,15 @@ class _BrowserPageState extends ConsumerState<BrowserPage> {
       if (r == 'not-found' && price != null) {
         if (autoPick(item.name, offers) case final other?) r = await _add(other.url, other.title);
       }
-      if (r == 'added' && item.qty > 1) {
+      // A multi-buy the user took means whole deals: 2 of "any 2 for £3".
+      final want = price?.units(item.qty, deals) ?? item.qty;
+      if (r == 'added' && want > 1) {
         var n = 1;
-        for (; n < item.qty; n++) {
+        for (; n < want; n++) {
           await Future<void>.delayed(const Duration(milliseconds: 1500));
           if ('${await _web?.evaluateJavascript(source: moreScript)}' != 'more') break;
         }
-        if (n < item.qty) r = 'added $n';
+        if (n < want) r = 'added $n';
       }
       if (mounted) setState(() => _done[i] = r);
     }
@@ -176,7 +182,7 @@ class _BrowserPageState extends ConsumerState<BrowserPage> {
           if (postcode.isNotEmpty)
             IconButton(
               tooltip: 'Copy postcode $postcode',
-              icon: const Icon(Icons.pin_drop_outlined),
+              icon: const Icon(Icons.pin_drop_rounded),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: postcode));
                 showMessage(context, 'Copied $postcode. Paste it where the shop asks for your postcode.');
@@ -185,15 +191,24 @@ class _BrowserPageState extends ConsumerState<BrowserPage> {
           if (shop.slots != null)
             IconButton(
               tooltip: 'Delivery slots',
-              icon: const Icon(Icons.local_shipping_outlined),
+              icon: const Icon(Icons.local_shipping_rounded),
               onPressed: () => _web?.loadUrl(urlRequest: URLRequest(url: WebUri(shop.slots!))),
             ),
           IconButton(
             tooltip: 'Keep a price from this page',
-            icon: const Icon(Icons.sell_outlined),
+            icon: const Icon(Icons.sell_rounded),
             onPressed: _readPrices,
           ),
-          IconButton(tooltip: 'Reload', icon: const Icon(Icons.refresh), onPressed: () => _web?.reload()),
+          IconButton(
+            tooltip: 'Open in your browser',
+            icon: const Icon(Icons.open_in_browser_rounded),
+            onPressed: _openOutside,
+          ),
+          IconButton(
+            tooltip: 'Reload',
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: () => _web?.reload(),
+          ),
         ],
         bottom: _progress < 1
             ? PreferredSize(
@@ -202,17 +217,64 @@ class _BrowserPageState extends ConsumerState<BrowserPage> {
               )
             : null,
       ),
-      body: InAppWebView(
-        initialUrlRequest: URLRequest(url: WebUri(_start)),
-        initialSettings: InAppWebViewSettings(javaScriptEnabled: true, supportMultipleWindows: false),
-        onWebViewCreated: (c) => _web = c,
-        onLoadStop: (_, _) {
-          if (_loaded?.isCompleted == false) _loaded!.complete();
-        },
-        onProgressChanged: (_, p) => setState(() => _progress = p / 100),
+      body: Stack(
+        children: [
+          InAppWebView(
+            initialUrlRequest: URLRequest(url: WebUri(_start)),
+            initialSettings: webSettings(supportMultipleWindows: false),
+            onWebViewCreated: (c) => _web = c,
+            onLoadStart: (_, _) {
+              if (_failed != null) setState(() => _failed = null);
+            },
+            onLoadStop: (_, _) {
+              if (_loaded?.isCompleted == false) _loaded!.complete();
+            },
+            // A shop's bot check comes with a 403, which the Windows web view
+            // reports here rather than in onLoadStop; the page still shows.
+            onReceivedHttpError: (_, req, _) {
+              if (req.isForMainFrame != false && _loaded?.isCompleted == false) _loaded!.complete();
+            },
+            onReceivedError: (_, req, err) {
+              if (req.isForMainFrame == false || err.type == WebResourceErrorType.CANCELLED) return;
+              if (_loaded?.isCompleted == false) _loaded!.complete();
+              setState(() => _failed = err.description);
+            },
+            onProgressChanged: (_, p) => setState(() => _progress = p / 100),
+          ),
+          if (_failed case final why?)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Theme.of(context).colorScheme.surface,
+                child: EmptyState(
+                  icon: Icons.cloud_off_rounded,
+                  title: '${shop.name} did not load',
+                  message: '$why. Try again, or open it in your browser.',
+                  actions: [
+                    FilledButton.icon(
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Try again'),
+                      onPressed: () => _web?.reload(),
+                    ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.open_in_browser_rounded),
+                      label: const Text('Open in your browser'),
+                      onPressed: _openOutside,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
       bottomNavigationBar: _basket ? _basketBar(context) : null,
     );
+  }
+
+  /// The page in view in the system browser, for a shop whose bot check
+  /// will not pass in the app.
+  Future<void> _openOutside() async {
+    final url = await _web?.getUrl();
+    if (mounted) await openLink(context, '${url ?? _start}');
   }
 
   Widget _basketBar(BuildContext context) {
@@ -279,7 +341,7 @@ class _BrowserPageState extends ConsumerState<BrowserPage> {
                   OutlinedButton(onPressed: () => setState(() => _stop = true), child: const Text('Stop'))
                 else
                   FilledButton.icon(
-                    icon: const Icon(Icons.add_shopping_cart),
+                    icon: const Icon(Icons.add_shopping_cart_rounded),
                     label: Text(_done.isEmpty ? 'Add all' : 'Again'),
                     onPressed: shop.searchable ? _fill : null,
                   ),

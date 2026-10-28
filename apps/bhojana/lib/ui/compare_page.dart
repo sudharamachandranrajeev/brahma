@@ -9,6 +9,7 @@ import '../domain/reader.dart';
 import '../domain/shops.dart';
 import 'browser_page.dart';
 import 'common.dart';
+import 'item_page.dart';
 import 'look.dart';
 
 /// Searches one product across the user's shops. Opened from a list item
@@ -60,6 +61,22 @@ class _ComparePageState extends ConsumerState<ComparePage> {
   Future<void> _keep(Offer o, {String source = 'web'}) async {
     await ref.mutate((s) => s.book.keepOffer(o, itemId: widget.item?.id, query: _searched, source: source));
     if (mounted) showMessage(context, 'Kept ${pounds(o.pence)} at ${shopName(o.shop)}.');
+  }
+
+  /// Puts the product searched on the list with [o] as its price at that
+  /// shop, then opens the new item.
+  Future<void> _addToList(Offer o) async {
+    final list = await ref.read(currentListProvider.future);
+    if (list == null) {
+      if (mounted) showMessage(context, 'Start a list first, on the List page.');
+      return;
+    }
+    final id = await ref.mutate((s) async {
+      final id = await s.book.addItem(list.id, _searched, today: today());
+      await s.book.keepOffer(o, itemId: id, query: _searched, source: 'web');
+      return id;
+    });
+    if (mounted) await openItem(context, id);
   }
 
   /// Keeps a price the user read off a shelf, a leaflet or a site.
@@ -115,12 +132,13 @@ class _ComparePageState extends ConsumerState<ComparePage> {
         children: [
           if (available)
             FilledButton.icon(
-              icon: const Icon(Icons.search),
+              style: coralButton(context),
+              icon: const Icon(Icons.search_rounded),
               label: Text('Search ${mine.where((s) => s.searchable).length} shops'),
               onPressed: () => _search(mine),
             ),
           OutlinedButton.icon(
-            icon: const Icon(Icons.edit_outlined),
+            icon: const Icon(Icons.edit_rounded),
             label: const Text('Type a price'),
             onPressed: _typePrice,
           ),
@@ -129,7 +147,14 @@ class _ComparePageState extends ConsumerState<ComparePage> {
       const SizedBox(height: 16),
       if (!available) _NoWebView(shops: mine, query: _query.text),
       for (final s in mine)
-        if (_results[s.id] case final r?) _ShopResults(shop: s, query: _searched, result: r, onKeep: _keep),
+        if (_results[s.id] case final r?)
+          _ShopResults(
+            shop: s,
+            query: _searched,
+            result: r,
+            onKeep: _keep,
+            onAdd: pushed ? null : _addToList,
+          ),
       if (kept.isNotEmpty)
         SectionCard(
           title: 'Prices kept',
@@ -153,7 +178,7 @@ class _ComparePageState extends ConsumerState<ComparePage> {
                       Text(pounds(p.pence), style: Theme.of(context).textTheme.titleMedium),
                       IconButton(
                         tooltip: 'Forget this price',
-                        icon: const Icon(Icons.close, size: 18),
+                        icon: const Icon(Icons.close_rounded, size: 18),
                         onPressed: () => ref.mutate((s) => s.book.removePrice(p.id)),
                       ),
                     ],
@@ -190,18 +215,27 @@ class _ComparePageState extends ConsumerState<ComparePage> {
 }
 
 class _ShopResults extends StatelessWidget {
-  const _ShopResults({required this.shop, required this.query, required this.result, required this.onKeep});
+  const _ShopResults({
+    required this.shop,
+    required this.query,
+    required this.result,
+    required this.onKeep,
+    this.onAdd,
+  });
   final Shop shop;
   final String query;
   final AsyncValue<List<Offer>> result;
   final Future<void> Function(Offer) onKeep;
+
+  /// Adds the product to the list with this price: a free search only.
+  final Future<void> Function(Offer)? onAdd;
 
   @override
   Widget build(BuildContext context) => SectionCard(
     title: shop.name,
     trailing: IconButton(
       tooltip: 'Open ${shop.name}',
-      icon: const Icon(Icons.open_in_new, size: 20),
+      icon: const Icon(Icons.open_in_new_rounded, size: 20),
       onPressed: () => openShop(context, shop, url: shop.searchUrl(query)),
     ),
     padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
@@ -219,7 +253,12 @@ class _ShopResults extends StatelessWidget {
             ListTile(
               title: Text(o.title, maxLines: 2, overflow: TextOverflow.ellipsis),
               subtitle: Text(
-                [o.unitPrice, o.offer, if (!o.inStock) 'Out of stock'].where((s) => s.isNotEmpty).join(' · '),
+                [
+                  o.unitPrice,
+                  o.offer,
+                  if (o.multiBuy case final d?) 'Multi-buy: ${d.text} (${pounds(d.each)} each)',
+                  if (!o.inStock) 'Out of stock',
+                ].where((s) => s.isNotEmpty).join(' · '),
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -227,8 +266,14 @@ class _ShopResults extends StatelessWidget {
                   Text(
                     pounds(o.pence),
                     style: Theme.of(context).textTheme.titleMedium
-                        ?.copyWith(color: o.offer.isEmpty ? null : tomato),
+                        ?.copyWith(color: o.offer.isEmpty ? null : priceInk(context)),
                   ),
+                  if (onAdd != null)
+                    IconButton(
+                      tooltip: 'Add to list',
+                      icon: const Icon(Icons.playlist_add_rounded),
+                      onPressed: () => onAdd!(o),
+                    ),
                   IconButton(
                     tooltip: 'Keep this price',
                     icon: const Icon(Icons.bookmark_add_outlined),
@@ -274,7 +319,7 @@ class _NoWebView extends StatelessWidget {
             for (final s in shops)
               if (s.searchable)
                 ActionChip(
-                  avatar: const Icon(Icons.open_in_new, size: 16),
+                  avatar: const Icon(Icons.open_in_new_rounded, size: 16),
                   label: Text(s.name),
                   onPressed: () => openLink(context, query.trim().isEmpty ? s.home : s.searchUrl(query)),
                 ),

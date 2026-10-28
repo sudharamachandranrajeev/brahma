@@ -1,7 +1,7 @@
 name: brahma
 description: "Brahma - one app for every part of life the Brahma apps look after: money, property, career, social media and learning (Linux, Windows, Android)."
 publish_to: 'none'
-version: 0.2.0+2
+version: 0.3.0+3
 
 environment:
   sdk: ^3.13.5
@@ -33,6 +33,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.4.3
+  url_launcher: ^6.3.2
 
 # The apps name brahma_core by its git URL; here everything builds against
 # the core in this repository.

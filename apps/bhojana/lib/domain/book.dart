@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:brahma_core/brahma_core.dart';
 import 'package:drift/drift.dart';
 
@@ -112,7 +114,7 @@ class ShoppingBook {
         title: o.title,
         pence: o.pence,
         unitPrice: Value(o.unitPrice),
-        offer: Value(o.offer),
+        offer: Value([o.deal, o.offer].where((t) => t.isNotEmpty).join(' · ')),
         url: Value(o.url),
         inStock: Value(o.inStock),
         day: today(),
@@ -139,6 +141,111 @@ class ShoppingBook {
 
   Future<void> setPref(String key, String value) =>
       store.save(db.prefs, PrefsCompanion.insert(id: key, value: value), key);
+
+  // ---- multi-buy deals ----
+
+  /// The user's answer to each multi-buy deal offered: true to take it,
+  /// false to pay the single price. Keyed by [dealKey].
+  Future<Map<String, bool>> dealChoices() async {
+    final raw = await pref(dealsPref);
+    if (raw == null || raw.isEmpty) return const {};
+    try {
+      return {for (final e in (jsonDecode(raw) as Map).entries) '${e.key}': e.value == true};
+    } on FormatException {
+      return const {};
+    }
+  }
+
+  Future<void> chooseDeal(String key, bool take) async =>
+      setPref(dealsPref, jsonEncode({...await dealChoices(), key: take}));
+
+  // ---- budget ----
+
+  /// The list's budget in pence, or null when it has none.
+  Future<int?> budget(String listId) async => int.tryParse(await pref('$budgetPref.$listId') ?? '');
+
+  /// Sets the list's budget; null clears it.
+  Future<void> setBudget(String listId, int? pence) => setPref('$budgetPref.$listId', '${pence ?? ''}');
+
+  // ---- re-adding ----
+
+  /// Names the user has bought before and has not on [onList]: the latest
+  /// first, each once, including items since deleted from other lists.
+  Future<List<String>> usualItems(Set<String> onList, {int limit = 8}) async {
+    final rows =
+        await (db.select(db.foodItems)
+              ..orderBy([(t) => OrderingTerm.desc(t.added), (t) => OrderingTerm.desc(t.ord)])
+              ..limit(200))
+            .get();
+    final seen = {...onList.map((n) => n.toLowerCase())};
+    final out = <String>[];
+    for (final r in rows) {
+      if (seen.add(r.name.toLowerCase())) out.add(r.name);
+      if (out.length == limit) break;
+    }
+    return out;
+  }
+
+  // ---- price watch ----
+
+  /// The items whose price the user watches, by id.
+  Future<Set<String>> watched() async => {...?(await pref(watchPref))?.split(',').where((s) => s.isNotEmpty)};
+
+  Future<void> watch(String itemId, bool on) async {
+    final ids = await watched();
+    await setPref(watchPref, (on ? (ids..add(itemId)) : (ids..remove(itemId))).join(','));
+  }
+}
+
+/// The synced pref, per list, holding [ShoppingBook.budget].
+const budgetPref = 'bhojana.budget';
+
+/// The synced pref holding [ShoppingBook.watched].
+const watchPref = 'bhojana.watch';
+
+/// The synced pref holding [ShoppingBook.dealChoices].
+const dealsPref = 'bhojana.deals';
+
+/// One answer per item, shop and deal: a new deal is asked about again.
+String dealKey(Price p, MultiBuy d) => '${p.itemId}|${p.shop}|${d.text}';
+
+extension PriceDeal on Price {
+  /// The multi-buy kept with this price, where the shop's deals are read.
+  MultiBuy? get multiBuy => multiBuyAt(shop, offer, pence);
+
+  /// The deal, if the user took it.
+  MultiBuy? takenDeal(Map<String, bool> deals) => switch (multiBuy) {
+    final d? when deals[dealKey(this, d)] == true => d,
+    _ => null,
+  };
+
+  /// What [want] of it cost: on the deal if the user took it, else singly.
+  int cost(int want, Map<String, bool> deals) => takenDeal(deals)?.cost(want) ?? pence * want;
+
+  /// How many to put in the basket for [want].
+  int units(int want, Map<String, bool> deals) => takenDeal(deals)?.units(want) ?? want;
+}
+
+/// A multi-buy found for a list item, with the user's answer (null: not
+/// answered yet).
+typedef DealOffer = ({Item item, Price price, MultiBuy deal, bool? taken});
+
+/// The multi-buys found for [items] at [shopIds], unanswered first.
+List<DealOffer> dealOffers(
+  List<Item> items,
+  List<Price> prices,
+  Map<String, bool> deals,
+  Set<String> shopIds,
+) {
+  final latest = latestPrices(prices);
+  final out = <DealOffer>[
+    for (final i in items)
+      for (final s in shopIds)
+        if (latest[(i.id, s)] case final p?)
+          if (p.multiBuy case final d?) (item: i, price: p, deal: d, taken: deals[dealKey(p, d)]),
+  ];
+  out.sort((a, b) => (a.taken == null ? 0 : 1).compareTo(b.taken == null ? 0 : 1));
+  return out;
 }
 
 /// The latest price per (item, shop): the one a list is costed with.
@@ -158,7 +265,7 @@ Map<(String, String), Price> latestPrices(List<Price> prices) {
 
 /// What [items] cost at each shop that has a price for any of them,
 /// cheapest complete basket first.
-List<ShopCost> costByShop(List<Item> items, List<Price> prices) {
+List<ShopCost> costByShop(List<Item> items, List<Price> prices, {Map<String, bool> deals = const {}}) {
   final latest = latestPrices(prices);
   final shopIds = {for (final k in latest.keys) k.$2};
   final out = <ShopCost>[];
@@ -167,7 +274,7 @@ List<ShopCost> costByShop(List<Item> items, List<Price> prices) {
     for (final i in items) {
       final p = latest[(i.id, s)];
       if (p == null) continue;
-      pence += p.pence * i.qty;
+      pence += p.cost(i.qty, deals);
       priced++;
     }
     if (priced > 0) out.add(ShopCost(s, pence, priced, items.length));
@@ -202,7 +309,12 @@ class Verdict {
 /// the whole list they are compared on it; otherwise every shop is compared
 /// like for like on the items they all price. Null when there is nothing to
 /// compare.
-Verdict? cheapestShop(List<Item> items, List<Price> prices, List<ShopCost> costs) {
+Verdict? cheapestShop(
+  List<Item> items,
+  List<Price> prices,
+  List<ShopCost> costs, {
+  Map<String, bool> deals = const {},
+}) {
   if (costs.isEmpty) return null;
   final complete = [
     for (final c in costs)
@@ -226,7 +338,7 @@ Verdict? cheapestShop(List<Item> items, List<Price> prices, List<ShopCost> costs
   ];
   if (common.isEmpty) return null;
   final totals = [
-    for (final s in shops) (s, common.fold(0, (sum, i) => sum + latest[(i.id, s)]!.pence * i.qty)),
+    for (final s in shops) (s, common.fold(0, (sum, i) => sum + latest[(i.id, s)]!.cost(i.qty, deals))),
   ]..sort((a, b) => a.$2.compareTo(b.$2));
   final next = totals.length > 1 ? totals[1] : null;
   return Verdict(
@@ -245,6 +357,48 @@ Price? bestPrice(String itemId, List<Price> prices) {
     if (p.itemId == itemId && p.inStock && (best == null || p.pence < best.pence)) best = p;
   }
   return best;
+}
+
+/// A watched item that costs less than last time: its best price now and
+/// the best on the latest earlier day it was priced.
+typedef PriceDrop = ({Item item, Price now, Price was});
+
+/// The price drops among [items] watched in [watched], biggest first.
+List<PriceDrop> priceDrops(List<Item> items, List<Price> prices, Set<String> watched) {
+  final out = <PriceDrop>[];
+  for (final i in items) {
+    if (!watched.contains(i.id)) continue;
+    final now = bestPrice(i.id, prices);
+    if (now == null) continue;
+    Price? was;
+    for (final p in prices) {
+      if (p.itemId != i.id || !p.inStock || p.day.compareTo(now.day) >= 0) continue;
+      final c = was == null ? 1 : p.day.compareTo(was.day);
+      if (c > 0 || (c == 0 && p.pence < was!.pence)) was = p;
+    }
+    if (was != null && now.pence < was.pence) out.add((item: i, now: now, was: was));
+  }
+  out.sort((a, b) => (b.was.pence - b.now.pence).compareTo(a.was.pence - a.now.pence));
+  return out;
+}
+
+/// What a list comes to at each item's best price: the items in the basket,
+/// the whole list, and how many items have no price yet (left out of both).
+typedef Spend = ({int basket, int list, int unpriced});
+
+Spend spend(List<Item> items, List<Price> prices, {Map<String, bool> deals = const {}}) {
+  var basket = 0, list = 0, unpriced = 0;
+  for (final i in items) {
+    final p = bestPrice(i.id, prices);
+    if (p == null) {
+      unpriced++;
+      continue;
+    }
+    final c = p.cost(i.qty, deals);
+    list += c;
+    if (i.done) basket += c;
+  }
+  return (basket: basket, list: list, unpriced: unpriced);
 }
 
 /// Pence as "£1.25" or "85p".
