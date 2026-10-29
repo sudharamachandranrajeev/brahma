@@ -103,7 +103,7 @@ the newest release, pick the file for your device:
 
 | Your device | File to download | Works on |
 | --- | --- | --- |
-| 🐧 Linux computer | `Brahma-<version>-linux-x64.tar.gz` | Ubuntu 24.04, Fedora, Arch and similar (Intel/AMD 64-bit) |
+| 🐧 Linux computer | `Brahma-<version>-linux-x64.tar.gz` | Ubuntu 24.04, Fedora, Arch and similar (64-bit x86) |
 | 🪟 Windows computer | `Brahma-<version>-windows-x64-setup.exe` | Windows 10 and 11 |
 | 🤖 Android phone | `Brahma-<version>-android.apk` | Android 7 and newer |
 
@@ -145,7 +145,7 @@ Prefer no installer? Download `…-windows-x64-portable.zip`, unzip it anywhere 
 
 1. Open the downloaded `.apk` on your phone.
 2. If Android asks, allow installs from your browser or file manager. This is normal for apps
-   from outside the Play Store.
+   from outside an app store.
 3. Tap **Install**, then **Open**.
 
 Newer versions install over the top and keep your data.
@@ -234,8 +234,8 @@ app. Uninstalling on Linux or Windows leaves it in place.
 <details>
 <summary><b>Does Ask AI see my data?</b></summary>
 
-No. It sends only the name of the screen and your question. The simplest choice opens ChatGPT,
-Claude or Gemini in your browser with the question filled in. You can also use your own key or an
+No. It sends only the name of the screen and your question. The simplest choice opens a popular AI
+chat site in your browser with the question filled in. You can also use your own key or an
 AI on your own computer.
 </details>
 
@@ -289,9 +289,8 @@ A `v*` tag builds, smoke-tests and publishes the Android, Windows and Linux buil
   [flutter_secure_storage](https://pub.dev/packages/flutter_secure_storage) and
   [qr](https://pub.dev/packages/qr)
 - [PocketBase](https://pocketbase.io) for the original sync server
-- [Cloudflare Workers](https://workers.cloudflare.com) and [ntfy](https://ntfy.sh) for the cloud
-  sync server and Brahma Watch
-- Known exploited flaws from [CISA's KEV catalogue](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) for Sentinel
+- [ntfy](https://ntfy.sh) for Brahma Watch alerts
+- Known exploited flaws from a public government catalogue, for Sentinel
 
 </details>
 
