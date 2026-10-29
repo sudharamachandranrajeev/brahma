@@ -3,6 +3,11 @@
 Releases of Brahma, the suite app in `app/`. Each app keeps its own
 changelog in `apps/<name>`.
 
+## 0.3.1 (2026-10-28)
+
+- Windows builds again with Visual Studio 2026: 0.3.0 was never published because the Windows
+  build failed.
+
 ## 0.3.0 (2026-10-28)
 
 - More Brahma apps on the home screen: Vastra (fashion and personal care), Arogya (health
