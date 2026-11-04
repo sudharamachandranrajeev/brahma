@@ -46,3 +46,47 @@ jobs:
       - name: Linux build
         if: matrix.package == 'app'
         run: flutter build linux --release
+
+  android-build:
+    name: android build (debug key)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+      - run: flutter pub get
+      # Debug-signed, every push: catches Android build breaks fast. The
+      # release-signed APK and emulator smoke test stay in release.yml,
+      # gated on a v* tag, where the signing secrets are available.
+      - name: Build the APK (debug key)
+        run: flutter build apk --debug
+
+  windows-build:
+    name: windows build
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.7
+          cache: true
+      - run: flutter pub get
+      # No installer/VC++ bundling here (that's release.yml); just prove the
+      # Windows build compiles on every push.
+      - name: Build
+        run: flutter build windows --release
