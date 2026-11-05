@@ -18,5 +18,8 @@
   "allowScripts": {
     "workerd@1.20261019.1": true,
     "esbuild@0.28.2": true
+  },
+  "dependencies": {
+    "postal-mime": "4.0.11"
   }
 }

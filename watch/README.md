@@ -11,6 +11,14 @@ in code: Anveshana edits them through `PUT /watches`. `npm run setup` also
 loads `~/.config/brahma/watches.json` when it exists (a JSON array of
 watches; see `Watch` in `src/watch.ts`).
 
+It also reads the property alert emails that Rightmove, Zoopla, OnTheMarket,
+OpenRent and SpareRoom send you, so England searches work too. Those sites
+do not allow programs to read their pages, so Watch never fetches them. You
+set up alerts on each site; your mailbox forwards the alert emails to Watch;
+Watch applies your own limits (place and distance, price, bedrooms, words
+such as "pets" or "-retirement"), drops the same home sent by a second site,
+and pushes one alert per home. Keep it for your own use.
+
 ## Deploy
 
 ```sh
@@ -22,6 +30,38 @@ npm run setup        # KV, secrets, deploy, first run, test push
 `~/.config/brahma/watch.env` (mode 600). Re-running it reuses them. On the
 phone, install ntfy and subscribe to the printed topic (QR code shown).
 
+## Alert emails (England)
+
+You need a domain on your Cloudflare account (Email Routing works only on a
+domain you own there) and a mailbox that can forward, such as Gmail.
+
+1. Redeploy with the mailbox that will forward the alerts. Email from any
+   other sender is refused, so strangers cannot push fake adverts to you:
+   ```sh
+   ALLOWED_FORWARDERS=you@gmail.com npm run setup
+   ```
+2. In the Cloudflare dashboard, open your domain, then **Email → Email
+   Routing**. Turn it on, and add a custom address such as `homes@` with the
+   action **Send to a Worker**, choosing `brahma-watch`.
+3. In Gmail, open **Settings → Forwarding and POP/IMAP → Add a forwarding
+   address** and enter `homes@your-domain`. Gmail sends a confirmation code
+   there; Watch pushes the code to your phone. Type it into Gmail yourself.
+4. In Gmail, create a filter for each site's alert sender (for example
+   `from:(rightmove.com OR rightmove.co.uk OR zoopla.co.uk OR onthemarket.com
+   OR openrent.co.uk OR spareroom.co.uk)`) with **Forward it to** that
+   address. Keep a copy in your inbox.
+5. On each site, save your searches with **instant** email alerts.
+6. In Anveshana, add an email search on the **Searches** page (place or
+   postcode, distance, price, bedrooms, words) and tap **Send to Watch**.
+
+Limits: an alert is only as fast as the site sends it. Rightmove puts at most
+14 homes in one email and does not email cuts under 2%. Let-agreed and sold
+changes do not come by email. The sites change their emails without notice:
+when Watch finds no adverts in an alert, it pushes a warning and keeps a copy
+(`GET /email`) so the reader can be fixed. The place of an advert comes from
+its postcode or town through [postcodes.io](https://postcodes.io); one without
+a findable place does not match a search with a distance.
+
 ## API
 
 All calls need `Authorization: Bearer $API_TOKEN`.
@@ -30,7 +70,8 @@ All calls need `Authorization: Bearer $API_TOKEN`.
 |---|---|
 | `GET /watches`, `PUT /watches` | Read or replace the saved searches (validated, max 50) |
 | `GET /events?since=<ISO time>` | Alerts raised since a time (last 500 kept) |
-| `GET /status` | Last run, last success and error per search |
+| `GET /status` | Last run, last success and error per search (rewritten at most hourly while healthy) |
+| `GET /email` | The last alert email read, and the last one the reader could not handle |
 | `POST /run` | Run now |
 | `POST /test-notify` | Send a test push |
 

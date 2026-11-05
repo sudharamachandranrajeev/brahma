@@ -44,6 +44,9 @@ if (existsSync(envPath)) {
 }
 env.NTFY_TOPIC ??= `brahma-${randomBytes(12).toString("hex")}`;
 env.API_TOKEN ??= randomBytes(32).toString("hex");
+// Alert emails: the mailbox(es) that forward them, e.g.
+//   ALLOWED_FORWARDERS=you@gmail.com npm run setup
+if (process.env.ALLOWED_FORWARDERS) env.ALLOWED_FORWARDERS = process.env.ALLOWED_FORWARDERS;
 
 const deployed = wrangler(["deploy"]);
 const url = deployed.match(/https:\/\/[\w.-]+\.workers\.dev/)?.[0];
@@ -54,7 +57,9 @@ mkdirSync(dir, { recursive: true, mode: 0o700 });
 writeFileSync(envPath, Object.entries(env).map(([k, v]) => `${k}=${v}`).join("\n") + "\n", { mode: 0o600 });
 chmodSync(envPath, 0o600);
 
-for (const name of ["NTFY_TOPIC", "API_TOKEN"]) wrangler(["secret", "put", name], env[name]);
+for (const name of ["NTFY_TOPIC", "API_TOKEN", "ALLOWED_FORWARDERS"]) {
+  if (env[name]) wrangler(["secret", "put", name], env[name]);
+}
 
 const call = async (path: string, method = "POST", body?: string) => {
   const res = await fetch(url + path, {

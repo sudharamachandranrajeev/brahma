@@ -22,6 +22,15 @@ export interface Listing {
   image: string | null;
   /** toLet, letAgreed, forSale, saleAgreed... */
   status: string;
+  /**
+   * Where it came from when not PropertyPal: the portal of an alert email
+   * ("rightmove", "zoopla", "onTheMarket", "openRent", "spareRoom"), with
+   * that portal's own advert id. [id] is then "<source>:<sourceId>".
+   */
+  source?: string;
+  sourceId?: string;
+  /** Email alerts: the advert's words as the email gave them, for keywords. */
+  text?: string;
 }
 
 const origin = "https://www.propertypal.com";
