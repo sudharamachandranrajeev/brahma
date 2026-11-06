@@ -138,6 +138,9 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
         selectedIndex: _index,
         onDestinationSelected: _select,
         labelType: extended ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+        // Destinations scroll (wheel, touchpad, drag) when the window is too
+        // short to show them all; the header and footer stay pinned.
+        scrollable: true,
         trailingAtBottom: true,
         trailing: widget.railFooter == null
             ? null
