@@ -22,10 +22,12 @@ class AskAiButton extends StatelessWidget {
   );
 }
 
-Future<void> showAskAi(BuildContext context, {String? screen, String? topic}) => showDialog<void>(
-  context: context,
-  builder: (_) => _AskAiDialog(screen: screen, topic: topic),
-);
+/// [question] starts the box filled in (passed on from Help's search).
+Future<void> showAskAi(BuildContext context, {String? screen, String? topic, String question = ''}) =>
+    showDialog<void>(
+      context: context,
+      builder: (_) => _AskAiDialog(screen: screen, topic: topic, question: question),
+    );
 
 /// Picks where Ask AI's answers come from.
 Future<void> showAskAiSetup(BuildContext context) =>
@@ -36,15 +38,16 @@ const _privacy =
     'Don\'t type passwords, recovery keys or other private details.';
 
 class _AskAiDialog extends ConsumerStatefulWidget {
-  const _AskAiDialog({this.screen, this.topic});
+  const _AskAiDialog({this.screen, this.topic, this.question = ''});
   final String? screen, topic;
+  final String question;
 
   @override
   ConsumerState<_AskAiDialog> createState() => _AskAiDialogState();
 }
 
 class _AskAiDialogState extends ConsumerState<_AskAiDialog> {
-  final _question = TextEditingController();
+  late final _question = TextEditingController(text: widget.question);
   final _scroll = ScrollController();
   final _turns = <HelpTurn>[];
   bool _busy = false;

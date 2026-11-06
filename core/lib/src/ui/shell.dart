@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../app/modules.dart';
 import '../app/providers.dart';
-import '../help/ask_ai_ui.dart';
+import '../help/help_search.dart';
 import '../help/report.dart';
 import 'hints.dart';
 import 'theme.dart';
@@ -102,11 +102,14 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     if (!Motion.reduced(context)) _fade.forward(from: 0);
   }
 
-  /// Ask AI about the screen on show.
-  void _ask() {
-    final d = _destinations[_index];
-    showAskAi(context, screen: d.label, topic: ref.read(hintTextsProvider)['page.${d.id}']);
-  }
+  /// Help for the screen on show: the offline feature search, which can
+  /// open another screen or pass the question on to Ask AI.
+  void _ask() => showHelp(
+    context,
+    screens: _destinations,
+    current: _destinations[_index],
+    onGo: (d) => _select(_destinations.indexOf(d)),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -149,8 +152,8 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
               const SizedBox(height: 8),
               IconButton(
                 onPressed: _ask,
-                tooltip: 'Ask AI for help with this screen',
-                icon: const Icon(Icons.auto_awesome_outlined),
+                tooltip: 'Help: search this app or ask AI',
+                icon: const Icon(Icons.help_outline),
               ),
             ],
           ),
@@ -613,7 +616,7 @@ class _SidePanel extends ConsumerWidget {
                 selected: i == selected,
               ),
             const Divider(height: 24),
-            tile(Icons.auto_awesome_outlined, 'Ask AI', 'Stuck? Ask how to do something here.', onAsk),
+            tile(Icons.help_outline, 'Help', 'Search what this app can do, or ask AI.', onAsk),
           ],
         ),
       ),
