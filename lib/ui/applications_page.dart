@@ -236,10 +236,13 @@ class ApplicationTile extends StatelessWidget {
                         ),
                       ),
                       if (a.followUp != null && stage.open)
-                        Pill(
-                          'Follow up ${relativeDay(a.followUp!, now)}',
-                          status: followUpStatus(a.followUp!, now),
-                          icon: Icons.notifications_none,
+                        // Shrinks (the label ellipsizes) on narrow cards.
+                        Flexible(
+                          child: Pill(
+                            'Follow up ${relativeDay(a.followUp!, now)}',
+                            status: followUpStatus(a.followUp!, now),
+                            icon: Icons.notifications_none,
+                          ),
                         ),
                     ],
                   ),

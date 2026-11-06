@@ -1,3 +1,4 @@
+import 'package:brahma_core/brahma_core.dart' show addDays, isoDate;
 import 'package:udyoga/domain/book.dart';
 import 'package:udyoga/domain/insights.dart';
 import 'package:udyoga/domain/pipeline.dart';
@@ -8,10 +9,12 @@ import 'support.dart';
 /// several stages, a lead, a career map, an assessment, growth items and a
 /// practice round with a reviewed answer.
 Future<void> seedBook(CareerBook book, {String today = '2026-10-24'}) async {
+  // Today's lists look ahead from the real date, so these stay in the future.
+  final soon = addDays(isoDate(DateTime.now()), 3);
   await book.saveProfile(sampleProfile);
   final ids = await book.importPostings(
     [
-      samplePosting(closing: '2026-10-28'),
+      samplePosting(closing: soon),
       samplePosting(id: '2', title: 'Digital Nurse Specialist', company: 'Sample Care Group'),
       samplePosting(id: '3', title: 'EPR Trainer', company: 'Northwind Health'),
       samplePosting(
@@ -30,7 +33,7 @@ Future<void> seedBook(CareerBook book, {String today = '2026-10-24'}) async {
   final a1 = await book.applyFor(await book.job(ids[1]), today: '2026-10-10', sent: true);
   final a2 = await book.applyFor(await book.job(ids[2]), today: '2026-10-01', sent: true);
   await book.moveTo(a2, Stage.interview, date: '2026-10-15');
-  await book.logEvent(a2, 'interview', at: '2026-10-30T10:00', summary: 'Panel interview');
+  await book.logEvent(a2, 'interview', at: '${soon}T10:00', summary: 'Panel interview');
   await book.setFollowUp(a1, '2026-10-20');
   await book.importLeads([
     const LeadSuggestion({
