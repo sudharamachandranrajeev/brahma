@@ -19,7 +19,10 @@ export interface Listing {
   lon: number | null;
   agent: string;
   agentPhone: string;
+  /** The main photo; kept for app versions that read only this. */
   image: string | null;
+  /** Every photo, the main one first. Graha Anveshana 0.8 and later show them all. */
+  images?: string[];
   /** toLet, letAgreed, forSale, saleAgreed... */
   status: string;
   /**
@@ -65,6 +68,7 @@ function toListing(r: any): Listing {
     agent: r.account?.organisation ?? "",
     agentPhone: phone?.international ?? "",
     image: r.images?.[0]?.url ?? null,
+    images: (r.images ?? []).map((i: any) => i?.url).filter((u: unknown): u is string => typeof u === "string" && u !== ""),
     status: r.status?.key ?? "",
   };
 }

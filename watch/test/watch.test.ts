@@ -30,6 +30,8 @@ test("parses the saved results page", () => {
   assert.equal(flat.agentPhone, "+44 28 9649 6000");
   assert.equal(flat.status, "toLet");
   assert.equal(flat.url, "https://www.propertypal.com/apt-1-sample-street-enniskillen/101");
+  assert.equal(flat.image, "https://example.com/101.jpg");
+  assert.deepEqual(flat.images, ["https://example.com/101.jpg"]);
   assert.equal(byAddress("Quiet Court").price, null, "hidden price");
 });
 
