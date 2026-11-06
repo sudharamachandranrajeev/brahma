@@ -46,4 +46,5 @@ export 'src/ui/format.dart';
 export 'src/ui/hints.dart';
 export 'src/ui/shell.dart';
 export 'src/ui/theme.dart';
+export 'src/ui/tour.dart';
 export 'src/ui/widgets.dart';

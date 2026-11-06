@@ -8,6 +8,7 @@ import '../sync/account_api.dart';
 import '../sync/server_check.dart';
 import '../ui/format.dart';
 import '../ui/hints.dart';
+import '../ui/tour.dart';
 import '../ui/widgets.dart';
 import 'pairing_dialogs.dart';
 import 'owner_tools.dart';
@@ -65,6 +66,17 @@ class HintsCard extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => showAskAiSetup(context),
           ),
+          if (ref.watch(tourProvider).isNotEmpty)
+            Hint(
+              'settings.tour',
+              child: ListTile(
+                leading: const Icon(Icons.tour_outlined),
+                title: const Text('Take the tour'),
+                subtitle: const Text('A short walk through the main screens. Skip it at any step.'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => ref.read(tourRequestProvider.notifier).start(),
+              ),
+            ),
         ],
       ),
     );

@@ -9,6 +9,7 @@ import '../help/help_search.dart';
 import '../help/report.dart';
 import 'hints.dart';
 import 'theme.dart';
+import 'tour.dart';
 
 /// Navigation around every module's screens: a rail on wide windows; on phones
 /// a scrolling dock and a side panel the page slides aside for. Pages are
@@ -75,6 +76,24 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
     // Start the sync controller.
     ref.read(syncProvider);
     widget.onStart?.call(ref);
+    // Offer the tour once, after the first frame, when the app has one.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || !await ref.read(tourOfferProvider.future) || !mounted) return;
+      if (await offerTour(context, ref)) _tour();
+    });
+  }
+
+  /// The app's guided tour; each step can switch to its screen.
+  void _tour() {
+    if (!mounted) return;
+    runTour(
+      context,
+      ref.read(tourProvider),
+      showScreen: (id) {
+        final i = _destinations.indexWhere((d) => d.id == id);
+        if (i >= 0) _select(i);
+      },
+    );
   }
 
   @override
@@ -113,6 +132,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(tourRequestProvider, (_, _) => _tour());
     final width = MediaQuery.sizeOf(context).width;
     final indexed = IndexedStack(
       index: _index,
@@ -164,7 +184,7 @@ class _AppShellState extends ConsumerState<AppShell> with TickerProviderStateMix
         destinations: [
           for (final d in _destinations)
             NavigationRailDestination(
-              icon: Hint(d.hint, child: Icon(d.icon)),
+              icon: TourTarget(d.hint, child: Hint(d.hint, child: Icon(d.icon))),
               selectedIcon: Icon(d.selectedIcon),
               label: Text(d.label),
             ),
@@ -431,13 +451,16 @@ class _DockState extends State<_Dock> {
                           onTap: widget.onHome!,
                         ),
                       for (final i in _order)
-                        _DockItem(
+                        TourTarget(
+                          widget.destinations[i].hint,
                           key: _keys[i],
-                          icon: widget.destinations[i].icon,
-                          selectedIcon: widget.destinations[i].selectedIcon,
-                          label: widget.destinations[i].label,
-                          selected: i == widget.selected,
-                          onTap: () => widget.onSelect(i),
+                          child: _DockItem(
+                            icon: widget.destinations[i].icon,
+                            selectedIcon: widget.destinations[i].selectedIcon,
+                            label: widget.destinations[i].label,
+                            selected: i == widget.selected,
+                            onTap: () => widget.onSelect(i),
+                          ),
                         ),
                     ],
                   ),
@@ -472,7 +495,6 @@ class _DockState extends State<_Dock> {
 
 class _DockItem extends StatelessWidget {
   const _DockItem({
-    super.key,
     required this.icon,
     required this.selectedIcon,
     required this.label,

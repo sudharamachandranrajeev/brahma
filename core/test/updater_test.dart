@@ -64,8 +64,9 @@ void main() {
             200,
           );
         }
-        if (url == _dl('SHA256SUMS.txt'))
+        if (url == _dl('SHA256SUMS.txt')) {
           return http.Response('${sum ?? sha256.convert(file)}  $name\n', 200);
+        }
         if (url == _dl(name)) return http.Response.bytes(file, 200);
         return http.Response('', 404);
       });

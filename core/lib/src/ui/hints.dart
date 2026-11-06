@@ -10,6 +10,7 @@ const coreHints = <String, String>{
   'nav.settings': 'Hints, sync and security.',
   'settings.hints': 'Show these tips and the explanations at the top of each page.',
   'settings.restoreHints': 'Turn hints on and show every page explanation again.',
+  'settings.tour': 'Take the guided tour: a short walk through the main screens. Skip it at any step.',
   'settings.sync':
       'Keep devices in step through your own server. Data is encrypted before it leaves the device.',
   'settings.lock': 'Ask for a PIN, fingerprint or face when the app opens.',
