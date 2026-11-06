@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../sentinel/core_checks.dart' show releasesClientProvider, updateChecksProvider;
 import '../sentinel/releases.dart';
 import 'providers.dart';
+import 'updater.dart';
+import 'updater_ui.dart';
 
 /// Hours between asks to GitHub; in between, the last answer is reused.
 const _checkEvery = Duration(hours: 24);
@@ -66,8 +68,9 @@ ReleaseInfo? _decode(String? text) {
 }
 
 /// Puts a "new version" banner above [child] when [startupUpdateProvider]
-/// finds one: What's new, Download (the installer for this platform, else
-/// the release page) and Later (hides this version; the next one shows).
+/// finds one: What's new, Update (in the app when it has an [AppUpdater];
+/// otherwise the browser opens the installer for this platform, else the
+/// release page) and Later (hides this version; the next one shows).
 class UpdateNotice extends ConsumerStatefulWidget {
   const UpdateNotice({super.key, required this.child});
   final Widget child;
@@ -79,12 +82,16 @@ class UpdateNotice extends ConsumerStatefulWidget {
 class _UpdateNoticeState extends ConsumerState<UpdateNotice> {
   bool _hidden = false;
 
+  String get _action => ref.read(updaterProvider) == null ? 'Download' : 'Update';
+
   Future<void> _later(ReleaseInfo r) async {
     setState(() => _hidden = true);
     await ref.read(coreSessionProvider).db.setLocalSetting(_dismissedKey, r.version);
   }
 
   Future<void> _download(ReleaseInfo r) async {
+    // A standalone app installs its own update; otherwise the browser fetches it.
+    if (ref.read(updaterProvider) case final updater?) return checkForUpdate(context, updater);
     if (!await launchUrl(r.download ?? r.page, mode: LaunchMode.externalApplication) && mounted) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text('Could not open ${r.page}')));
     }
@@ -104,7 +111,7 @@ class _UpdateNoticeState extends ConsumerState<UpdateNotice> {
             Navigator.pop(context);
             _download(r);
           },
-          child: const Text('Download'),
+          child: Text(_action),
         ),
       ],
     ),
@@ -145,7 +152,7 @@ class _UpdateNoticeState extends ConsumerState<UpdateNotice> {
                     children: [
                       TextButton(onPressed: () => _notes(release), child: const Text("What's new")),
                       TextButton(onPressed: () => _later(release), child: const Text('Later')),
-                      FilledButton(onPressed: () => _download(release), child: const Text('Download')),
+                      FilledButton(onPressed: () => _download(release), child: Text(_action)),
                     ],
                   ),
                 ],

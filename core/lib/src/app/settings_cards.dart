@@ -15,6 +15,8 @@ import 'providers.dart';
 import 'sentinel_page.dart';
 import 'sync_dialogs.dart';
 import 'sync_wizard.dart';
+import 'updater.dart';
+import 'updater_ui.dart';
 
 /// Settings sections every Brahma app shows. Each app's settings page puts
 /// its own sections around these.
@@ -132,6 +134,7 @@ class AboutCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final name = ref.watch(appIdentityProvider).name;
+    final updater = ref.watch(updaterProvider);
     return SectionCard(
       title: 'About',
       padding: const EdgeInsets.only(bottom: 8),
@@ -143,6 +146,15 @@ class AboutCard extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => showLicensePage(context: context, applicationName: name),
           ),
+          if (updater != null)
+            ListTile(
+              leading: const Icon(Icons.system_update_outlined),
+              title: const Text('Check for updates'),
+              subtitle: Text(
+                'You have ${updater.current}. A newer version downloads, is checked and installs from here.',
+              ),
+              onTap: () => checkForUpdate(context, updater),
+            ),
           for (final (kind, icon, about) in [
             (ReportKind.bug, Icons.bug_report_outlined, 'Something broke or did not work as expected.'),
             (ReportKind.feature, Icons.lightbulb_outline, 'Something you wish $name did.'),

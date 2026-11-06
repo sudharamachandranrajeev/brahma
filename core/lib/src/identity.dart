@@ -22,6 +22,10 @@ class AppIdentity {
 
   String get linkScheme => id;
   String get linkChannel => '$androidPackage/links';
+
+  /// The method channel the Android app hands an update's APK to the
+  /// system installer on (see [AppUpdater]).
+  String get updateChannel => '$androidPackage/update';
 }
 
 /// Whether [scheme] can be a Brahma app's link scheme. Setup and pairing
