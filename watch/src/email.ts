@@ -313,6 +313,7 @@ export function parseAlertEmail(
       agent: "",
       agentPhone: "",
       image: imgs[0] ?? null,
+      images: [...new Set(imgs)],
       status: rent ? "toLet" : "forSale",
       text: flat.slice(0, 600),
     });

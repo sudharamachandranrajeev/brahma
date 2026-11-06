@@ -104,6 +104,7 @@ test("reads a Rightmove-like alert", () => {
   assert.equal(a.address, "Cardigan Road, Leeds, LS6 1LF");
   assert.equal(a.status, "toLet");
   assert.equal(a.image, "https://media.rightmove.co.uk/photo-1.jpeg");
+  assert.equal(a.images?.[0], "https://media.rightmove.co.uk/photo-1.jpeg");
   assert.match(a.text!, /Pets considered/);
   assert.equal(b.sourceId, "152000111");
   assert.equal(b.price, 1150);
