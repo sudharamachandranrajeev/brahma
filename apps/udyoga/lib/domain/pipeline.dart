@@ -1,4 +1,4 @@
-import 'package:brahma_core/brahma_core.dart';
+import 'package:brahma_core/brahma_core.dart' hide Release, UpdateException, checksumsName, updaterProvider;
 
 /// Where an application stands. Open stages come first, in order.
 enum Stage {

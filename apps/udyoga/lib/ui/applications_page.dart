@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:brahma_core/brahma_core.dart';
+import 'package:brahma_core/brahma_core.dart' hide Release, UpdateException, checksumsName, updaterProvider;
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -236,10 +236,13 @@ class ApplicationTile extends StatelessWidget {
                         ),
                       ),
                       if (a.followUp != null && stage.open)
-                        Pill(
-                          'Follow up ${relativeDay(a.followUp!, now)}',
-                          status: followUpStatus(a.followUp!, now),
-                          icon: Icons.notifications_none,
+                        // Shrinks (the label ellipsizes) on narrow cards.
+                        Flexible(
+                          child: Pill(
+                            'Follow up ${relativeDay(a.followUp!, now)}',
+                            status: followUpStatus(a.followUp!, now),
+                            icon: Icons.notifications_none,
+                          ),
                         ),
                     ],
                   ),

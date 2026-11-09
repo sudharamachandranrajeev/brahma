@@ -135,4 +135,25 @@ void main() {
     expect(tester.takeException(), isNull);
     await app.close();
   });
+
+  testWidgets('the side rail scrolls by touchpad on a short window', (tester) async {
+    final app = AppHarness(tester);
+    tester.view.physicalSize = const Size(1000, 420);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await app.open();
+    await app.run();
+    // Ten screens do not fit 420 pixels: the rail must scroll, not overflow.
+    expect(tester.takeException(), isNull);
+    final rail = find.byType(NavigationRail);
+    final last = find.descendant(of: rail, matching: find.text(allDestinations.last.label));
+    expect(tester.getRect(last).top, greaterThan(420));
+    final pad = await tester.createGesture(kind: PointerDeviceKind.trackpad);
+    await pad.panZoomStart(tester.getCenter(rail));
+    await pad.panZoomUpdate(tester.getCenter(rail), pan: const Offset(0, -800));
+    await pad.panZoomEnd();
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.getRect(last).bottom, lessThanOrEqualTo(420));
+    await app.close();
+  });
 }

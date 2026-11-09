@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:brahma_core/brahma_core.dart';
+import 'package:brahma_core/brahma_core.dart' hide Release, UpdateException, checksumsName, updaterProvider;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:udyoga/ui/carousel.dart';
 import 'package:udyoga/domain/ai.dart';

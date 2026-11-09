@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.6 (2026-11-06)
+
+- The side panel on wide windows scrolls when the window is too short to show every screen, with
+  the touchpad, mouse wheel or a drag. Before, the last screens were cut off.
+- Application cards: a long follow-up label no longer spills past the edge of a narrow card.
+
 ## 0.4.5 (2026-10-28)
 
 - Application board: active applications as a column per stage. Drag a card to move it (hold it
