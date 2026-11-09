@@ -29,7 +29,7 @@ jobs:
       name: ${{ steps.v.outputs.name }}
       build: ${{ steps.v.outputs.build }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: v
         run: |
           if [[ $GITHUB_REF == refs/tags/v* ]]; then
@@ -46,7 +46,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build tools
         run: |
           sudo apt-get update -qq
@@ -63,8 +63,8 @@ jobs:
     needs: [version, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
@@ -93,7 +93,7 @@ jobs:
             --build-name=${{ needs.version.outputs.name }} --build-number=${{ needs.version.outputs.build }}
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk dist/Brahma-${{ needs.version.outputs.version }}-android.apk
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android
           path: app/dist/*
@@ -106,7 +106,7 @@ jobs:
         shell: bash
         working-directory: app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -171,7 +171,7 @@ jobs:
           if ($u.ExitCode -ne 0) { throw "uninstall exited with $($u.ExitCode)" }
           if (-not (Test-Path $db.FullName)) { throw "Uninstalling deleted the user's data" }
           Write-Host "Installed, started, uninstalled; data kept."
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: app/dist/*
@@ -181,7 +181,7 @@ jobs:
     # The oldest supported runner, so the build runs on older glibc too.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build tools
         run: |
           sudo apt-get update -qq
@@ -216,7 +216,7 @@ jobs:
           EOF
           sed -i 's/^          //' "$dir/README.txt"
           tar czf "dist/Brahma-$version-linux-x64.tar.gz" "$dir"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: app/dist/*
@@ -229,8 +229,8 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: android
           path: dist
@@ -246,7 +246,7 @@ jobs:
           target: google_apis
           disable-animations: true
           script: bash .github/android-smoke.sh smoke
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: smoke-android
@@ -270,7 +270,7 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: linux
           path: dist
@@ -333,16 +333,16 @@ jobs:
       run:
         working-directory: .
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: android
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows
           path: dist
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: linux
           path: dist
