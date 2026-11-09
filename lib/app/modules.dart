@@ -1,4 +1,4 @@
-import 'package:brahma_core/brahma_core.dart';
+import 'package:brahma_core/brahma_core.dart' hide Release, UpdateException, checksumsName, updaterProvider;
 import 'package:flutter/material.dart';
 
 import '../ui/applications_page.dart';

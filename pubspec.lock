@@ -62,7 +62,7 @@ packages:
     description:
       path: core
       ref: HEAD
-      resolved-ref: "73e9f7cd4e2fe5ea7ab9e52cd48bef9b94fea43e"
+      resolved-ref: "411ce814e18a6940bb174bce70d9776bc43e1f9d"
       url: "https://github.com/sudharamachandranrajeev/brahma.git"
     source: git
     version: "0.1.0"
@@ -190,10 +190,10 @@ packages:
     dependency: "direct main"
     description:
       name: crypto
-      sha256: c8ea0233063ba03258fbcf2ca4d6dadfefe14f02fab57702265467a19f27fadf
+      sha256: e3626ae6270383c9e3a549f34c9e4cd26c09ae6a9adaab2bf4737a00340efdc4
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.7"
+    version: "3.0.8"
   cryptography:
     dependency: transitive
     description:

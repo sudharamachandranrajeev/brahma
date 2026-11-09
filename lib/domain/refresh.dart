@@ -1,4 +1,4 @@
-import 'package:brahma_core/brahma_core.dart';
+import 'package:brahma_core/brahma_core.dart' hide Release, UpdateException, checksumsName, updaterProvider;
 import 'package:drift/drift.dart' show BooleanExpressionOperators;
 import 'package:http/http.dart' as http;
 

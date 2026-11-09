@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:brahma_core/brahma_core.dart';
+import 'package:brahma_core/brahma_core.dart' hide Release, UpdateException, checksumsName, updaterProvider;
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
