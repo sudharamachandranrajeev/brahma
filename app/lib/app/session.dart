@@ -7,7 +7,7 @@ const brahmaIdentity = AppIdentity(
   id: 'brahma',
   name: 'Brahma',
   androidPackage: 'dev.brahma.app',
-  releases: 'sudharamachandranrajeev/brahma',
+  releases: 'sudharamachandranrajeev/brahma-life-suite',
 );
 
 /// The suite's own session (its local settings and the sync account) and

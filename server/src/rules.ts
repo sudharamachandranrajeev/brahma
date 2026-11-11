@@ -4,7 +4,7 @@
 // verifies the file against the maintainers' public key (core's
 // sentinel/rules.dart).
 
-export const RULES_URL = "https://raw.githubusercontent.com/sudharamachandranrajeev/brahma/main/sentinel/rules.json";
+export const RULES_URL = "https://raw.githubusercontent.com/sudharamachandranrajeev/brahma-life-suite/main/sentinel/rules.json";
 
 const FRESH_MS = 12 * 3600_000;
 

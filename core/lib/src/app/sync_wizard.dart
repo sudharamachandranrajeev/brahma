@@ -65,7 +65,7 @@ class _FirstRunSetupState extends ConsumerState<FirstRunSetup> {
 enum _Step { welcome, where, guide, server, account, done }
 
 /// The Brahma repository people get the server from.
-const serverRepository = 'https://github.com/sudharamachandranrajeev/brahma';
+const serverRepository = 'https://github.com/sudharamachandranrajeev/brahma-life-suite';
 
 /// Guided first setup: keep data on this device, or sync through the user's
 /// own server, at home or in the cloud, with step-by-step help for setting

@@ -48,21 +48,21 @@ final linkedApps = <LinkedApp>[
     tagline: 'Fashion and personal care',
     icon: Icons.checkroom_outlined,
     color: const Color(0xFFB0507A),
-    page: Uri.parse('$_owner/vastra/releases'),
+    page: Uri.parse('$_owner/vastra-fashion-finds/releases'),
   ),
   LinkedApp(
     name: 'Arogya',
     tagline: 'Health records',
     icon: Icons.medical_services_outlined,
     color: const Color(0xFF2E8B7A),
-    page: Uri.parse('$_owner/arogya/releases'),
+    page: Uri.parse('$_owner/arogya-health-records-ehr/releases'),
   ),
   LinkedApp(
     name: 'Bhandara',
     tagline: 'Storage and disk health',
     icon: Icons.storage_outlined,
     color: const Color(0xFF5B6BB0),
-    page: Uri.parse('$_owner/bhandara/releases'),
+    page: Uri.parse('$_owner/bhandara-storage-monitor/releases'),
   ),
   // No release yet, so the card opens the repository.
   LinkedApp(
@@ -70,6 +70,6 @@ final linkedApps = <LinkedApp>[
     tagline: 'AI tokens, costs and limits',
     icon: Icons.data_usage_outlined,
     color: const Color(0xFFB07A2E),
-    page: Uri.parse('$_owner/ganana'),
+    page: Uri.parse('$_owner/ganana-ai-usage-tracker'),
   ),
 ];

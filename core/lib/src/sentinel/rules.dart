@@ -20,7 +20,7 @@ import 'sentinel.dart';
 /// The public half of the rules signing key.
 const rulesPublicKey = 'ta/VHytnMj2bUMTwDHpP5i0NGy2PYXle1MOGE2krkdc=';
 
-const rulesUrl = 'https://raw.githubusercontent.com/sudharamachandranrajeev/brahma/main/sentinel/rules.json';
+const rulesUrl = 'https://raw.githubusercontent.com/sudharamachandranrajeev/brahma-life-suite/main/sentinel/rules.json';
 
 /// How long a fetched rules file counts as fresh.
 const rulesFresh = Duration(hours: 12);

@@ -19,7 +19,7 @@ The Flutter package every Brahma app is built on.
 dependencies:
   brahma_core:
     git:
-      url: https://github.com/sudharamachandranrajeev/brahma.git
+      url: https://github.com/sudharamachandranrajeev/brahma-life-suite.git
       path: core
 ```
 

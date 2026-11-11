@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 owner=https://github.com/sudharamachandranrajeev
 
 # apps/<name> comes from the repository of the same name, except these.
-declare -A repo=([anveshana]=graha-anveshana [vahana]=vahana-anveshana)
+declare -A repo=([anveshana]=graha-anveshana-property-search [artha]=artha-personal-finance [bhojana]=bhojana-grocery-shopping [udyoga]=udyoga-career-manager [vahana]=vahana-anveshana-car-manager [vani]=vani-social-media-manager [vidya]=vidya-learning-manager)
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "Commit or stash your changes first." >&2

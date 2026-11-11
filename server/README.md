@@ -25,7 +25,7 @@ device only. Sync can be turned on later in Settings.
 On the computer that will be the server, open a terminal and paste:
 
 ```sh
-git clone https://github.com/sudharamachandranrajeev/brahma.git
+git clone https://github.com/sudharamachandranrajeev/brahma-life-suite.git
 cd brahma/server/home
 ./install.sh
 ```
@@ -66,7 +66,7 @@ holds the signing key: keep it private, mode 600).
 On any computer with Git and Node.js 24 or newer:
 
 ```sh
-git clone https://github.com/sudharamachandranrajeev/brahma.git
+git clone https://github.com/sudharamachandranrajeev/brahma-life-suite.git
 cd brahma/server
 npm install
 npx wrangler login      # once; opens the browser to allow your Cloudflare account

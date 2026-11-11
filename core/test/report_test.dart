@@ -43,7 +43,7 @@ void main() {
     expect(link.queryParameters['body']!.length, lessThan(6100));
     expect(
       issueRepo(const AppIdentity(id: 'u', name: 'U', androidPackage: 'p')),
-      'sudharamachandranrajeev/brahma',
+      'sudharamachandranrajeev/brahma-life-suite',
     );
   });
 

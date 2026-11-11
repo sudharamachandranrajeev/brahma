@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/sudharamachandranrajeev/brahma"><img src="app/branding/brahma-512.png" alt="Brahma" width="140"></a>
+  <a href="https://github.com/sudharamachandranrajeev/brahma-life-suite"><img src="app/branding/brahma-512.png" alt="Brahma" width="140"></a>
   <br>
   Brahma
   <br>
@@ -9,7 +9,7 @@
 <h4 align="center">Your money, home, car, career, learning, shopping and social media in one private app, on your phone and computer.</h4>
 
 <p align="center">
-  <a href="https://github.com/sudharamachandranrajeev/brahma/releases"><img src="https://img.shields.io/github/v/release/sudharamachandranrajeev/brahma?include_prereleases&color=8a5cf6&label=download" alt="Latest release"></a>
+  <a href="https://github.com/sudharamachandranrajeev/brahma-life-suite/releases"><img src="https://img.shields.io/github/v/release/sudharamachandranrajeev/brahma-life-suite?include_prereleases&color=8a5cf6&label=download" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/works%20on-Linux%20%7C%20Windows%20%7C%20Android-555" alt="Works on Linux, Windows and Android">
   <img src="https://img.shields.io/badge/your%20data-encrypted-2e7d32" alt="Your data is encrypted">
   <img src="https://img.shields.io/badge/apps%20inside-7-8a5cf6" alt="Seven apps inside">
@@ -60,22 +60,22 @@ Seven apps run **inside** Brahma. Each one also ships on its own.
 
 | App | What it does for you |
 | --- | --- |
-| [Artha](https://github.com/sudharamachandranrajeev/artha) | Money: accounts, spending, bills and investments |
-| [Udyoga](https://github.com/sudharamachandranrajeev/udyoga) | Career: matched jobs, tailored CVs, applications and interview practice |
-| [Graha Anveshana](https://github.com/sudharamachandranrajeev/graha-anveshana) | Property: finding a home to rent or buy, viewings and lettings |
-| [Vahana Anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana) | Cars: buying, owning and selling, with MOT and tax dates |
-| [Vidya](https://github.com/sudharamachandranrajeev/vidya) | Learning: courses, flashcards, skills and focus time |
-| [Bhojana](https://github.com/sudharamachandranrajeev/bhojana) | Shopping: lists and UK grocery prices compared across shops |
-| [Vani](https://github.com/sudharamachandranrajeev/vani) | Social media: scheduled posts, one inbox and alerts |
+| [Artha](https://github.com/sudharamachandranrajeev/artha-personal-finance) | Money: accounts, spending, bills and investments |
+| [Udyoga](https://github.com/sudharamachandranrajeev/udyoga-career-manager) | Career: matched jobs, tailored CVs, applications and interview practice |
+| [Graha Anveshana](https://github.com/sudharamachandranrajeev/graha-anveshana-property-search) | Property: finding a home to rent or buy, viewings and lettings |
+| [Vahana Anveshana](https://github.com/sudharamachandranrajeev/vahana-anveshana-car-manager) | Cars: buying, owning and selling, with MOT and tax dates |
+| [Vidya](https://github.com/sudharamachandranrajeev/vidya-learning-manager) | Learning: courses, flashcards, skills and focus time |
+| [Bhojana](https://github.com/sudharamachandranrajeev/bhojana-grocery-shopping) | Shopping: lists and UK grocery prices compared across shops |
+| [Vani](https://github.com/sudharamachandranrajeev/vani-social-media-manager) | Social media: scheduled posts, one inbox and alerts |
 
 These run **on their own** for now. Their cards on the Brahma home screen open their download page.
 
 | App | What it does for you |
 | --- | --- |
-| [Vastra](https://github.com/sudharamachandranrajeev/vastra) | Fashion and personal care: save products, find sellers, compare offers |
-| [Arogya](https://github.com/sudharamachandranrajeev/arogya) | Health records |
-| [Bhandara](https://github.com/sudharamachandranrajeev/bhandara) | Storage: disk health and space |
-| [Ganana](https://github.com/sudharamachandranrajeev/ganana) | AI use: tokens, costs and limits |
+| [Vastra](https://github.com/sudharamachandranrajeev/vastra-fashion-finds) | Fashion and personal care: save products, find sellers, compare offers |
+| [Arogya](https://github.com/sudharamachandranrajeev/arogya-health-records-ehr) | Health records |
+| [Bhandara](https://github.com/sudharamachandranrajeev/bhandara-storage-monitor) | Storage: disk health and space |
+| [Ganana](https://github.com/sudharamachandranrajeev/ganana-ai-usage-tracker) | AI use: tokens, costs and limits |
 
 ## 📸 Screenshots
 
@@ -98,7 +98,7 @@ These run **on their own** for now. Their cards on the Brahma home screen open t
 
 ### Step 1 – Download
 
-Open the [releases page](https://github.com/sudharamachandranrajeev/brahma/releases) and, under
+Open the [releases page](https://github.com/sudharamachandranrajeev/brahma-life-suite/releases) and, under
 the newest release, pick the file for your device:
 
 | Your device | File to download | Works on |
@@ -248,7 +248,7 @@ You need [Git](https://git-scm.com) and [Flutter](https://flutter.dev) 3.47. On 
 `clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev`.
 
 ```bash
-git clone https://github.com/sudharamachandranrajeev/brahma
+git clone https://github.com/sudharamachandranrajeev/brahma-life-suite
 cd brahma/app
 flutter pub get
 flutter run -d linux        # or windows, or an Android device
@@ -296,9 +296,9 @@ A `v*` tag builds, smoke-tests and publishes the Android, Windows and Linux buil
 
 ## Related
 
-- [Vinyasa](https://github.com/sudharamachandranrajeev/vinyasa) – plan and rearrange a room, built
+- [Vinyasa](https://github.com/sudharamachandranrajeev/vinyasa-space-organiser) – plan and rearrange a room, built
   on the same core (not in Brahma yet).
-- [Adisthanam](https://github.com/sudharamachandranrajeev/adisthanam) – installs your own Brahma
+- [Adisthanam](https://github.com/sudharamachandranrajeev/adisthanam-home-server) – installs your own Brahma
   login and data server with one command.
 
 ## License

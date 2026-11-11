@@ -24,7 +24,7 @@ enum ReportKind {
 }
 
 /// Where an app's issues go: its own repository, else Brahma's.
-String issueRepo(AppIdentity app) => app.releases ?? 'sudharamachandranrajeev/brahma';
+String issueRepo(AppIdentity app) => app.releases ?? 'sudharamachandranrajeev/brahma-life-suite';
 
 /// The last few errors the user met (shown to them, or uncaught), newest
 /// last, to attach to a problem report if they choose.
