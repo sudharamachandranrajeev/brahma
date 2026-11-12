@@ -68,6 +68,7 @@ String reportBody({
   required String details,
   String steps = '',
   String? error,
+  String? screen,
 }) => [
   if (kind == ReportKind.bug) ...[
     '### What happened',
@@ -81,7 +82,8 @@ String reportBody({
   ],
   '',
   '---',
-  '$app $version on $platform. Sent from the app\'s ${kind.label} form.',
+  '$app $version on $platform. Sent from the app\'s ${kind.label} form'
+      '${screen == null ? '' : ', on the $screen screen'}.',
 ].join('\n');
 
 /// GitHub's new-issue page with [title] and [body] filled in. GitHub only
@@ -96,16 +98,32 @@ Uri issueLink({required String repo, required ReportKind kind, required String t
   });
 }
 
-Future<void> showReport(BuildContext context, {ReportKind kind = ReportKind.bug, String? error}) =>
+/// [screen] names the page the report was started from, for the issue text.
+Future<void> showReport(BuildContext context, {ReportKind kind = ReportKind.bug, String? error, String? screen}) =>
     showDialog<void>(
       context: context,
-      builder: (_) => _ReportDialog(kind: kind, error: error ?? AppErrors.last),
+      builder: (_) => _ReportDialog(kind: kind, error: error ?? AppErrors.last, screen: screen),
     );
 
+/// The Feedback button at the right of every page's app bar: the report form,
+/// started from [screen].
+class FeedbackButton extends StatelessWidget {
+  const FeedbackButton({super.key, this.screen});
+  final String? screen;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: 'Feedback: report a problem or suggest a feature',
+    icon: const Icon(Icons.feedback_outlined),
+    onPressed: () => showReport(context, kind: ReportKind.feature, screen: screen),
+  );
+}
+
 class _ReportDialog extends ConsumerStatefulWidget {
-  const _ReportDialog({required this.kind, this.error});
+  const _ReportDialog({required this.kind, this.error, this.screen});
   final ReportKind kind;
   final String? error;
+  final String? screen;
 
   @override
   ConsumerState<_ReportDialog> createState() => _ReportDialogState();
@@ -144,6 +162,7 @@ class _ReportDialogState extends ConsumerState<_ReportDialog> {
     details: _details.text.trim(),
     steps: _steps.text.trim(),
     error: _kind == ReportKind.bug && _withError ? widget.error : null,
+    screen: widget.screen,
   );
 
   Future<void> _send() async {

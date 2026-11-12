@@ -86,4 +86,38 @@ void main() {
     await tester.pump();
     expect(find.text('Give it a short title'), findsOneWidget);
   });
+
+  test('a report says which screen it came from', () {
+    final body = reportBody(
+      kind: ReportKind.feature,
+      app: 'Vidya',
+      version: '0.2.0',
+      platform: 'linux',
+      details: 'Dark mode',
+      screen: 'Search',
+    );
+    expect(body, endsWith("Sent from the app's Suggest a feature form, on the Search screen."));
+  });
+
+  testWidgets('the Feedback button opens the form, an idea first', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appIdentityProvider.overrideWithValue(
+            const AppIdentity(id: 'v', name: 'Vidya', androidPackage: 'p'),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(appBar: AppBar(actions: const [FeedbackButton(screen: 'Search')])),
+        ),
+      ),
+    );
+    await tester.tap(find.byTooltip('Feedback: report a problem or suggest a feature'));
+    await tester.pumpAndSettle();
+    expect(find.text('Suggest a feature'), findsOneWidget);
+    expect(find.text('In a few words, what would help?'), findsOneWidget);
+    await tester.tap(find.text('Bug'));
+    await tester.pumpAndSettle();
+    expect(find.text('Report a problem'), findsOneWidget);
+  });
 }

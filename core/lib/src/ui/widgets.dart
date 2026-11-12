@@ -121,7 +121,7 @@ class PageScaffold extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: Text(title),
-      actions: [...actions, const SyncIndicator(), const SizedBox(width: 8)],
+      actions: [...actions, FeedbackButton(screen: title), const SyncIndicator(), const SizedBox(width: 8)],
       bottom: bottom,
     ),
     floatingActionButton: fab,
